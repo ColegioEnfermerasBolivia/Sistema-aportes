@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('nombre');
             $table->enum('tipo', ['DEPARTAMENTAL', 'REGIONAL']);
-            $table->foreignId('colegio_padre')
+            $table->foreignId('colegio_padre_id')
                 ->nullable()
                 ->constrained('colegios')
                 ->nullOnDelete();
