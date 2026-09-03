@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\UsuarioController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -26,3 +27,27 @@ Route::post('/cambiar-password', [\App\Http\Controllers\AuthController::class, '
 Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])
     ->middleware(['auth', 'debe-cambiar-password'])
     ->name('dashboard');
+
+Route::get('/usuarios', [UsuarioController::class, 'index'])
+    ->middleware(['auth', 'debe-cambiar-password', 'rol:SUPER ADMIN,ADMIN'])
+    ->name('usuarios.index');
+
+Route::post('/usuarios', [UsuarioController::class, 'store'])
+    ->middleware(['auth', 'debe-cambiar-password', 'rol:SUPER ADMIN,ADMIN'])
+    ->name('usuarios.store');
+
+Route::get('/usuarios/{usuario}/editar', [UsuarioController::class, 'edit'])
+    ->middleware(['auth', 'debe-cambiar-password', 'rol:SUPER ADMIN,ADMIN'])
+    ->name('usuarios.edit');
+
+Route::put('/usuarios/{usuario}', [UsuarioController::class, 'update'])
+    ->middleware(['auth', 'debe-cambiar-password', 'rol:SUPER ADMIN,ADMIN'])
+    ->name('usuarios.update');
+
+Route::patch('/usuarios/{usuario}/estado', [UsuarioController::class, 'cambiarEstado'])
+    ->middleware(['auth', 'debe-cambiar-password', 'rol:SUPER ADMIN,ADMIN'])
+    ->name('usuarios.estado');
+
+Route::patch('/usuarios/{usuario}/reset-password', [UsuarioController::class, 'resetPassword'])
+    ->middleware(['auth', 'debe-cambiar-password', 'rol:SUPER ADMIN,ADMIN'])
+    ->name('usuarios.reset-password');
