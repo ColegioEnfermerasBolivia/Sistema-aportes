@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Models\Usuario;
+use App\Models\Afiliado;
 use App\Policies\UsuarioPolicy;
+use App\Policies\AfiliadoPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -23,5 +25,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::policy(Usuario::class, UsuarioPolicy::class);
+        Gate::policy(Afiliado::class, AfiliadoPolicy::class);
     }
 }

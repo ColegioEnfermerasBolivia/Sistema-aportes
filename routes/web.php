@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UsuarioController;
+use App\Http\Controllers\AfiliadoController;
+use App\Http\Controllers\InformacionLaboralController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -51,3 +53,52 @@ Route::patch('/usuarios/{usuario}/estado', [UsuarioController::class, 'cambiarEs
 Route::patch('/usuarios/{usuario}/reset-password', [UsuarioController::class, 'resetPassword'])
     ->middleware(['auth', 'debe-cambiar-password', 'rol:SUPER ADMIN,ADMIN'])
     ->name('usuarios.reset-password');
+
+Route::get('/afiliados', [AfiliadoController::class, 'index'])
+    ->middleware(['auth', 'debe-cambiar-password', 'rol:SUPER ADMIN,ADMIN,USUARIO'])
+    ->name('afiliados.index');
+
+Route::post('/afiliados', [AfiliadoController::class, 'store'])
+    ->middleware(['auth', 'debe-cambiar-password', 'rol:SUPER ADMIN,ADMIN,USUARIO'])
+    ->name('afiliados.store');
+
+Route::put('/afiliados/{afiliado}', [AfiliadoController::class, 'update'])
+    ->middleware(['auth', 'debe-cambiar-password', 'rol:SUPER ADMIN,ADMIN,USUARIO'])
+    ->name('afiliados.update');
+
+Route::patch('/afiliados/{afiliado}/estado', [AfiliadoController::class, 'cambiarEstado'])
+    ->middleware(['auth', 'debe-cambiar-password', 'rol:SUPER ADMIN,ADMIN,USUARIO'])
+    ->name('afiliados.estado');
+
+Route::get(
+    '/afiliados/{afiliado}/informacion-laboral',
+    [InformacionLaboralController::class, 'index']
+)
+    ->middleware([
+        'auth',
+        'debe-cambiar-password',
+        'rol:SUPER ADMIN,ADMIN,USUARIO'
+    ])
+    ->name('informacion-laboral.index');
+
+Route::post(
+    '/afiliados/{afiliado}/informacion-laboral',
+    [InformacionLaboralController::class, 'store']
+)
+    ->middleware([
+        'auth',
+        'debe-cambiar-password',
+        'rol:SUPER ADMIN,ADMIN,USUARIO'
+    ])
+    ->name('informacion-laboral.store');
+
+Route::put(
+    '/informacion-laboral/{informacionLaboral}',
+    [InformacionLaboralController::class, 'update']
+)
+    ->middleware([
+        'auth',
+        'debe-cambiar-password',
+        'rol:SUPER ADMIN,ADMIN,USUARIO'
+    ])
+    ->name('informacion-laboral.update');
