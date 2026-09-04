@@ -34,4 +34,9 @@ class Colegio extends Model
     {
         return $this->hasMany(Usuario::class, 'colegio_id');
     }
+
+    public function afiliados(): HasMany
+    {
+        return $this->hasMany(Afiliado::class, 'colegio_id');
+    }
 }
