@@ -4,13 +4,11 @@
 ])
 
 <div x-data="{ abierto: {{ $abiertoInicial ? 'true' : 'false' }} }">
-
     @isset($trigger)
         <div @click="abierto = true">
             {{ $trigger }}
         </div>
     @endisset
-
     <div
         x-show="abierto"
         x-cloak
@@ -30,11 +28,9 @@
                     ×
                 </button>
             </div>
-
             <div class="modal-body">
                 {{ $slot }}
             </div>
         </div>
     </div>
-
 </div>

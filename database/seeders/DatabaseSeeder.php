@@ -15,6 +15,8 @@ class DatabaseSeeder extends Seeder
             RolesSeeder::class,
             ColegioSeeder::class,
             UsuarioSeeder::class,
+            GradoAcademicoSeeder::class,
+            PostgradoSeeder::class,
         ]);
     }
 }

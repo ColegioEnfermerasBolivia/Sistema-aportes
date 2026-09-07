@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\AfiliadoController;
 use App\Http\Controllers\InformacionLaboralController;
+use App\Http\Controllers\AfiliadoPostgradoController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -102,3 +103,27 @@ Route::put(
         'rol:SUPER ADMIN,ADMIN,USUARIO'
     ])
     ->name('informacion-laboral.update');
+
+Route::post('/afiliados/{afiliado}/postgrados', [AfiliadoPostgradoController::class, 'store'])
+    ->middleware([
+        'auth',
+        'debe-cambiar-password',
+        'rol:SUPER ADMIN,ADMIN,USUARIO'
+    ])
+    ->name('afiliado-postgrado.store');
+
+Route::put('/afiliado-postgrado/{afiliadoPostgrado}', [AfiliadoPostgradoController::class, 'update'])
+    ->middleware([
+        'auth',
+        'debe-cambiar-password',
+        'rol:SUPER ADMIN,ADMIN,USUARIO'
+    ])
+    ->name('afiliado-postgrado.update');
+
+Route::delete('/afiliado-postgrado/{afiliadoPostgrado}', [AfiliadoPostgradoController::class, 'destroy'])
+    ->middleware([
+        'auth',
+        'debe-cambiar-password',
+        'rol:SUPER ADMIN,ADMIN,USUARIO'
+    ])
+    ->name('afiliado-postgrado.destroy');

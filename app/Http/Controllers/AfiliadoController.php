@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Afiliado;
 use App\Models\Colegio;
+use App\Models\Postgrado;
+use App\Models\GradoAcademico;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
@@ -16,7 +18,22 @@ class AfiliadoController extends Controller
 
         $usuario = auth()->user();
 
-        $query = Afiliado::with('colegio');
+        $query = Afiliado::with([
+            'colegio',
+            'informacionesLaborales' => function ($query) {
+                $query->orderByDesc('fecha_ingreso_trabajo');
+            },
+            'afiliadosPostgrados.postgrado',
+            'afiliadosPostgrados.gradoAcademico',
+        ]);
+
+        $postgrados = Postgrado::where('estado', 'ACTIVO')
+            ->orderBy('nombre')
+            ->get();
+
+        $gradosAcademicos = GradoAcademico::where('estado', 'ACTIVO')
+            ->orderBy('nombre')
+            ->get();
 
         if ($usuario->rol?->nombre === 'USUARIO') {
 
@@ -112,7 +129,9 @@ class AfiliadoController extends Controller
             'afiliados.index',
             compact(
                 'afiliados',
-                'colegios'
+                'colegios',
+                'postgrados',
+                'gradosAcademicos',
             )
         );
     }
