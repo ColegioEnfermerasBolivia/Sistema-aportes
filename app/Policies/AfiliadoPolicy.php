@@ -135,4 +135,40 @@ class AfiliadoPolicy
     ): bool {
         return $this->viewLaboral($usuario, $afiliado);
     }
+
+    public function viewAcademic(
+    Usuario $usuario,
+    Afiliado $afiliado
+    ): bool {
+        return $this->viewLaboral($usuario, $afiliado);
+        }
+
+    public function createAcademic(
+        Usuario $usuario,
+        Afiliado $afiliado
+    ): bool {
+        if ($usuario->rol?->nombre === 'ADMIN') {
+            return true;
+        }
+
+        if ($usuario->rol?->nombre !== 'USUARIO') {
+            return false;
+        }
+
+        return $this->viewLaboral($usuario, $afiliado);
+    }
+
+    public function updateAcademic(
+        Usuario $usuario,
+        Afiliado $afiliado
+    ): bool {
+        return $this->createAcademic($usuario, $afiliado);
+    }
+
+    public function deleteAcademic(
+        Usuario $usuario,
+        Afiliado $afiliado
+    ): bool {
+        return $this->createAcademic($usuario, $afiliado);
+    }
 }

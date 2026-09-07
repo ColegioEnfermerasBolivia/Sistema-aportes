@@ -41,4 +41,9 @@ class Afiliado extends Model
             'afiliado_id'
         );
     }
+
+    public function afiliadosPostgrados(): HasMany
+    {
+        return $this->hasMany(AfiliadoPostgrado::class, 'afiliado_id');
+    }
 }

@@ -88,7 +88,7 @@ class InformacionLaboralController extends Controller
 
         return redirect()
             ->route(
-                'informacion-laboral.index',
+                'afiliados.index',
                 $afiliado
             )
             ->with(
@@ -175,10 +175,7 @@ class InformacionLaboralController extends Controller
         $informacionLaboral->update($datos);
 
         return redirect()
-            ->route(
-                'informacion-laboral.index',
-                $informacionLaboral->afiliado_id
-            )
+            ->route('afiliados.index')
             ->with(
                 'success',
                 'Información laboral actualizada correctamente.'
