@@ -1,9 +1,6 @@
 @php
-
     $esEdicion = $modo === 'editar';
-
 @endphp
-
 
 <form
     method="POST"
@@ -11,268 +8,352 @@
         ? route('afiliados.update', $afiliado)
         : route('afiliados.store')
     }}"
+    class="space-y-6"
 >
 
     @csrf
 
-
     @if ($esEdicion)
-
         @method('PUT')
-
     @endif
 
 
+    {{-- ========================================== --}}
+    {{-- DATOS DE IDENTIFICACIÓN --}}
+    {{-- ========================================== --}}
+
     <div>
 
-        {{-- ========================================== --}}
-        {{-- REGISTRO DEPARTAMENTAL --}}
-        {{-- ========================================== --}}
+        <h3 class="mb-5 text-base font-semibold text-[#0d1b6e]">
+            Datos de identificación
+        </h3>
 
-        <div>
+        <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
 
-            <label for="{{ $esEdicion ? 'editar_registro' : 'registro_departamental' }}">
-                Registro departamental
-            </label>
-
-            <input
-                type="text"
-                id="{{ $esEdicion ? 'editar_registro' : 'registro_departamental' }}"
-                name="registro_departamental"
-                value="{{ old(
-                    'registro_departamental',
-                    $esEdicion ? $afiliado->registro_departamental : ''
-                ) }}"
-                maxlength="30"
-                required
-            >
-
-        </div>
-
-
-        {{-- ========================================== --}}
-        {{-- MATRÍCULA PROFESIONAL --}}
-        {{-- ========================================== --}}
-
-        <div>
-
-            <label for="{{ $esEdicion ? 'editar_matricula' : 'matricula_profesional' }}">
-                Matrícula profesional
-            </label>
-
-            <input
-                type="text"
-                id="{{ $esEdicion ? 'editar_matricula' : 'matricula_profesional' }}"
-                name="matricula_profesional"
-                value="{{ old(
-                    'matricula_profesional',
-                    $esEdicion ? $afiliado->matricula_profesional : ''
-                ) }}"
-                maxlength="30"
-                required
-            >
-
-        </div>
-
-
-        {{-- ========================================== --}}
-        {{-- CI --}}
-        {{-- ========================================== --}}
-
-        <div>
-
-            <label for="{{ $esEdicion ? 'editar_ci' : 'ci' }}">
-                CI
-            </label>
-
-            <input
-                type="text"
-                id="{{ $esEdicion ? 'editar_ci' : 'ci' }}"
-                name="ci"
-                value="{{ old(
-                    'ci',
-                    $esEdicion ? $afiliado->ci : ''
-                ) }}"
-                maxlength="20"
-                required
-            >
-
-        </div>
-
-
-        {{-- ========================================== --}}
-        {{-- COLEGIO --}}
-        {{-- ========================================== --}}
-
-        @if (
-            auth()->user()->rol?->nombre === 'SUPER ADMIN'
-            ||
-            (
-                auth()->user()->rol?->nombre === 'ADMIN'
-                && !$esEdicion
-            )
-        )
-
+            {{-- REGISTRO DEPARTAMENTAL --}}
             <div>
-
-                <label for="{{ $esEdicion ? 'editar_colegio' : 'colegio_id' }}">
-                    Colegio
+                <label
+                    for="{{ $esEdicion ? 'editar_registro' : 'registro_departamental' }}"
+                    class="mb-2 block text-sm font-medium text-gray-700"
+                >
+                    Registro departamental
                 </label>
 
-                <select
-                    id="{{ $esEdicion ? 'editar_colegio' : 'colegio_id' }}"
-                    name="colegio_id"
+                <input
+                    type="text"
+                    id="{{ $esEdicion ? 'editar_registro' : 'registro_departamental' }}"
+                    name="registro_departamental"
+                    value="{{ old(
+                        'registro_departamental',
+                        $esEdicion ? $afiliado->registro_departamental : ''
+                    ) }}"
+                    maxlength="30"
                     required
+                    placeholder="Ej. LP-000123"
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#1a34c9] focus:ring-2 focus:ring-[#1a34c9]/10"
                 >
 
-                    <option value="">
-                        Seleccione un colegio
-                    </option>
-
-                    @foreach ($colegios as $colegio)
-
-                        <option
-                            value="{{ $colegio->id }}"
-                            @selected(
-                                old(
-                                    'colegio_id',
-                                    $esEdicion
-                                        ? $afiliado->colegio_id
-                                        : ''
-                                ) == $colegio->id
-                            )
-                        >
-                            {{ $colegio->nombre }}
-                        </option>
-
-                    @endforeach
-
-                </select>
-
+                @error('registro_departamental')
+                    <p class="mt-1.5 text-xs text-red-600">
+                        {{ $message }}
+                    </p>
+                @enderror
             </div>
 
-        @endif
+
+            {{-- MATRÍCULA PROFESIONAL --}}
+            <div>
+                <label
+                    for="{{ $esEdicion ? 'editar_matricula' : 'matricula_profesional' }}"
+                    class="mb-2 block text-sm font-medium text-gray-700"
+                >
+                    Matrícula profesional
+                </label>
+
+                <input
+                    type="text"
+                    id="{{ $esEdicion ? 'editar_matricula' : 'matricula_profesional' }}"
+                    name="matricula_profesional"
+                    value="{{ old(
+                        'matricula_profesional',
+                        $esEdicion ? $afiliado->matricula_profesional : ''
+                    ) }}"
+                    maxlength="30"
+                    required
+                    placeholder="Ej. MAT-0000"
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#1a34c9] focus:ring-2 focus:ring-[#1a34c9]/10"
+                >
+
+                @error('matricula_profesional')
+                    <p class="mt-1.5 text-xs text-red-600">
+                        {{ $message }}
+                    </p>
+                @enderror
+            </div>
 
 
-        {{-- ========================================== --}}
-        {{-- NOMBRES --}}
-        {{-- ========================================== --}}
+            {{-- CI --}}
+            <div>
+                <label
+                    for="{{ $esEdicion ? 'editar_ci' : 'ci' }}"
+                    class="mb-2 block text-sm font-medium text-gray-700"
+                >
+                    CI
+                </label>
 
-        <div>
+                <input
+                    type="text"
+                    id="{{ $esEdicion ? 'editar_ci' : 'ci' }}"
+                    name="ci"
+                    value="{{ old(
+                        'ci',
+                        $esEdicion ? $afiliado->ci : ''
+                    ) }}"
+                    maxlength="20"
+                    required
+                    placeholder="Número de CI"
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#1a34c9] focus:ring-2 focus:ring-[#1a34c9]/10"
+                >
 
-            <label for="{{ $esEdicion ? 'editar_nombres' : 'nombres' }}">
-                Nombres
-            </label>
-
-            <input
-                type="text"
-                id="{{ $esEdicion ? 'editar_nombres' : 'nombres' }}"
-                name="nombres"
-                value="{{ old(
-                    'nombres',
-                    $esEdicion ? $afiliado->nombres : ''
-                ) }}"
-                maxlength="100"
-                required
-            >
-
-        </div>
-
-
-        {{-- ========================================== --}}
-        {{-- APELLIDOS --}}
-        {{-- ========================================== --}}
-
-        <div>
-
-            <label for="{{ $esEdicion ? 'editar_apellidos' : 'apellidos' }}">
-                Apellidos
-            </label>
-
-            <input
-                type="text"
-                id="{{ $esEdicion ? 'editar_apellidos' : 'apellidos' }}"
-                name="apellidos"
-                value="{{ old(
-                    'apellidos',
-                    $esEdicion ? $afiliado->apellidos : ''
-                ) }}"
-                maxlength="100"
-                required
-            >
-
-        </div>
+                @error('ci')
+                    <p class="mt-1.5 text-xs text-red-600">
+                        {{ $message }}
+                    </p>
+                @enderror
+            </div>
 
 
-        {{-- ========================================== --}}
-        {{-- CELULAR --}}
-        {{-- ========================================== --}}
+            {{-- CELULAR --}}
+            <div>
+                <label
+                    for="{{ $esEdicion ? 'editar_celular' : 'celular' }}"
+                    class="mb-2 block text-sm font-medium text-gray-700"
+                >
+                    Celular
+                </label>
 
-        <div>
+                <input
+                    type="text"
+                    id="{{ $esEdicion ? 'editar_celular' : 'celular' }}"
+                    name="celular"
+                    value="{{ old(
+                        'celular',
+                        $esEdicion ? $afiliado->celular : ''
+                    ) }}"
+                    maxlength="20"
+                    required
+                    placeholder="Ej. 70000000"
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#1a34c9] focus:ring-2 focus:ring-[#1a34c9]/10"
+                >
 
-            <label for="{{ $esEdicion ? 'editar_celular' : 'celular' }}">
-                Celular
-            </label>
-
-            <input
-                type="text"
-                id="{{ $esEdicion ? 'editar_celular' : 'celular' }}"
-                name="celular"
-                value="{{ old(
-                    'celular',
-                    $esEdicion ? $afiliado->celular : ''
-                ) }}"
-                maxlength="20"
-                required
-            >
-
-        </div>
-
-
-        {{-- ========================================== --}}
-        {{-- FECHA DE AFILIACIÓN --}}
-        {{-- ========================================== --}}
-
-        <div>
-
-            <label for="{{ $esEdicion ? 'editar_fecha' : 'fecha_afiliacion' }}">
-                Fecha de afiliación
-            </label>
-
-            <input
-                type="date"
-                id="{{ $esEdicion ? 'editar_fecha' : 'fecha_afiliacion' }}"
-                name="fecha_afiliacion"
-                value="{{ old(
-                    'fecha_afiliacion',
-                    $esEdicion
-                        ? $afiliado->fecha_afiliacion?->format('Y-m-d')
-                        : ''
-                ) }}"
-                required
-            >
+                @error('celular')
+                    <p class="mt-1.5 text-xs text-red-600">
+                        {{ $message }}
+                    </p>
+                @enderror
+            </div>
 
         </div>
 
     </div>
 
 
-    <br>
+    {{-- ========================================== --}}
+    {{-- DATOS PERSONALES --}}
+    {{-- ========================================== --}}
+
+    <div>
+
+        <h3 class="mb-5 text-base font-semibold text-[#0d1b6e]">
+            Datos personales
+        </h3>
+
+        <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+
+            {{-- NOMBRES --}}
+            <div>
+                <label
+                    for="{{ $esEdicion ? 'editar_nombres' : 'nombres' }}"
+                    class="mb-2 block text-sm font-medium text-gray-700"
+                >
+                    Nombres
+                </label>
+
+                <input
+                    type="text"
+                    id="{{ $esEdicion ? 'editar_nombres' : 'nombres' }}"
+                    name="nombres"
+                    value="{{ old(
+                        'nombres',
+                        $esEdicion ? $afiliado->nombres : ''
+                    ) }}"
+                    maxlength="100"
+                    required
+                    placeholder="Nombres"
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#1a34c9] focus:ring-2 focus:ring-[#1a34c9]/10"
+                >
+
+                @error('nombres')
+                    <p class="mt-1.5 text-xs text-red-600">
+                        {{ $message }}
+                    </p>
+                @enderror
+            </div>
+
+
+            {{-- APELLIDOS --}}
+            <div>
+                <label
+                    for="{{ $esEdicion ? 'editar_apellidos' : 'apellidos' }}"
+                    class="mb-2 block text-sm font-medium text-gray-700"
+                >
+                    Apellidos
+                </label>
+
+                <input
+                    type="text"
+                    id="{{ $esEdicion ? 'editar_apellidos' : 'apellidos' }}"
+                    name="apellidos"
+                    value="{{ old(
+                        'apellidos',
+                        $esEdicion ? $afiliado->apellidos : ''
+                    ) }}"
+                    maxlength="100"
+                    required
+                    placeholder="Apellidos"
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#1a34c9] focus:ring-2 focus:ring-[#1a34c9]/10"
+                >
+
+                @error('apellidos')
+                    <p class="mt-1.5 text-xs text-red-600">
+                        {{ $message }}
+                    </p>
+                @enderror
+            </div>
+
+        </div>
+
+    </div>
+
+
+    {{-- ========================================== --}}
+    {{-- COLEGIO --}}
+    {{-- ========================================== --}}
+
+    @if (
+        auth()->user()->rol?->nombre === 'SUPER ADMIN'
+        ||
+        (
+            auth()->user()->rol?->nombre === 'ADMIN'
+            && !$esEdicion
+        )
+    )
+
+        <div>
+
+            <h3 class="mb-5 text-base font-semibold text-[#0d1b6e]">
+                Colegio
+            </h3>
+
+            <label
+                for="{{ $esEdicion ? 'editar_colegio' : 'colegio_id' }}"
+                class="mb-2 block text-sm font-medium text-gray-700"
+            >
+                Colegio
+            </label>
+
+            <select
+                id="{{ $esEdicion ? 'editar_colegio' : 'colegio_id' }}"
+                name="colegio_id"
+                required
+                class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-3 text-sm text-gray-900 outline-none transition focus:border-[#1a34c9] focus:ring-2 focus:ring-[#1a34c9]/10"
+            >
+
+                <option value="">
+                    Seleccione un colegio
+                </option>
+
+                @foreach ($colegios as $colegio)
+
+                    <option
+                        value="{{ $colegio->id }}"
+                        @selected(
+                            old(
+                                'colegio_id',
+                                $esEdicion
+                                    ? $afiliado->colegio_id
+                                    : ''
+                            ) == $colegio->id
+                        )
+                    >
+                        {{ $colegio->nombre }}
+                    </option>
+
+                @endforeach
+
+            </select>
+
+            @error('colegio_id')
+                <p class="mt-1.5 text-xs text-red-600">
+                    {{ $message }}
+                </p>
+            @enderror
+
+        </div>
+
+    @endif
+
+
+    {{-- ========================================== --}}
+    {{-- FECHA DE AFILIACIÓN --}}
+    {{-- ========================================== --}}
+
+    <div>
+
+        <label
+            for="{{ $esEdicion ? 'editar_fecha' : 'fecha_afiliacion' }}"
+            class="mb-2 block text-sm font-medium text-gray-700"
+        >
+            Fecha de afiliación
+        </label>
+
+        <input
+            type="date"
+            id="{{ $esEdicion ? 'editar_fecha' : 'fecha_afiliacion' }}"
+            name="fecha_afiliacion"
+            value="{{ old(
+                'fecha_afiliacion',
+                $esEdicion
+                    ? $afiliado->fecha_afiliacion?->format('Y-m-d')
+                    : ''
+            ) }}"
+            required
+            class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-3 text-sm text-gray-900 outline-none transition focus:border-[#1a34c9] focus:ring-2 focus:ring-[#1a34c9]/10"
+        >
+
+        @error('fecha_afiliacion')
+            <p class="mt-1.5 text-xs text-red-600">
+                {{ $message }}
+            </p>
+        @enderror
+
+    </div>
 
 
     {{-- ========================================== --}}
     {{-- BOTONES --}}
     {{-- ========================================== --}}
 
-    <div>
+    <div class="flex justify-end gap-3 border-t border-gray-200 pt-5">
 
-        <button type="submit">
-
+        <button
+            type="submit"
+            class="rounded-lg bg-[#1a34c9] px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1429a3] focus:outline-none focus:ring-2 focus:ring-[#1a34c9]/20"
+        >
             {{ $esEdicion
                 ? 'Guardar cambios'
                 : 'Registrar afiliado'
             }}
-
         </button>
 
     </div>
