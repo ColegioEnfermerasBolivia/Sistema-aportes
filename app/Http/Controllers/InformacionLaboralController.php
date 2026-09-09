@@ -4,12 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\Afiliado;
 use App\Models\InformacionLaboral;
+use App\Services\AuditoriaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 
 class InformacionLaboralController extends Controller
 {
+    public function __construct(
+        private AuditoriaService $auditoria
+    ){}
+
     public function index(Afiliado $afiliado)
     {
         Gate::authorize('viewLaboral', $afiliado);
@@ -84,7 +89,27 @@ class InformacionLaboralController extends Controller
             2
         );
 
-        InformacionLaboral::create($datos);
+        $informacionLaboral = InformacionLaboral::create($datos);
+
+        $datosNuevos = [
+            'afiliado_id' => $informacionLaboral->afiliado_id,
+            'institucion' => $informacionLaboral->institucion,
+            'tipo_contrato' => $informacionLaboral->tipo_contrato,
+            'haber_basico' => $informacionLaboral->haber_basico,
+            'monto_aporte' => $informacionLaboral->monto_aporte,
+            'fecha_ingreso_trabajo' => $informacionLaboral->fecha_ingreso_trabajo,
+            'culminado' => $informacionLaboral->culminado,
+            'fecha_retiro' => $informacionLaboral->fecha_retiro,
+        ];
+
+        $this->auditoria->registrar(
+            auth()->id(),
+            'CREAR',
+            'informacion_laboral',
+            $informacionLaboral->id,
+            null,
+            $datosNuevos
+        );
 
         return redirect()
             ->route(
@@ -114,6 +139,17 @@ class InformacionLaboralController extends Controller
                     'Este registro laboral ya fue culminado y no puede modificarse.'
                 );
         }
+
+        $datosAnteriores = [
+            'afiliado_id' => $informacionLaboral->afiliado_id,
+            'institucion' => $informacionLaboral->institucion,
+            'tipo_contrato' => $informacionLaboral->tipo_contrato,
+            'haber_basico' => $informacionLaboral->haber_basico,
+            'monto_aporte' => $informacionLaboral->monto_aporte,
+            'fecha_ingreso_trabajo' => $informacionLaboral->fecha_ingreso_trabajo,
+            'culminado' => $informacionLaboral->culminado,
+            'fecha_retiro' => $informacionLaboral->fecha_retiro,
+        ];
 
         $datos = $request->validate([
             'institucion' => [
@@ -172,7 +208,31 @@ class InformacionLaboralController extends Controller
             $datos['haber_basico'] * 0.01,
             2
         );
+
+
         $informacionLaboral->update($datos);
+
+        $datosNuevos = [
+            'afiliado_id' => $informacionLaboral->afiliado_id,
+            'institucion' => $informacionLaboral->institucion,
+            'tipo_contrato' => $informacionLaboral->tipo_contrato,
+            'haber_basico' => $informacionLaboral->haber_basico,
+            'monto_aporte' => $informacionLaboral->monto_aporte,
+            'fecha_ingreso_trabajo' => $informacionLaboral->fecha_ingreso_trabajo,
+            'culminado' => $informacionLaboral->culminado,
+            'fecha_retiro' => $informacionLaboral->fecha_retiro,
+        ];
+
+        if ($datosAnteriores !== $datosNuevos) {
+            $this->auditoria->registrar(
+                auth()->id(),
+                'ACTUALIZAR',
+                'informacion_laboral',
+                $informacionLaboral->id,
+                $datosAnteriores,
+                $datosNuevos
+            );
+        }
 
         return redirect()
             ->route('afiliados.index')
