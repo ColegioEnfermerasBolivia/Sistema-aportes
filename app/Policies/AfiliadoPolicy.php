@@ -29,6 +29,10 @@ class AfiliadoPolicy
         Afiliado $afiliado
     ): bool {
 
+        if ($afiliado->estado !== 'ACTIVO') {
+            return false;
+        }
+
         if (in_array($usuario->rol?->nombre, [
             'SUPER ADMIN',
             'ADMIN',
@@ -64,6 +68,11 @@ class AfiliadoPolicy
         Usuario $usuario,
         Afiliado $afiliado
     ): bool {
+
+        if ($afiliado->estado !== 'ACTIVO') {
+            return false;
+        }
+        
         return $usuario->rol?->nombre === 'SUPER ADMIN';
     }
 
@@ -126,6 +135,10 @@ class AfiliadoPolicy
         Usuario $usuario,
         Afiliado $afiliado
     ): bool {
+        if ($afiliado->estado !== 'ACTIVO') {
+            return false;
+        }
+
         return $this->viewLaboral($usuario, $afiliado);
     }
 
@@ -133,6 +146,10 @@ class AfiliadoPolicy
         Usuario $usuario,
         Afiliado $afiliado
     ): bool {
+        if ($afiliado->estado !== 'ACTIVO') {
+            return false;
+        }
+
         return $this->viewLaboral($usuario, $afiliado);
     }
 
@@ -147,6 +164,10 @@ class AfiliadoPolicy
         Usuario $usuario,
         Afiliado $afiliado
     ): bool {
+        if ($afiliado->estado !== 'ACTIVO') {
+            return false;
+        }
+
         if ($usuario->rol?->nombre === 'ADMIN') {
             return true;
         }

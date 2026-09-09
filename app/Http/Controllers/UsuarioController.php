@@ -3,16 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Models\Colegio;
-use App\Models\usuario;
+use App\Models\Usuario;
 use App\Models\Rol;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use App\Services\AuditoriaService;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class UsuarioController extends Controller
 {
+    public function __construct(
+        private AuditoriaService $auditoria
+    ) {
+    }
    public function index()
     {
         $usuarios = Usuario::with(['rol', 'colegio'])
@@ -99,7 +104,27 @@ class UsuarioController extends Controller
         $datos['debe_cambiar_password'] = true;
         $datos['estado'] = 'ACTIVO';
 
-        Usuario::create($datos);
+        $usuario = Usuario::create($datos);
+
+        $datosNuevos = [
+            'ci' => $usuario->ci,
+            'nombres' => $usuario->nombres,
+            'apellidos' => $usuario->apellidos,
+            'username' => $usuario->username,
+            'cel' => $usuario->cel,
+            'rol_id' => $usuario->rol_id,
+            'colegio_id' => $usuario->colegio_id,
+            'estado' => $usuario->estado,
+        ];
+
+        $this->auditoria->registrar(
+            auth()->id(),
+            'CREAR',
+            'usuarios',
+            $usuario->id,
+            null,
+            $datosNuevos
+        );
 
         return redirect()
             ->route('usuarios.index')
@@ -177,11 +202,18 @@ class UsuarioController extends Controller
             ],
         ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Datos básicos
-        |--------------------------------------------------------------------------
-        */
+        $datosAnteriores = [
+            'ci' => $usuario->ci,
+            'nombres'=> $usuario->nombres,
+            'apellidos'=> $usuario->apellidos,
+            'username' => $usuario->username,
+            'cel' => $usuario->cel,
+            'rol_id' => $usuario->rol_id,
+            'colegio_id' => $usuario->colegio_id,
+            'estado' => $usuario->estado,
+        ];
+
+        /* Datos básicos */
 
         $usuario->ci = $datos['ci'];
         $usuario->nombres = $datos['nombres'];
@@ -190,65 +222,34 @@ class UsuarioController extends Controller
         $usuario->cel = $datos['cel'];
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | Rol
-        |--------------------------------------------------------------------------
-        */
+        /*Rol */
 
         if ($datos['rol_id'] != $usuario->rol_id) {
-
             Gate::authorize('changeRole', $usuario);
-
             $usuario->rol_id = $datos['rol_id'];
         }
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Estado
-        |--------------------------------------------------------------------------
-        */
+        /* Estado */
 
         if ($datos['estado'] !== $usuario->estado) {
-
             Gate::authorize('changeEstado', $usuario);
-
             $usuario->estado = $datos['estado'];
         }
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Colegio
-        |--------------------------------------------------------------------------
-        */
+        /* Colegio */
 
         if ($datos['colegio_id'] != $usuario->colegio_id) {
-
             Gate::authorize('changeColegio', $usuario);
-
             $usuario->colegio_id = $datos['colegio_id'];
         }
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Obtener rol final
-        |--------------------------------------------------------------------------
-        */
+        /* Obtener rol final */
 
         $rolFinal = Rol::findOrFail($usuario->rol_id);
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Reglas del colegio según el rol
-        |--------------------------------------------------------------------------
-        */
+        /* Reglas del colegio según el rol */
 
         if ($rolFinal->nombre === 'USUARIO') {
-
             if (empty($usuario->colegio_id)) {
                 return back()
                     ->withErrors([
@@ -259,12 +260,33 @@ class UsuarioController extends Controller
             }
 
         } else {
-
             $usuario->colegio_id = null;
         }
 
-
         $usuario->save();
+
+        $datosNuevos = [
+            'ci' => $usuario->ci,
+            'nombres' => $usuario->nombres,
+            'apellidos' => $usuario->apellidos,
+            'username' => $usuario->username,
+            'cel' => $usuario->cel,
+            'rol_id' => $usuario->rol_id,
+            'colegio_id' => $usuario->colegio_id,
+            'estado' => $usuario->estado,
+        ];
+
+        if ($datosAnteriores !== $datosNuevos) {
+            $this->auditoria->registrar(
+                auth()->id(),
+                'ACTUALIZAR',
+                'usuarios',
+                $usuario->id,
+                $datosAnteriores,
+                $datosNuevos
+            );
+        }
+
 
         return redirect()
             ->route('usuarios.index')
@@ -275,11 +297,26 @@ class UsuarioController extends Controller
     {
         Gate::authorize('changeEstado', $usuario);
 
+        $estadoAnterior = $usuario->estado;
+
         $usuario->estado = $usuario->estado === 'ACTIVO'
             ? 'INACTIVO'
             : 'ACTIVO';
 
         $usuario->save();
+
+        $accion = $usuario->estado === 'ACTIVO'
+            ? 'ACTIVAR'
+            : 'DESACTIVAR';
+        
+        $this->auditoria->registrar(
+            auth()->id(),
+            $accion,
+            'usuarios',
+            $usuario->id,
+            [ 'estado' => $estadoAnterior ,],
+            [ 'estado' => $usuario->estado,]
+        );
 
         return redirect()
             ->route('usuarios.index')
@@ -295,12 +332,23 @@ class UsuarioController extends Controller
     {
         Gate::authorize('resetPassword', $usuario);
 
+        $debeCambiarPasswordAnterior = $usuario->debe_cambiar_password;
+
         $passwordTemporal = Str::password(10);
 
         $usuario->password = Hash::make($passwordTemporal);
         $usuario->debe_cambiar_password = true;
 
         $usuario->save();
+
+        $this->auditoria->registrar(
+            auth()->id(),
+            'RESET_PASSWORD',
+            'usuarios',
+            $usuario->id,
+            ['debe_cambiar_password' => $debeCambiarPasswordAnterior,],
+            ['debe_cambiar_password' => true],
+        );
 
         return redirect()
             ->route('usuarios.index')
