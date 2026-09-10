@@ -47,4 +47,14 @@ class Afiliado extends Model
     {
         return $this->hasMany(AfiliadoPostgrado::class, 'afiliado_id');
     }
+
+    public function pagos(): HasMany
+    {
+        return $this->hasMany(Pago::class, 'afiliado_id');
+    }
+
+    public function aportes(): HasMany
+    {
+        return $this->hasMany(Aporte::class, 'afiliado_id');
+    }
 }
