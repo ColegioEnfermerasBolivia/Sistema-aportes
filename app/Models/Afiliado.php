@@ -27,6 +27,7 @@ class Afiliado extends Model
 
     protected $casts = [
         'fecha_afiliacion' => 'date',
+        'colegio_id' => 'integer',
     ];
 
     public function colegio(): BelongsTo

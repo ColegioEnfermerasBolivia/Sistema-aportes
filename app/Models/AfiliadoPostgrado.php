@@ -23,6 +23,9 @@ class AfiliadoPostgrado extends Model
     ];
 
     protected $casts = [
+        'afiliado_id' => 'integer',
+        'postgrado_id' => 'integer',
+        'grado_academico_id' => 'integer',
         'fecha_titulo' => 'date',
     ];
 

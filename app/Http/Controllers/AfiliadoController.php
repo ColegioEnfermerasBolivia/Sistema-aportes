@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Afiliado;
 use App\Models\Colegio;
 use App\Models\Postgrado;
+use App\Services\AuditoriaService;
 use App\Models\GradoAcademico;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -12,6 +13,11 @@ use Illuminate\Validation\Rule;
 
 class AfiliadoController extends Controller
 {
+    public function __construct(
+        private AuditoriaService $auditoria
+    ) {
+    }
+
     public function index(Request $request)
     {
         Gate::authorize('viewAny', Afiliado::class);
@@ -226,7 +232,28 @@ class AfiliadoController extends Controller
 
         $datos['estado'] = 'ACTIVO';
 
-        Afiliado::create($datos);
+        $afiliado = Afiliado::create($datos);
+
+        $datosNuevos = [
+            'registro_departamental' => $afiliado->registro_departamental,
+            'matricula_profesional' => $afiliado->matricula_profesional,
+            'ci' => $afiliado->ci,
+            'nombres' => $afiliado->nombres,
+            'apellidos' => $afiliado->apellidos,
+            'celular' => $afiliado->celular,
+            'fecha_afiliacion' => $afiliado->fecha_afiliacion,
+            'colegio_id' => $afiliado->colegio_id,
+            'estado' => $afiliado->estado,
+        ];
+
+        $this->auditoria->registrar(
+                auth()->id(),
+                'CREAR',
+                'afiliados',
+                $afiliado->id,
+                null,
+                $datosNuevos
+        );
 
         return redirect()
             ->route('afiliados.index')
@@ -244,6 +271,18 @@ class AfiliadoController extends Controller
             'update',
             $afiliado
         );
+
+        $datosAnteriores = [
+            'registro_departamental' => $afiliado->registro_departamental,
+            'matricula_profesional' => $afiliado->matricula_profesional,
+            'ci' => $afiliado->ci,
+            'nombres' => $afiliado->nombres,
+            'apellidos' => $afiliado->apellidos,
+            'celular' => $afiliado->celular,
+            'fecha_afiliacion' => $afiliado->fecha_afiliacion,
+            'colegio_id' => $afiliado->colegio_id,
+            'estado' => $afiliado->estado,
+        ];
 
         $usuario = auth()->user();
         $datos = $request->validate([
@@ -327,6 +366,29 @@ class AfiliadoController extends Controller
         $datos['estado'] = $afiliado->estado;
         $afiliado->update($datos);
 
+        $datosNuevos = [
+            'registro_departamental' => $afiliado->registro_departamental,
+            'matricula_profesional' => $afiliado->matricula_profesional,
+            'ci' => $afiliado->ci,
+            'nombres' => $afiliado->nombres,
+            'apellidos' => $afiliado->apellidos,
+            'celular' => $afiliado->celular,
+            'fecha_afiliacion' => $afiliado->fecha_afiliacion,
+            'colegio_id' => $afiliado->colegio_id,
+            'estado' => $afiliado->estado,
+        ];
+
+        if ($datosAnteriores !== $datosNuevos) {
+            $this->auditoria->registrar(
+                auth()->id(),
+                'ACTUALIZAR',
+                'afiliados',
+                $afiliado->id,
+                $datosAnteriores,
+                $datosNuevos
+            );
+        }
+
         return redirect()
             ->route('afiliados.index')
             ->with(
@@ -343,11 +405,26 @@ class AfiliadoController extends Controller
             $afiliado
         );
 
+        $estadoAnterior = $afiliado->estado;
+
         $afiliado->estado = $afiliado->estado === 'ACTIVO'
             ? 'INACTIVO'
             : 'ACTIVO';
 
         $afiliado->save();
+
+        $accion = $afiliado->estado === 'ACTIVO'
+            ? 'ACTIVAR'
+            : 'DESACTIVAR';
+        
+        $this->auditoria->registrar(
+            auth()->id(),
+            $accion,
+            'afiliados',
+            $afiliado->id,
+            ['estado' => $estadoAnterior,],
+            ['estado' => $afiliado->estado,]
+        );
 
         return redirect()
             ->route('afiliados.index')

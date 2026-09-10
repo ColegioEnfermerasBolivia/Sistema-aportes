@@ -4,12 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\Afiliado;
 use App\Models\AfiliadoPostgrado;
+use App\Services\AuditoriaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 
 class AfiliadoPostgradoController extends Controller
 {
+    public function __construct(
+        private AuditoriaService $auditoria
+    ) {}
     public function store(
         Request $request,
         Afiliado $afiliado
@@ -77,7 +81,26 @@ class AfiliadoPostgradoController extends Controller
 
         $datos['afiliado_id'] = $afiliado->id;
 
-        AfiliadoPostgrado::create($datos);
+        $afiliadoPostgrado = AfiliadoPostgrado::create($datos);
+
+        $datosNuevos = [
+            'afiliado_id' => $afiliadoPostgrado->afiliado_id,
+            'postgrado_id' => $afiliadoPostgrado->postgrado_id,
+            'grado_academico_id' => $afiliadoPostgrado->grado_academico_id,
+            'institucion' => $afiliadoPostgrado->institucion,
+            'numero_titulo' => $afiliadoPostgrado->numero_titulo,
+            'fecha_titulo' => $afiliadoPostgrado->fecha_titulo,
+            'numero_certificado' => $afiliadoPostgrado->numero_certificado,
+        ];
+
+        $this->auditoria->registrar(
+            auth()->id(),
+            'CREAR',
+            'afiliado_postgrado',
+            $afiliadoPostgrado->id,
+            null,
+            $datosNuevos
+        );
 
         return redirect()
             ->route('afiliados.index')
@@ -95,6 +118,16 @@ class AfiliadoPostgradoController extends Controller
             'updateAcademic',
             $afiliadoPostgrado->afiliado
         );
+
+        $datosAnteriores = [
+            'afiliado_id' => $afiliadoPostgrado->afiliado_id,
+            'postgrado_id' => $afiliadoPostgrado->postgrado_id,
+            'grado_academico_id' => $afiliadoPostgrado->grado_academico_id,
+            'institucion' => $afiliadoPostgrado->institucion,
+            'numero_titulo' => $afiliadoPostgrado->numero_titulo,
+            'fecha_titulo' => $afiliadoPostgrado->fecha_titulo,
+            'numero_certificado' => $afiliadoPostgrado->numero_certificado,
+        ];
 
         $datos = $request->validate([
             'postgrado_id' => [
@@ -167,6 +200,27 @@ class AfiliadoPostgradoController extends Controller
 
         $afiliadoPostgrado->update($datos);
 
+        $datosNuevos = [
+            'afiliado_id' => $afiliadoPostgrado->afiliado_id,
+            'postgrado_id' => $afiliadoPostgrado->postgrado_id,
+            'grado_academico_id' => $afiliadoPostgrado->grado_academico_id,
+            'institucion' => $afiliadoPostgrado->institucion,
+            'numero_titulo' => $afiliadoPostgrado->numero_titulo,
+            'fecha_titulo' => $afiliadoPostgrado->fecha_titulo,
+            'numero_certificado' => $afiliadoPostgrado->numero_certificado,
+        ];
+
+        if ($datosAnteriores !== $datosNuevos) {
+            $this->auditoria->registrar(
+                auth()->id(),
+                'ACTUALIZAR',
+                'afiliado_postgrado',
+                $afiliadoPostgrado->id,
+                $datosAnteriores,
+                $datosNuevos
+            );
+        }
+
         return redirect()
             ->route('afiliados.index')
             ->with(
@@ -183,7 +237,28 @@ class AfiliadoPostgradoController extends Controller
             $afiliadoPostgrado->afiliado
         );
 
+        $datosAnteriores = [
+            'afiliado_id' => $afiliadoPostgrado->afiliado_id,
+            'postgrado_id' => $afiliadoPostgrado->postgrado_id,
+            'grado_academico_id' => $afiliadoPostgrado->grado_academico_id,
+            'institucion' => $afiliadoPostgrado->institucion,
+            'numero_titulo' => $afiliadoPostgrado->numero_titulo,
+            'fecha_titulo' => $afiliadoPostgrado->fecha_titulo,
+            'numero_certificado' => $afiliadoPostgrado->numero_certificado,
+        ];
+
+        $id = $afiliadoPostgrado->id;
+
         $afiliadoPostgrado->delete();
+
+        $this->auditoria->registrar(
+            auth()->id(),
+            'ELIMINAR',
+            'afiliado_postgrado',
+            $id,
+            $datosAnteriores,
+            null
+        );
 
         return redirect()
             ->route('afiliados.index')
