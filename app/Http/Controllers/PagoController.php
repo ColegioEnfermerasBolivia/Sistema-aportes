@@ -210,41 +210,4 @@ class PagoController extends Controller
         );
     }
 
-    public function verificar(Pago $pago)
-    {
-        $usuario = Auth::user();
-
-        /*Validar rol*/
-
-        if ($usuario->rol_id !== 2) {
-            return back()
-                ->withErrors([
-                    'pago' => 'No tienes permiso para verificar pagos.',
-                ]);
-        }
-
-        /*Validar estado del pago*/
-
-        if ($pago->estado !== 'EN_LOTE') {
-            return back()
-                ->withErrors([
-                    'pago' => 'Solo se pueden verificar pagos que se encuentren en lote.',
-                ]);
-        }
-
-        /*Verificar pago*/
-
-        DB::transaction(function () use ($pago, $usuario) {
-            $pago->update([
-                'estado' => 'VERIFICADO',
-                'verificado_por' => $usuario->id,
-                'fecha_verificacion' => now(),
-            ]);
-        });
-
-        return back()->with(
-            'success',
-            'El pago fue verificado correctamente.'
-        );
-    }
 }
