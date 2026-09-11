@@ -5,6 +5,7 @@ use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\AfiliadoController;
 use App\Http\Controllers\InformacionLaboralController;
 use App\Http\Controllers\AfiliadoPostgradoController;
+use App\Http\Controllers\LoteVerificacionController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -127,3 +128,50 @@ Route::delete('/afiliado-postgrado/{afiliadoPostgrado}', [AfiliadoPostgradoContr
         'rol:SUPER ADMIN,ADMIN,USUARIO'
     ])
     ->name('afiliado-postgrado.destroy');
+
+/*LOTES*/
+
+Route::get('/aportes/lotes', [LoteVerificacionController::class, 'index'])
+    ->middleware([
+        'auth',
+        'debe-cambiar-password',
+        'rol:SUPER ADMIN,ADMIN,USUARIO',
+        'can:viewAny,App\Models\LoteVerificacion',
+    ])
+    ->name('lotes.index');
+
+Route::post('/lotes/{lote}/revisar', [LoteVerificacionController::class, 'revisar'])
+    ->middleware([
+        'auth',
+        'debe-cambiar-password',
+        'rol:ADMIN',
+        'can:revisar,lote',
+    ])
+    ->name('lotes.revisar');
+
+Route::post('/lotes/{lote}/preview-aportes', [LoteVerificacionController::class, 'previewAportes'])
+    ->middleware([
+        'auth',
+        'debe-cambiar-password',
+        'rol:ADMIN',
+        'can:previewAportes,lote',
+    ])
+    ->name('lotes.preview-aportes');
+
+Route::post('/lotes/{lote}/confirmar-aportes', [LoteVerificacionController::class, 'confirmarAportes'])
+    ->middleware([
+        'auth',
+        'debe-cambiar-password',
+        'rol:ADMIN',
+        'can:confirmarAportes,lote',
+    ])
+    ->name('lotes.confirmar-aportes');
+
+Route::get('/aportes/lotes/{lote}', [LoteVerificacionController::class, 'show'])
+    ->middleware([
+        'auth',
+        'debe-cambiar-password',
+        'rol:SUPER ADMIN,ADMIN,USUARIO',
+        'can:view,lote',
+    ])
+    ->name('lotes.show');

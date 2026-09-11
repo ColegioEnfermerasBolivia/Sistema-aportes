@@ -22,14 +22,15 @@
 </style>
 
 </head>
-<body class="min-h-screen bg-gray-100">
-    <div class="flex min-h-screen">
-        {{-- Barra lateral --}}
-        <x-navbar />
-        {{-- Contenido --}}
-        <main class="min-w-0 flex-1">
-            @yield('content')
-        </main>
-    </div>
+    <body class="min-h-screen bg-gray-100">
+        <div class="flex min-h-screen">
+            {{-- Barra lateral --}}
+            <x-navbar />
+            {{-- Contenido --}}
+            <main class="min-w-0 flex-1">
+                @yield('content')
+            </main>
+        </div>
+        @stack('scripts')
     </body>
 </html>
