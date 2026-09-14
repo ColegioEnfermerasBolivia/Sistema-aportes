@@ -20,27 +20,6 @@ class LoteVerificacionPolicy
     }
 
     /**
-     * Determina si el usuario puede ver un lote específico.
-     */
-    public function view(
-        Usuario $usuario,
-        LoteVerificacion $lote
-    ): bool {
-        if (in_array($usuario->rol?->nombre, [
-            'SUPER ADMIN',
-            'ADMIN',
-        ])) {
-            return true;
-        }
-
-        if ($usuario->rol?->nombre === 'USUARIO') {
-            return $usuario->colegio_id === $lote->colegio_id;
-        }
-
-        return false;
-    }
-
-    /**
      * Determina si puede iniciar o continuar la revisión de un lote.
      */
     public function revisar(

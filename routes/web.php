@@ -6,6 +6,8 @@ use App\Http\Controllers\AfiliadoController;
 use App\Http\Controllers\InformacionLaboralController;
 use App\Http\Controllers\AfiliadoPostgradoController;
 use App\Http\Controllers\LoteVerificacionController;
+use App\Http\Controllers\PagoController;
+use App\Http\Controllers\AportesController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -167,11 +169,48 @@ Route::post('/lotes/{lote}/confirmar-aportes', [LoteVerificacionController::clas
     ])
     ->name('lotes.confirmar-aportes');
 
-Route::get('/aportes/lotes/{lote}', [LoteVerificacionController::class, 'show'])
+/*PAGOS*/
+
+Route::post('/pagos', [PagoController::class, 'store'])
+    ->middleware([
+        'auth',
+        'debe-cambiar-password',
+        'rol:ADMIN,USUARIO',
+    ])
+    ->name('pagos.store');
+
+Route::patch('/pagos/{pago}/rechazar', [PagoController::class, 'rechazar'])
+    ->middleware([
+        'auth',
+        'debe-cambiar-password',
+        'rol:ADMIN',
+        'can:rechazar,pago',
+    ])
+    ->name('pagos.rechazar');
+
+/*LOTES*/
+
+Route::get('/aportes/lotes', [LoteVerificacionController::class, 'index'])
     ->middleware([
         'auth',
         'debe-cambiar-password',
         'rol:SUPER ADMIN,ADMIN,USUARIO',
-        'can:view,lote',
+        'can:viewAny,App\Models\LoteVerificacion',
     ])
-    ->name('lotes.show');
+    ->name('lotes.index');
+
+Route::get('/aportes', [AportesController::class, 'index'])
+    ->middleware([
+        'auth',
+        'debe-cambiar-password',
+        'rol:SUPER ADMIN,ADMIN,USUARIO',
+    ])
+    ->name('aportes.index');
+
+Route::get('/afiliados/buscar-ci', [AfiliadoController::class, 'buscarPorCi'])
+    ->middleware([
+        'auth',
+        'debe-cambiar-password',
+        'rol:ADMIN,USUARIO',
+    ])
+    ->name('afiliados.buscar-ci');

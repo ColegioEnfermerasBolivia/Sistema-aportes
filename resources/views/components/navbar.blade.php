@@ -98,7 +98,7 @@
 
                 {{-- Ver aportes --}}
                 <a
-                    href="#"{{-- route('aportes.index') --}}
+                    href={{ route('aportes.index') }}
                     class="{{ request()->routeIs('aportes.index')
                         ? 'font-semibold text-[#1a34c9]'
                         : 'text-[#555] hover:text-[#1a34c9]'

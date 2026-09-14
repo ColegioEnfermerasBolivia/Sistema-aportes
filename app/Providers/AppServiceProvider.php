@@ -4,8 +4,10 @@ namespace App\Providers;
 
 use App\Models\Usuario;
 use App\Models\Afiliado;
+use App\Models\Pago;
 use App\Policies\UsuarioPolicy;
 use App\Policies\AfiliadoPolicy;
+use App\Policies\PagoPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -26,5 +28,6 @@ class AppServiceProvider extends ServiceProvider
     {
         Gate::policy(Usuario::class, UsuarioPolicy::class);
         Gate::policy(Afiliado::class, AfiliadoPolicy::class);
+        Gate::policy(Pago::class, PagoPolicy::class);
     }
 }
