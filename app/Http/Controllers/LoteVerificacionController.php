@@ -181,18 +181,6 @@ class LoteVerificacionController extends Controller
             ->route('lotes.index')
             ->with('lote_revisar', $lote->id);
     }
-
-    public function show(LoteVerificacion $lote)
-    {
-        Gate::authorize('view', $lote);
-        $lote->load([
-            'colegio',
-            'pagos.afiliado',
-        ]);
-
-        return view('aportes.lotes.show', compact('lote'));
-    }
-
     public function previsualizarAportes(
         Request $request,
         LoteVerificacion $lote
@@ -316,6 +304,8 @@ class LoteVerificacionController extends Controller
 
     public function previewAportes(Request $request, LoteVerificacion $lote)
     {
+        Gate::authorize('previewAportes', $lote);
+
         $usuario = Auth::user();
 
         /*Validar rol*/
@@ -419,6 +409,8 @@ class LoteVerificacionController extends Controller
 
     public function confirmarAportes(Request $request, LoteVerificacion $lote)
     {
+        Gate::authorize('confirmarAportes', $lote);
+
         $usuario = Auth::user();
 
         // 1. Solo ADMIN puede confirmar aportes
