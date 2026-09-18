@@ -70,10 +70,10 @@
                                hover:text-gray-800
                                focus:outline-none
                                focus:ring-2
-                               focus:ring-[#1a34c9]/30"
+                               focus:ring-[#1a34c9]/30 hover:cursor-pointer"
                         aria-label="Cerrar"
                     >
-                        ×
+                        <x-icon name="x" size="35"/>
                     </button>
                 </div>
 

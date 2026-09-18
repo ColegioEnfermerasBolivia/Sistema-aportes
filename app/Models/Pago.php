@@ -33,6 +33,8 @@ class Pago extends Model
         'registrado_por' => 'integer',
         'verificado_por' => 'integer',
         'fecha_verificacion' => 'datetime',
+        'creado_en' => 'datetime',
+        'actualizado_en' => 'datetime',
     ];
 
     public function afiliado(): BelongsTo

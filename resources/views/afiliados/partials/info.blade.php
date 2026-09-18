@@ -33,9 +33,7 @@
     @endphp
 
 
-    {{-- ====================================================== --}}
     {{-- DATOS DEL AFILIADO --}}
-    {{-- ====================================================== --}}
 
     <section class="mb-8">
         <div class="mb-4 flex items-center justify-between">
@@ -213,10 +211,10 @@
                            px-4 py-2.5
                            text-sm font-semibold text-white
                            transition
-                           hover:bg-[#1429a3]"
+                           hover:bg-[#1429a3] hover:cursor-pointer"
                 >
                     <span class="mr-1 text-lg">
-                        +
+                        <x-icon name="register" class="text-white" size="20"/>
                     </span>
                     Registrar trabajo
                 </button>
@@ -303,16 +301,17 @@
                                             );
                                             laboralModal = true;
                                         "
-                                        class="rounded-lg
-                                               border border-gray-300
+                                        class="rounded-lg inline-flex items-center gap-1
+                                               border border-blue-500
                                                bg-white
                                                px-3 py-2
                                                text-xs font-semibold
-                                               text-gray-700
+                                               text-blue-500
                                                transition
-                                               hover:bg-gray-50
-                                               hover:text-[#1a34c9]"
+                                               hover:bg-blue-300
+                                               hover:cursor-pointer"
                                     >
+                                        <x-icon name="edit" class="text-blue-500" size="20"/>
                                         Editar
                                     </button>
                                 </td>
@@ -429,10 +428,10 @@
                        px-4 py-2.5
                        text-sm font-semibold text-white
                        transition
-                       hover:bg-[#1429a3]"
+                       hover:bg-[#1429a3] hover:cursor-pointer"
             >
                 <span class="mr-1 text-lg">
-                    +
+                    <x-icon name="register" class="text-white" size="25"/>
                 </span>
 
                 Registrar información académica
@@ -514,16 +513,17 @@
                                                 numeroCertificado = @js($academica->numero_certificado);
                                                 academicaModal = true;
                                             "
-                                            class="rounded-lg
-                                                   border border-gray-300
+                                            class="rounded-lg inline-flex items-center gap-1.5
+                                                   border border-blue-500
                                                    bg-white
                                                    px-3 py-2
                                                    text-xs font-semibold
-                                                   text-gray-700
+                                                   text-blue-500
                                                    transition
                                                    hover:bg-gray-50
-                                                   hover:text-[#1a34c9]"
+                                                   hover:cursor-pointer"
                                         >
+                                            <x-icon name="edit" class="text-blue-500" size="20"/>
                                             Editar
                                         </button>
 
@@ -541,15 +541,16 @@
 
                                             <button
                                                 type="submit"
-                                                class="rounded-lg
+                                                class="rounded-lg inline-flex items-center gap-1.5
                                                        border border-red-200
                                                        bg-white
                                                        px-3 py-2
                                                        text-xs font-semibold
                                                        text-red-600
                                                        transition
-                                                       hover:bg-red-50"
+                                                       hover:bg-red-50 hover:cursor-pointer"
                                             >
+                                                <x-icon name="trash" class="text-red-600" size="20"/>
                                                 Eliminar
                                             </button>
                                         </form>
@@ -609,7 +610,7 @@
                         class="text-3xl font-light text-gray-500
                                hover:text-gray-800"
                     >
-                        ×
+                        <x-icon name="x" class="text-gray-500" size="30"/>
                     </button>
                 </div>
 
@@ -777,26 +778,28 @@
                             <button
                                 type="button"
                                 @click="laboralModal = false"
-                                class="rounded-lg
+                                class="rounded-lg inline-flex items-center gap-1.5
                                        border border-gray-300
                                        bg-white
                                        px-5 py-2.5
                                        text-sm font-semibold
-                                       text-gray-700
-                                       hover:bg-gray-50"
+                                       text-gray-500
+                                       hover:bg-gray-50 hover:cursor-pointer"
                             >
+                                <x-icon name="cancel" class="text-gray-500" size="20"/>
                                 Cancelar
                             </button>
 
                             <button
                                 type="submit"
-                                class="rounded-lg
+                                class="rounded-lg inline-flex items-center gap-1.5
                                        bg-[#1a34c9]
                                        px-5 py-2.5
                                        text-sm font-semibold
                                        text-white
                                        hover:bg-[#1429a3]"
                             >
+                                <x-icon name="register" class="text-blue-700" size="30"/>
 
                                 <span x-show="modoLaboral === 'crear'">
                                     Registrar
@@ -866,9 +869,9 @@
                         type="button"
                         @click="academicaModal = false"
                         class="text-3xl font-light text-gray-500
-                               hover:text-gray-800"
+                               hover:text-gray-800 inline-flex items-center gap-1.5"
                     >
-                        ×
+                        <x-icon name="x" class="text-gray-500" size="30"/>
                     </button>
 
                 </div>
@@ -1093,7 +1096,7 @@
                             <button
                                 type="button"
                                 @click="academicaModal = false"
-                                class="rounded-lg
+                                class="rounded-lg inline-flex items-center gap-1.5
                                        border border-gray-300
                                        bg-white
                                        px-5 py-2.5
@@ -1101,6 +1104,7 @@
                                        text-gray-700
                                        hover:bg-gray-50"
                             >
+                                <x-icon name="cancel" class="text-gray-700" size="20"/>
                                 Cancelar
                             </button>
 
@@ -1115,25 +1119,16 @@
                             >
 
                                 <span
-                                    x-text="
-                                        modoAcademica === 'crear'
+                                    x-text="modoAcademica === 'crear'
                                             ? 'Registrar'
                                             : 'Guardar cambios'
                                     "
                                 ></span>
-
                             </button>
-
                         </div>
-
                     </form>
-
                 </div>
-
             </div>
-
         </div>
-
     </template>
-
 </div>
