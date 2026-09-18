@@ -10,24 +10,17 @@
     }}"
     class="space-y-6"
 >
-
     @csrf
-
     @if ($esEdicion)
         @method('PUT')
     @endif
 
-
-    {{-- ========================================== --}}
-    {{-- DATOS DE IDENTIFICACIÓN --}}
-    {{-- ========================================== --}}
+    {{--  DATOS DE IDENTIFICACIÓN --}}
 
     <div>
-
         <h3 class="mb-5 text-base font-semibold text-[#0d1b6e]">
             Datos de identificación
         </h3>
-
         <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
 
             {{-- REGISTRO DEPARTAMENTAL --}}
@@ -38,7 +31,6 @@
                 >
                     Registro departamental
                 </label>
-
                 <input
                     type="text"
                     id="{{ $esEdicion ? 'editar_registro' : 'registro_departamental' }}"
@@ -90,7 +82,6 @@
                     </p>
                 @enderror
             </div>
-
 
             {{-- CI --}}
             <div>
@@ -152,22 +143,15 @@
                     </p>
                 @enderror
             </div>
-
         </div>
-
     </div>
 
 
-    {{-- ========================================== --}}
     {{-- DATOS PERSONALES --}}
-    {{-- ========================================== --}}
-
     <div>
-
         <h3 class="mb-5 text-base font-semibold text-[#0d1b6e]">
             Datos personales
         </h3>
-
         <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
 
             {{-- NOMBRES --}}
@@ -192,14 +176,12 @@
                     placeholder="Nombres"
                     class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#1a34c9] focus:ring-2 focus:ring-[#1a34c9]/10"
                 >
-
                 @error('nombres')
                     <p class="mt-1.5 text-xs text-red-600">
                         {{ $message }}
                     </p>
                 @enderror
             </div>
-
 
             {{-- APELLIDOS --}}
             <div>
@@ -209,7 +191,6 @@
                 >
                     Apellidos
                 </label>
-
                 <input
                     type="text"
                     id="{{ $esEdicion ? 'editar_apellidos' : 'apellidos' }}"
@@ -223,23 +204,16 @@
                     placeholder="Apellidos"
                     class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#1a34c9] focus:ring-2 focus:ring-[#1a34c9]/10"
                 >
-
                 @error('apellidos')
                     <p class="mt-1.5 text-xs text-red-600">
                         {{ $message }}
                     </p>
                 @enderror
             </div>
-
         </div>
-
     </div>
 
-
-    {{-- ========================================== --}}
     {{-- COLEGIO --}}
-    {{-- ========================================== --}}
-
     @if (
         auth()->user()->rol?->nombre === 'SUPER ADMIN'
         ||
@@ -248,33 +222,26 @@
             && !$esEdicion
         )
     )
-
         <div>
-
             <h3 class="mb-5 text-base font-semibold text-[#0d1b6e]">
                 Colegio
             </h3>
-
             <label
                 for="{{ $esEdicion ? 'editar_colegio' : 'colegio_id' }}"
                 class="mb-2 block text-sm font-medium text-gray-700"
             >
                 Colegio
             </label>
-
             <select
                 id="{{ $esEdicion ? 'editar_colegio' : 'colegio_id' }}"
                 name="colegio_id"
                 required
                 class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-3 text-sm text-gray-900 outline-none transition focus:border-[#1a34c9] focus:ring-2 focus:ring-[#1a34c9]/10"
             >
-
                 <option value="">
                     Seleccione un colegio
                 </option>
-
                 @foreach ($colegios as $colegio)
-
                     <option
                         value="{{ $colegio->id }}"
                         @selected(
@@ -288,35 +255,24 @@
                     >
                         {{ $colegio->nombre }}
                     </option>
-
                 @endforeach
-
             </select>
-
             @error('colegio_id')
                 <p class="mt-1.5 text-xs text-red-600">
                     {{ $message }}
                 </p>
             @enderror
-
         </div>
-
     @endif
 
-
-    {{-- ========================================== --}}
     {{-- FECHA DE AFILIACIÓN --}}
-    {{-- ========================================== --}}
-
     <div>
-
         <label
             for="{{ $esEdicion ? 'editar_fecha' : 'fecha_afiliacion' }}"
             class="mb-2 block text-sm font-medium text-gray-700"
         >
             Fecha de afiliación
         </label>
-
         <input
             type="date"
             id="{{ $esEdicion ? 'editar_fecha' : 'fecha_afiliacion' }}"
@@ -330,32 +286,30 @@
             required
             class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-3 text-sm text-gray-900 outline-none transition focus:border-[#1a34c9] focus:ring-2 focus:ring-[#1a34c9]/10"
         >
-
         @error('fecha_afiliacion')
             <p class="mt-1.5 text-xs text-red-600">
                 {{ $message }}
             </p>
         @enderror
-
     </div>
-
-
-    {{-- ========================================== --}}
+    
     {{-- BOTONES --}}
-    {{-- ========================================== --}}
-
     <div class="flex justify-end gap-3 border-t border-gray-200 pt-5">
-
         <button
             type="submit"
-            class="rounded-lg bg-[#1a34c9] px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1429a3] focus:outline-none focus:ring-2 focus:ring-[#1a34c9]/20"
-        >
-            {{ $esEdicion
-                ? 'Guardar cambios'
-                : 'Registrar afiliado'
-            }}
+            @class([
+                'inline-flex items-center gap-1.5 rounded-lg px-6 py-3 text-sm font-semibold text-white shadow-sm transition focus:outline-none focus:ring-2 hover:cursor-pointer',
+                'bg-green-600 hover:bg-green-700 focus:ring-green-500/20' => $esEdicion,
+                'bg-[#2563EB] hover:bg-[#2563EB] focus:ring-[#1a34c9]/20' => !$esEdicion,
+            ])
+            >
+            @if ($esEdicion === true)
+                <x-icon name="save" size="25"/>
+            @else
+                <x-icon name="edit" size="25"/>
+            @endif
+
+            {{ $esEdicion ? 'Guardar cambios' : 'Registrar afiliado'}}
         </button>
-
     </div>
-
 </form>

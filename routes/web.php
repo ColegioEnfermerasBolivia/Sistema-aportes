@@ -133,6 +133,11 @@ Route::delete('/afiliado-postgrado/{afiliadoPostgrado}', [AfiliadoPostgradoContr
 
 /*LOTES*/
 
+// =====================================================
+// LOTES DE VERIFICACIÓN
+// =====================================================
+
+// Listar lotes
 Route::get('/aportes/lotes', [LoteVerificacionController::class, 'index'])
     ->middleware([
         'auth',
@@ -142,6 +147,59 @@ Route::get('/aportes/lotes', [LoteVerificacionController::class, 'index'])
     ])
     ->name('lotes.index');
 
+
+// Historial de lotes
+Route::get('/aportes/lotes/historial', [LoteVerificacionController::class, 'historial'])
+    ->middleware([
+        'auth',
+        'debe-cambiar-password',
+        'rol:SUPER ADMIN,ADMIN,USUARIO',
+        'can:viewAny,App\Models\LoteVerificacion',
+    ])
+    ->name('lotes.historial');
+
+
+// Mostrar formulario para crear lote
+Route::get('/aportes/lotes/crear', [LoteVerificacionController::class, 'create'])
+    ->middleware([
+        'auth',
+        'debe-cambiar-password',
+        'rol:USUARIO',
+        'can:create,App\Models\LoteVerificacion',
+    ])
+    ->name('lotes.create');
+
+// Crear lote
+Route::post('/aportes/lotes', [LoteVerificacionController::class, 'store'])
+    ->middleware([
+        'auth',
+        'debe-cambiar-password',
+        'rol:USUARIO',
+        'can:create,App\Models\LoteVerificacion',
+    ])
+    ->name('lotes.store');
+
+// Cerrar y enviar lote
+Route::patch('/lotes/{lote}/cerrar', [LoteVerificacionController::class, 'cerrar'])
+    ->middleware([
+        'auth',
+        'debe-cambiar-password',
+        'rol:USUARIO',
+        'can:cerrar,lote',
+    ])
+    ->name('lotes.cerrar');
+
+// Reabrir lote
+Route::patch('/lotes/{lote}/reabrir', [LoteVerificacionController::class, 'reabrir'])
+    ->middleware([
+        'auth',
+        'debe-cambiar-password',
+        'rol:SUPER ADMIN',
+        'can:reabrir,lote',
+    ])
+    ->name('lotes.reabrir');
+
+// Iniciar revisión del lote
 Route::post('/lotes/{lote}/revisar', [LoteVerificacionController::class, 'revisar'])
     ->middleware([
         'auth',
@@ -151,6 +209,7 @@ Route::post('/lotes/{lote}/revisar', [LoteVerificacionController::class, 'revisa
     ])
     ->name('lotes.revisar');
 
+// Previsualizar aportes que se generarán
 Route::post('/lotes/{lote}/preview-aportes', [LoteVerificacionController::class, 'previewAportes'])
     ->middleware([
         'auth',
@@ -160,6 +219,7 @@ Route::post('/lotes/{lote}/preview-aportes', [LoteVerificacionController::class,
     ])
     ->name('lotes.preview-aportes');
 
+// Confirmar aportes y finalizar revisión
 Route::post('/lotes/{lote}/confirmar-aportes', [LoteVerificacionController::class, 'confirmarAportes'])
     ->middleware([
         'auth',
@@ -169,8 +229,12 @@ Route::post('/lotes/{lote}/confirmar-aportes', [LoteVerificacionController::clas
     ])
     ->name('lotes.confirmar-aportes');
 
-/*PAGOS*/
 
+// =====================================================
+// PAGOS
+// =====================================================
+
+// Registrar pago
 Route::post('/pagos', [PagoController::class, 'store'])
     ->middleware([
         'auth',
@@ -179,26 +243,17 @@ Route::post('/pagos', [PagoController::class, 'store'])
     ])
     ->name('pagos.store');
 
-Route::patch('/pagos/{pago}/rechazar', [PagoController::class, 'rechazar'])
+// Modificar pago
+Route::patch('/pagos/{pago}', [PagoController::class, 'update'])
     ->middleware([
         'auth',
         'debe-cambiar-password',
-        'rol:ADMIN',
-        'can:rechazar,pago',
+        'rol:USUARIO',
+        'can:update,pago',
     ])
-    ->name('pagos.rechazar');
+    ->name('pagos.update');
 
-/*LOTES*/
-
-Route::get('/aportes/lotes', [LoteVerificacionController::class, 'index'])
-    ->middleware([
-        'auth',
-        'debe-cambiar-password',
-        'rol:SUPER ADMIN,ADMIN,USUARIO',
-        'can:viewAny,App\Models\LoteVerificacion',
-    ])
-    ->name('lotes.index');
-
+// Aportes
 Route::get('/aportes', [AportesController::class, 'index'])
     ->middleware([
         'auth',
@@ -207,10 +262,11 @@ Route::get('/aportes', [AportesController::class, 'index'])
     ])
     ->name('aportes.index');
 
+//buscar afiliado por CI
 Route::get('/afiliados/buscar-ci', [AfiliadoController::class, 'buscarPorCi'])
     ->middleware([
         'auth',
         'debe-cambiar-password',
-        'rol:ADMIN,USUARIO',
+        'rol:SUPER ADMIN,ADMIN,USUARIO',
     ])
     ->name('afiliados.buscar-ci');

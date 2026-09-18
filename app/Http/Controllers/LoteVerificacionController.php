@@ -2,157 +2,336 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Aporte;
+use App\Models\Colegio;
 use App\Models\LoteVerificacion;
 use App\Models\Pago;
+use App\Services\AuditoriaService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Carbon\Carbon;
+use function PHPUnit\Framework\returnArgument;
 
 class LoteVerificacionController extends Controller
 {
+    public function __construct(
+        private AuditoriaService $auditoria
+    ) {}
     public function index()
+    {
+        Gate::authorize('viewAny', LoteVerificacion::class);
+        $usuario = Auth::user();
+
+        /*USUARIO*/
+        if ($usuario->rol?->nombre === 'USUARIO') {
+
+            $loteActual = LoteVerificacion::with([
+                'colegio',
+                'enviadoPor',
+                'pagos' => fn ($query) => $query
+                    ->with('afiliado')
+                    ->orderBy('id'),
+            ])
+                ->where('colegio_id', $usuario->colegio_id)
+                ->whereIn('estado', [
+                    'ABIERTO',
+                    'ENVIADO',
+                    'EN_VERIFICACION',
+                ])
+                ->orderByDesc('year')
+                ->orderByDesc('mes')
+                ->orderByDesc('id')
+                ->first();
+
+            return view('aportes.lotes.index', compact('loteActual'));
+        }
+
+        /*ADMIN / SUPER ADMIN*/
+        $consulta = LoteVerificacion::with([
+            'colegio',
+            'enviadoPor',
+            'pagos' => fn ($query) => $query
+                ->with('afiliado')
+                ->orderBy('id'),
+        ])
+            ->whereIn('estado', [
+                'ABIERTO',
+                'ENVIADO',
+                'EN_VERIFICACION',
+            ]);
+
+        $lotes = $consulta
+            ->orderByDesc('year')
+            ->orderByDesc('mes')
+            ->orderByDesc('id')
+            ->paginate(10);
+
+        return view('aportes.lotes.index', compact('lotes'));
+    }
+
+    public function historial(Request $request)
     {
         Gate::authorize('viewAny', LoteVerificacion::class);
 
         $usuario = Auth::user();
+        $datos = $request->validate([ 
+            'buscar' => ['nullable', 'string', 'max:100'], 
+            'colegio_id' => ['nullable', 'integer', 'exists:colegios,id'], 
+            ]);
 
         $consulta = LoteVerificacion::with([
             'colegio',
-            'pagos' => function ($query) {
-                $query
-                    ->where('estado', 'EN_LOTE')
-                    ->with('afiliado');
-            },
-        ]);
+            'enviadoPor',
+            'verificadoPor',
+            'pagos' => fn ($query) => $query
+                ->whereIn('estado', ['OBSERVADO', 'VERIFICADO'])
+                ->with('afiliado')
+                ->orderBy('id'),
+        ])
+            ->where('estado', 'VERIFICADO');
 
-        /*
-        * ADMIN y SUPER ADMIN pueden consultar todos los lotes.
-        */
-        if (in_array($usuario->rol?->nombre, [
-            'SUPER ADMIN',
-            'ADMIN',
-        ])) {
+        /*USUARIO:*/
+        if ($usuario->rol?->nombre === 'USUARIO') {
+            $consulta->where('colegio_id', $usuario->colegio_id);
+        }
 
-            // No agregamos ningún filtro de colegio.
-
-        /*
-        * USUARIO solamente puede consultar
-        * los lotes de su propio colegio.
-        */
-        } elseif ($usuario->rol?->nombre === 'USUARIO') {
+        /*BUSQUEDA POR CODIGO DE LOTE */
+        if (!empty($datos['buscar'])) {
+            $buscar = trim($datos['buscar']);
 
             $consulta->where(
-                'colegio_id',
-                $usuario->colegio_id
+                'codigo_lote',
+                'like',
+                "%{$buscar}%"
             );
+        }
+
+        /*FILTRO POR COLEGIO */
+
+        if (in_array($usuario->rol?->nombre, ['ADMIN', 'SUPER ADMIN']) && !empty($datos['colegio_id'])) {
+            $consulta->where('colegio_id', $datos['colegio_id']);
         }
 
         $lotes = $consulta
             ->orderByDesc('year')
             ->orderByDesc('mes')
+            ->orderByDesc('id')
             ->paginate(10);
 
+        $colegios = collect();
+
+        if (in_array($usuario->rol?->nombre, ['ADMIN', 'SUPER ADMIN'])) {
+            $colegios = Colegio::where('estado', 'ACTIVO')
+                ->orderBy('nombre')
+                ->get();
+        }
+
+        return view('aportes.lotes.historial', compact('lotes', 'colegios'));
+    }
+
+    public function create()
+    {
+        Gate::authorize('create', LoteVerificacion::class);
+
+        $usuario = Auth::user();
+
+        if (!$usuario->colegio_id) {
+            abort(403, 'El usuario no tiene un colegio asignado.');
+        }
+
+        $colegio = $usuario->colegio;
+
+        if (!$colegio) {
+            abort(403, 'El colegio del usuario no existe.');
+        }
+
         return view(
-            'aportes.lotes.index',
-            compact('lotes')
+            'aportes.lotes.create',
+            compact('colegio')
         );
     }
 
-    public function registrarAportes(LoteVerificacion $lote)
+    public function store(Request $request)
     {
+        Gate::authorize('create', LoteVerificacion::class);
+
         $usuario = Auth::user();
 
-        /*Validar rol*/
+        $datos = $request->validate([
+            'mes' => [
+                'required',
+                'integer',
+                'between:1,12',
+            ],
+        ]);
 
-        if ($usuario->rol_id !== 2) {
+        if (!$usuario->colegio_id) {
             return back()
                 ->withErrors([
-                    'lote' => 'No tienes permiso para registrar aportes.',
-                ]);
+                    'lote' => 'El usuario no tiene un colegio asignado.',
+                ])
+                ->withInput();
         }
 
-        /*Validar estado del lote*/
+        $colegio = $usuario->colegio;
 
-        if ($lote->estado !== 'EN_VERIFICACION') {
+        if (!$colegio) {
             return back()
                 ->withErrors([
-                    'lote' => 'El lote debe encontrarse en estado EN_VERIFICACION para registrar los aportes.',
-                ]);
+                    'lote' => 'El colegio del usuario no existe.',
+                ])
+                ->withInput();
         }
 
-        DB::transaction(function () use ($lote, $usuario) {
+        $loteAbierto = LoteVerificacion::query()
+            ->where('colegio_id', $usuario->colegio_id)
+            ->where('estado', 'ABIERTO')
+            ->exists();
 
-            $pagos = $lote->pagos()
-                ->where('estado', 'VERIFICADO')
-                ->with('afiliado')
-                ->get();
+        if ($loteAbierto) {
+            return back()
+                ->withErrors([
+                    'lote' => 'Tu colegio ya tiene un lote abierto. Debes cerrarlo y enviarlo antes de crear otro.',
+                ])
+                ->withInput();
+        }
 
-            foreach ($pagos as $pago) {
+        $year = now()->year;
+        $mes = (int) $datos['mes'];
 
-                /*Evitar procesar nuevamente un pago*/
+        if (!$colegio->codigo) {
+            return back()
+                ->withErrors([
+                    'lote' => 'El colegio no tiene un código configurado.',
+                ])
+                ->withInput();
+        }
 
-                if ($pago->aportes()->exists()) {
-                    continue;
-                }
+        $codigoLote = $colegio->codigo
+            . '-'
+            . $year
+            . '-'
+            . str_pad($mes, 2, '0', STR_PAD_LEFT);
 
-                $afiliado = $pago->afiliado;
+        try {
+            $lote = LoteVerificacion::create([
+                'colegio_id' => $usuario->colegio_id,
+                'mes' => $mes,
+                'year' => $year,
+                'codigo_lote' => $codigoLote,
+                'cantidad_aportes' => 0,
+                'monto_total' => 0,
+                'estado' => 'ABIERTO',
+            ]);
 
-                /*Determinar primer período a registrar*/
+            //Auditoria
+            $this->auditoria->registrar(
+                $usuario->id,
+                'CREAR',
+                'lotes_verificacion',
+                $lote->id,
+                null,
+                [
+                    'colegio_id' => $lote->colegio_id,
+                    'mes' => $lote->mes,
+                    'year' => $lote->year,
+                    'codigo_lote' => $lote->codigo_lote,
+                    'cantidad_aportes' => $lote->cantidad_aportes,
+                    'monto_total' => $lote->monto_total,
+                    'estado' => $lote->estado,
+                ]
+            );
 
-                $ultimoAporte = $afiliado->aportes()
-                    ->orderByDesc('year')
-                    ->orderByDesc('mes')
-                    ->first();
+        } catch (\Illuminate\Database\QueryException $e) {
+            return back()
+                ->withErrors([
+                    'lote' => 'Ya existe un lote para ese colegio, mes y año.',
+                ])
+                ->withInput();
+        }
 
-                if ($ultimoAporte) {
+        return redirect()
+            ->route('lotes.index')
+            ->with(
+                'success',
+                "El lote {$lote->codigo_lote} fue creado correctamente."
+            );
+    }
 
-                    $fechaInicio = Carbon::create(
-                        $ultimoAporte->year,
-                        $ultimoAporte->mes,
-                        1
-                    )->addMonth();
+    public function cerrar(LoteVerificacion $lote)
+    {
+        Gate::authorize('cerrar', $lote);
 
-                } else {
+        $usuario = Auth::user();
 
-                    $fechaInicio = Carbon::parse(
-                        $afiliado->fecha_afiliacion
-                    )->startOfMonth();
-                }
+        $datosAnteriores = [
+            'estado' => $lote->estado,
+            'fecha_cierre_departamental' => $lote->fecha_cierre_departamental,
+            'enviado_por' => $lote->enviado_por
+        ];
 
-                /*Calcular monto por período*/
+        $lote->update([
+            'estado' => 'ENVIADO',
+            'fecha_cierre_departamental' => now(),
+            'enviado_por' => $usuario->id,
+        ]);
 
-                $montoPorPeriodo = $pago->monto_total / $pago->cantidad_periodos;
-
-                /*Generar aportes*/
-
-                for ($i = 0; $i < $pago->cantidad_periodos; $i++) {
-
-                    $fechaPeriodo = $fechaInicio->copy()->addMonths($i);
-
-                    Aporte::create([
-                        'afiliado_id' => $afiliado->id,
-                        'colegio_id' => $afiliado->colegio_id,
-                        'pago_id' => $pago->id,
-                        'mes' => $fechaPeriodo->month,
-                        'year' => $fechaPeriodo->year,
-                        'monto' => $montoPorPeriodo,
-                        'estado' => 'VERIFICADO',
-                        'observaciones' => null,
-                        'registrado_por' => $pago->registrado_por,
-                        'fecha_registro' => now(),
-                        'verificado_por' => $usuario->id,
-                        'fecha_verificacion' => now(),
-                    ]);
-                }
-            }
-        });
+        //Auditoria
+        $this->auditoria->registrar(
+            $usuario->id,
+            'CERRAR',
+            'lotes_verificacion',
+            $lote->id,
+            $datosAnteriores,[
+                'estado' => $lote->estado,
+                'fecha_cierre_departamental' => $lote->fecha_cierre_departamental,
+                'enviado_por' => $lote->enviado_por
+            ]
+        );
 
         return back()->with(
             'success',
-            'Los aportes del lote fueron registrados correctamente.'
+            "El lote {$lote->codigo_lote} fue cerrado y enviado correctamente."
+        );
+    }
+
+    public function reabrir(LoteVerificacion $lote)
+    {
+        $usuario = Auth::user();
+
+        Gate::authorize('reabrir', $lote);
+
+        //Datos Anteriores
+        $datosAnteriores = [
+            'estado' => $lote->estado,
+            'fecha_cierre_departamental' => $lote->fecha_cierre_departamental,
+            'enviado_por' => $lote->enviado_por,
+        ];
+
+        $lote->update([
+            'estado' => 'ABIERTO',
+            'fecha_cierre_departamental' => null,
+            'enviado_por' => null,
+        ]);
+
+        //Auditoria
+        $this->auditoria->registrar(
+            $usuario->id,
+            'REABRIR',
+            'lotes_verificacion',
+            $lote->id,
+            $datosAnteriores, [
+                'estado' => $lote->estado,
+                'fecha_cierre_departamental' => $lote->fecha_cierre_departamental,
+                'enviado_por' => $lote->enviado_por
+            ]
+        );
+
+        return back()->with(
+            'success',
+            "El lote {$lote->codigo_lote} fue reabierto correctamente."
         );
     }
 
@@ -160,69 +339,41 @@ class LoteVerificacionController extends Controller
     {
         Gate::authorize('revisar', $lote);
 
-        if (!in_array($lote->estado, [
-            'ENVIADO',
-            'EN_VERIFICACION'
-        ])) {
-            return back()
-                ->withErrors([
-                    'lote' => 'Este lote no está disponible para revisión.',
-                ]);
-        }
-
-        if ($lote->estado === 'ENVIADO') {
-            $lote->update([
-                'estado' => 'EN_VERIFICACION',
-                'fecha_recepcion_col_nacional' => now(),
-            ]);
-        }
+        $lote->update([
+            'estado' => 'EN_VERIFICACION',
+            'fecha_recepcion_col_nacional' => now(),
+        ]);
 
         return redirect()
             ->route('lotes.index')
             ->with('lote_revisar', $lote->id);
     }
-    public function previsualizarAportes(
+
+    public function previewAportes(
         Request $request,
         LoteVerificacion $lote
     ) {
-        $usuario = Auth::user();
+        Gate::authorize('previewAportes', $lote);
 
-        // Validar rol
-        if ($usuario->rol_id !== 2) {
-            return response()->json([
-                'message' => 'No tienes permiso para registrar aportes.',
-            ], 403);
-        }
-
-        // Validar estado del lote
-        if ($lote->estado !== 'EN_VERIFICACION') {
-            return response()->json([
-                'message' => 'El lote debe encontrarse en estado EN_VERIFICACION.',
-            ], 422);
-        }
-
-        // Validar pagos seleccionados
         $datos = $request->validate([
-            'pago_ids' => ['required', 'array', 'min:1'],
-            'pago_ids.*' => ['required', 'integer', 'distinct'],
+            'pago_ids' => [
+                'required',
+                'array',
+                'min:1',
+            ],
+            'pago_ids.*' => [
+                'required',
+                'integer',
+                'distinct',
+            ],
         ]);
 
-        /*
-        * Obtener únicamente los pagos:
-        * - pertenecientes a este lote
-        * - que continúen EN_LOTE
-        * - que hayan sido seleccionados
-        */
         $pagos = $lote->pagos()
             ->where('estado', 'EN_LOTE')
             ->whereIn('id', $datos['pago_ids'])
             ->with('afiliado')
             ->get();
 
-        /*
-        * Si alguno de los pagos seleccionados ya no está
-        * disponible, no continuamos.
-        */
         if ($pagos->count() !== count($datos['pago_ids'])) {
             return response()->json([
                 'message' => 'Uno o más pagos seleccionados ya no están disponibles para revisión.',
@@ -232,50 +383,48 @@ class LoteVerificacionController extends Controller
         $aportesPreview = [];
 
         foreach ($pagos as $pago) {
-
             $afiliado = $pago->afiliado;
 
-            /*
-            * Buscar el último aporte oficial del afiliado.
-            */
             $ultimoAporte = $afiliado->aportes()
+                ->where('estado', 'VERIFICADO')
                 ->orderByDesc('year')
                 ->orderByDesc('mes')
                 ->first();
 
-            /*
-            * Determinar el primer período que corresponde.
-            */
             if ($ultimoAporte) {
-
                 $fechaInicio = Carbon::create(
                     $ultimoAporte->year,
                     $ultimoAporte->mes,
                     1
                 )->addMonth();
-
             } else {
-
                 $fechaInicio = Carbon::parse(
                     $afiliado->fecha_afiliacion
                 )->startOfMonth();
             }
 
-            /*
-            * El pago ya fue validado al momento de registrarse,
-            * por lo que cantidad_periodos representa exactamente
-            * cuántos aportes debemos generar.
-            */
-            $montoPorPeriodo =
-                $pago->monto_total / $pago->cantidad_periodos;
+            $montoTotalCentavos = (int) round(
+                $pago->monto_total * 100
+            );
 
-            /*
-            * Generar únicamente una previsualización.
-            *
-            * Todavía NO hacemos Aporte::create().
-            */
-            for ($i = 0; $i < $pago->cantidad_periodos; $i++) {
+            if (
+                $montoTotalCentavos % $pago->cantidad_periodos !== 0
+            ) {
+                return response()->json([
+                    'message' => "El pago {$pago->id} no puede dividirse exactamente entre sus períodos.",
+                ], 422);
+            }
 
+            $montoPorPeriodoCentavos = intdiv(
+                $montoTotalCentavos,
+                $pago->cantidad_periodos
+            );
+
+            for (
+                $i = 0;
+                $i < $pago->cantidad_periodos;
+                $i++
+            ) {
                 $fechaPeriodo = $fechaInicio
                     ->copy()
                     ->addMonths($i);
@@ -283,181 +432,108 @@ class LoteVerificacionController extends Controller
                 $aportesPreview[] = [
                     'pago_id' => $pago->id,
                     'afiliado_id' => $afiliado->id,
-                    'nombre' => $afiliado->nombres . ' ' . $afiliado->apellidos,
+                    'nombre' => $afiliado->nombres
+                        . ' '
+                        . $afiliado->apellidos,
                     'ci' => $afiliado->ci,
                     'mes' => $fechaPeriodo->month,
                     'year' => $fechaPeriodo->year,
                     'monto' => number_format(
-                        $montoPorPeriodo,
+                        $montoPorPeriodoCentavos / 100,
                         2,
                         '.',
                         ''
                     ),
-                ];
-            }
-        }
-
-        return response()->json([
-            'aportes' => $aportesPreview,
-        ]);
-    }
-
-    public function previewAportes(Request $request, LoteVerificacion $lote)
-    {
-        Gate::authorize('previewAportes', $lote);
-
-        $usuario = Auth::user();
-
-        /*Validar rol*/
-
-        if ($usuario->rol_id !== 2) {
-            return response()->json([
-                'message' => 'No tienes permiso para previsualizar aportes.',
-            ], 403);
-        }
-
-        /*Validar estado del lote*/
-
-        if ($lote->estado !== 'EN_VERIFICACION') {
-            return response()->json([
-                'message' => 'El lote debe encontrarse en estado EN_VERIFICACION.',
-            ], 422);
-        }
-
-        /*Validar pagos seleccionados*/
-
-        $datos = $request->validate([
-            'pago_ids' => ['required', 'array', 'min:1'],
-            'pago_ids.*' => ['required', 'integer', 'distinct'],
-        ]);
-
-        /*Obtener únicamente pagos válidos del lote*/
-
-        $pagos = $lote->pagos()
-            ->whereIn('id', $datos['pago_ids'])
-            ->where('estado', 'EN_LOTE')
-            ->with('afiliado')
-            ->get();
-
-        /*Verificar que todos los pagos enviados sean válidos */
-
-        if ($pagos->count() !== count($datos['pago_ids'])) {
-            return response()->json([
-                'message' => 'Uno o más pagos seleccionados ya no están disponibles para procesar.',
-            ], 422);
-        }
-
-        /*Generar previsualización*/
-
-        $aportesPreview = [];
-
-        foreach ($pagos as $pago) {
-
-            $afiliado = $pago->afiliado;
-
-            /*
-            | Determinar primer período pendiente
-            */
-
-            $ultimoAporte = $afiliado->aportes()
-                ->orderByDesc('year')
-                ->orderByDesc('mes')
-                ->first();
-
-            if ($ultimoAporte) {
-
-                $fechaInicio = Carbon::create(
-                    $ultimoAporte->year,
-                    $ultimoAporte->mes,
-                    1
-                )->addMonth();
-
-            } else {
-
-                $fechaInicio = Carbon::parse(
-                    $afiliado->fecha_afiliacion
-                )->startOfMonth();
-            }
-
-            /*Calcular monto por período*/
-
-            $montoPorPeriodo = $pago->monto_total / $pago->cantidad_periodos;
-
-            /*Generar filas de previsualización*/
-
-            for ($i = 0; $i < $pago->cantidad_periodos; $i++) {
-
-                $fechaPeriodo = $fechaInicio->copy()->addMonths($i);
-
-                $aportesPreview[] = [
-                    'pago_id' => $pago->id,
-                    'afiliado_id' => $afiliado->id,
-                    'nombre' => $afiliado->nombres . ' ' . $afiliado->apellidos,
-                    'ci' => $afiliado->ci,
-                    'mes' => $fechaPeriodo->month,
-                    'year' => $fechaPeriodo->year,
-                    'monto' => number_format($montoPorPeriodo, 2, '.', ''),
                     'seleccionado' => true,
                 ];
             }
         }
-
         return response()->json([
             'aportes' => $aportesPreview,
         ]);
     }
 
-    public function confirmarAportes(Request $request, LoteVerificacion $lote)
-    {
+    public function confirmarAportes(
+        Request $request,
+        LoteVerificacion $lote
+    ) {
         Gate::authorize('confirmarAportes', $lote);
 
-        $usuario = Auth::user();
-
-        // 1. Solo ADMIN puede confirmar aportes
-        if ($usuario->rol_id !== 2) {
-            return response()->json([
-                'message' => 'No tienes permiso para confirmar aportes.',
-            ], 403);
-        }
-
-        // 2. El lote debe estar en proceso de verificación
-        if ($lote->estado !== 'EN_VERIFICACION') {
-            return response()->json([
-                'message' => 'El lote no se encuentra disponible para verificación.',
-            ], 422);
-        }
-
-        // 3. Validamos únicamente los IDs de pagos
         $datos = $request->validate([
-            'pago_ids' => ['required', 'array', 'min:1'],
-            'pago_ids.*' => ['required', 'integer', 'distinct'],
+            'pago_ids' => [
+                'required',
+                'array',
+                'min:1',
+            ],
+            'pago_ids.*' => [
+                'required',
+                'integer',
+                'distinct',
+            ],
 
-            'pagos_observados' => ['nullable', 'array'],
-            'pagos_observados.*' => ['required', 'integer', 'distinct'],
+            'pagos_observados' => [
+                'nullable',
+                'array',
+            ],
+            'pagos_observados.*' => [
+                'required',
+                'integer',
+                'distinct',
+            ],
+            'observaciones_pagos' => [
+                'nullable',
+                'array',
+            ],
+
+            'observaciones_pagos.*' => [
+                'nullable',
+                'string',
+                'max:1000',
+            ],
         ]);
 
         $pagoIds = $datos['pago_ids'];
         $pagosObservadosIds = $datos['pagos_observados'] ?? [];
+        $observacionesPagos = $datos['observaciones_pagos'] ?? [];
+        $observacionesPagosNormalizadas = [];
 
-        // 4. Los pagos observados deben formar parte de los pagos seleccionados
-        if (!empty(array_diff($pagosObservadosIds, $pagoIds))) {
+        foreach ($pagosObservadosIds as $pagoId) {
+            $observacion = trim($observacionesPagos[$pagoId] ?? '');
+
+            if ($observacion === '') {
+                return response()->json([
+                    'message' => "Debes ingresar una observación para el pago {$pagoId}.",
+                ], 422);
+            }
+
+            $observacionesPagosNormalizadas[$pagoId] = $observacion;
+        }
+
+        if (!empty(array_diff(
+            $pagosObservadosIds,
+            $pagoIds
+        ))) {
             return response()->json([
                 'message' => 'Se recibió un pago observado que no pertenece a la selección.',
             ], 422);
         }
 
-        try {
+        $usuario = Auth::user();
 
+        $datosAnteriores = [
+            'estado_lote' => $lote->estado,
+            'pagos_seleccionados' => $pagoIds,
+            'pagos_marcados_como_observados' => $pagosObservadosIds,
+        ];
+
+        try {
             $resultado = DB::transaction(function () use (
                 $lote,
                 $usuario,
                 $pagoIds,
-                $pagosObservadosIds
+                $pagosObservadosIds,
+                $observacionesPagosNormalizadas
             ) {
-
-                // 5. Volvemos a consultar los pagos desde la BD.
-                // Nunca usamos los datos enviados por Alpine para
-                // determinar meses, montos o cantidad de períodos.
                 $pagos = $lote->pagos()
                     ->whereIn('id', $pagoIds)
                     ->where('estado', 'EN_LOTE')
@@ -465,7 +541,6 @@ class LoteVerificacionController extends Controller
                     ->lockForUpdate()
                     ->get();
 
-                // Verificamos que todos sigan disponibles
                 if ($pagos->count() !== count($pagoIds)) {
                     throw new \Exception(
                         'Uno o más pagos seleccionados ya no están disponibles para procesar.'
@@ -476,57 +551,54 @@ class LoteVerificacionController extends Controller
                 $pagosObservados = 0;
                 $aportesGenerados = 0;
 
+                $pagosProcesadosIds = [];
+                $pagosObservadosIdsRegistrados = [];
+
                 foreach ($pagos as $pago) {
-
-                    /*PAGO OBSERVADO*/
-
-                    if (in_array($pago->id, $pagosObservadosIds)) {
-
+                    if (in_array(
+                        $pago->id,
+                        $pagosObservadosIds
+                    )) {
                         $pago->update([
                             'estado' => 'OBSERVADO',
+                            'observaciones' => $observacionesPagosNormalizadas[$pago->id],
                             'verificado_por' => $usuario->id,
                             'fecha_verificacion' => now(),
-                            'observaciones' =>
-                                'Pago observado durante la revisión: uno o más períodos fueron desmarcados para conciliación con el colegio de origen.',
                         ]);
-
+                        $pagosObservadosIdsRegistrados[] = $pago->id;
                         $pagosObservados++;
-
                         continue;
                     }
 
                     /*PAGO VERIFICADO*/
-
                     $afiliado = $pago->afiliado;
 
-                    // Buscamos el último aporte oficial del afiliado
                     $ultimoAporte = $afiliado->aportes()
+                        ->where('estado', 'VERIFICADO')
                         ->orderByDesc('year')
                         ->orderByDesc('mes')
                         ->first();
 
                     if ($ultimoAporte) {
-
                         $fechaInicio = Carbon::create(
                             $ultimoAporte->year,
                             $ultimoAporte->mes,
                             1
                         )->addMonth();
-
                     } else {
-
                         $fechaInicio = Carbon::parse(
                             $afiliado->fecha_afiliacion
                         )->startOfMonth();
                     }
 
-                    // Dividimos usando centavos para evitar errores
-                    // de precisión con decimales.
                     $montoTotalCentavos = (int) round(
                         $pago->monto_total * 100
                     );
 
-                    if ($montoTotalCentavos % $pago->cantidad_periodos !== 0) {
+                    if (
+                        $montoTotalCentavos
+                        % $pago->cantidad_periodos !== 0
+                    ) {
                         throw new \Exception(
                             "El pago {$pago->id} no puede dividirse exactamente entre sus períodos."
                         );
@@ -537,20 +609,29 @@ class LoteVerificacionController extends Controller
                         $pago->cantidad_periodos
                     );
 
-                    /*
-                    * Generamos exactamente la cantidad de períodos
-                    * indicada por el pago.
-                    */
-                    for ($i = 0; $i < $pago->cantidad_periodos; $i++) {
-
+                    /*Generamos los períodos consecutivos.*/
+                    for (
+                        $i = 0;
+                        $i < $pago->cantidad_periodos;
+                        $i++
+                    ) {
                         $fechaPeriodo = $fechaInicio
                             ->copy()
                             ->addMonths($i);
 
-                        // Evitamos duplicar un período oficial
-                        $existe = Aporte::where('afiliado_id', $afiliado->id)
-                            ->where('mes', $fechaPeriodo->month)
-                            ->where('year', $fechaPeriodo->year)
+                        /*Protección adicional contra duplicados.*/
+                        $existe = Aporte::where(
+                                'afiliado_id',
+                                $afiliado->id
+                            )
+                            ->where(
+                                'mes',
+                                $fechaPeriodo->month
+                            )
+                            ->where(
+                                'year',
+                                $fechaPeriodo->year
+                            )
                             ->exists();
 
                         if ($existe) {
@@ -577,25 +658,26 @@ class LoteVerificacionController extends Controller
                         $aportesGenerados++;
                     }
 
-                    // El pago queda definitivamente verificado
+                    /*El pago queda definitivamente verificado.*/
                     $pago->update([
                         'estado' => 'VERIFICADO',
                         'verificado_por' => $usuario->id,
                         'fecha_verificacion' => now(),
                     ]);
-
+                    $pagosProcesadosIds[] = $pago->id;
                     $pagosProcesados++;
                 }
 
-                /*ACTUALIZAR ESTADO DEL LOTE*/
-                $pagosPendientes = Pago::where('lote_verificacion_id', $lote->id)
+                $pagosPendientes = Pago::where(
+                        'lote_verificacion_id',
+                        $lote->id
+                    )
                     ->where('estado', 'EN_LOTE')
                     ->count();
 
                 $loteVerificado = false;
 
                 if ($pagosPendientes === 0) {
-
                     $lote->update([
                         'estado' => 'VERIFICADO',
                         'verificado_por' => $usuario->id,
@@ -604,14 +686,38 @@ class LoteVerificacionController extends Controller
 
                     $loteVerificado = true;
                 }
-                
+
                 return [
                     'pagos_procesados' => $pagosProcesados,
                     'pagos_observados' => $pagosObservados,
                     'aportes_generados' => $aportesGenerados,
                     'lote_verificado' => $loteVerificado,
+
+                    //Auditoria
+                    'pagos_procesados_ids' => $pagosProcesadosIds,
+                    'pagos_observados_ids' => $pagosObservadosIdsRegistrados,
+                    'observaciones_pagos' => $observacionesPagosNormalizadas,
                 ];
             });
+
+            $datosNuevos = [
+                'estado_lote' => $lote->estado,
+                'pagos_verificados' => $resultado['pagos_procesados_ids'],
+                'pagos_observados' => $resultado['pagos_observados_ids'],
+                'observaciones_pagos' => $resultado['observaciones_pagos'],
+                'cantidad_pagos_verificados' => $resultado['pagos_procesados'],
+                'cantidad_pagos_observados' => $resultado['pagos_observados'],
+                'cantidad_aportes_generados' => $resultado['aportes_generados'],
+            ];
+
+            $this->auditoria->registrar(
+                $usuario->id,
+                'CONFIRMAR APORTES',
+                'lotes_verificacion',
+                $lote->id,
+                $datosAnteriores,
+                $datosNuevos
+            );
 
             return response()->json([
                 'message' => 'La revisión del lote se procesó correctamente.',

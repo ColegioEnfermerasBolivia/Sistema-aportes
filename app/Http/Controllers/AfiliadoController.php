@@ -444,12 +444,10 @@ class AfiliadoController extends Controller
         ]);
 
         $usuario = auth()->user();
-
         $query = Afiliado::query()
             ->where('ci', trim($datos['ci']));
 
         /*Restricción por colegio para usuarios USUARIO*/
-
         if ($usuario->rol?->nombre === 'USUARIO') {
             $colegio = $usuario->colegio;
 
@@ -471,7 +469,6 @@ class AfiliadoController extends Controller
         }
 
         $afiliado = $query->first();
-
         if (!$afiliado) {
             return response()->json([
                 'message' => 'No se encontró ningún afiliado con ese CI.',
@@ -479,7 +476,6 @@ class AfiliadoController extends Controller
         }
 
         /*Último aporte verificado*/
-
         $ultimoAporte = Aporte::query()
             ->where('afiliado_id', $afiliado->id)
             ->where('estado', 'VERIFICADO')
@@ -502,5 +498,4 @@ class AfiliadoController extends Controller
                 : null,
         ]);
     }
-
 }

@@ -40,6 +40,8 @@ class LoteVerificacion extends Model
         'fecha_verificacion' => 'datetime',
         'enviado_por' => 'integer',
         'verificado_por' => 'integer',
+        'creado_en' => 'datetime', 
+        'actualizado_en' => 'datetime',
     ];
 
     public function colegio(): BelongsTo
