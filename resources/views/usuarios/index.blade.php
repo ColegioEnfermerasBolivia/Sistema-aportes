@@ -30,10 +30,12 @@
                            focus:outline-none
                            focus:ring-2
                            focus:ring-[#1a34c9]
-                           focus:ring-offset-2"
+                           focus:ring-offset-2
+                           hover:cursor-pointer
+                           "
                 >
                     <span class="text-xl leading-none">
-                        +
+                        <x-icon name="add" class="text-white" size="25"/>
                     </span>
 
                     Agregar usuario
@@ -230,15 +232,20 @@
                                         <x-slot:trigger>
                                             <button
                                                 type="button"
-                                                class="inline-flex items-center rounded-lg
+                                                class="inline-flex items-center gap-2 rounded-lg
                                                        border border-gray-300
                                                        bg-white px-3 py-2
                                                        text-xs font-semibold
-                                                       text-gray-700
                                                        transition
                                                        hover:bg-gray-50
-                                                       hover:text-[#1a34c9]"
+                                                       hover:text-[#1a34c9]
+                                                       hover:cursor-pointer
+                                                       text-blue-600
+                                                       "
                                             >
+                                                <span class="text-xl leading-none">
+                                                    <x-icon name="edit" class="text-blue-600" size="20"/>
+                                                </span>
                                                 Editar
                                             </button>
                                         </x-slot:trigger>
@@ -260,18 +267,22 @@
 
                                             <button
                                                 type="submit"
-                                                class="inline-flex items-center rounded-lg
-                                                       border border-gray-300
-                                                       bg-white px-3 py-2
-                                                       text-xs font-semibold
-                                                       text-gray-700
-                                                       transition
-                                                       hover:bg-gray-50"
+                                                class="inline-flex items-center gap-2 rounded-lg
+                                                    border border-gray-300
+                                                    bg-white px-3 py-2
+                                                    text-xs font-semibold
+                                                    transition
+                                                    hover:bg-gray-50
+                                                    hover:cursor-pointer
+                                                    {{ $usuario->estado === 'ACTIVO' ? 'text-amber-500' : 'text-green-600' }}"
                                             >
-                                                {{ $usuario->estado === 'ACTIVO'
-                                                    ? 'Desactivar'
-                                                    : 'Activar'
-                                                }}
+                                                @if ($usuario->estado === 'ACTIVO')
+                                                    <x-icon name="userOff" size="20" />
+                                                    Desactivar
+                                                @else
+                                                    <x-icon name="userUp" size="20" />
+                                                    Activar
+                                                @endif
                                             </button>
                                         </form>
                                     @endif
@@ -288,14 +299,19 @@
                                             @method('PATCH')
                                             <button
                                                 type="submit"
-                                                class="inline-flex items-center rounded-lg
+                                                class="inline-flex items-center gap-2 rounded-lg
                                                        bg-[#f7f7f9] px-3 py-2
+                                                       border border-gray-300
                                                        text-xs font-semibold
                                                        text-[#1a34c9]
                                                        transition
-                                                       hover:bg-[#e9edff]"
+                                                       hover:bg-[#e9edff]
+                                                       hover:cursor-pointer"
                                             >
-                                                Resetear contraseña
+                                                <span class="text-xl leading-none">
+                                                    <x-icon name="resetPassword" class="text-purple-500" size="20"/>
+                                                </span>
+                                                Reset
                                             </button>
                                         </form>
                                     @endif

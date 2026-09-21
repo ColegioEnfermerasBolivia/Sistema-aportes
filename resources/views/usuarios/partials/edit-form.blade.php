@@ -400,28 +400,37 @@
         <button
             type="button"
             @click="abierto = false"
-            class="rounded-lg border border-[#1a34c9]
-                   bg-white px-7 py-3
-                   text-sm font-semibold text-[#1a34c9]
+            class="rounded-lg border border-[#6B7280]
+                    px-7 py-3
+                   text-sm font-semibold text-[#6B7280]
                    transition
-                   hover:bg-[#f4f6ff]"
+                   hover:bg-[#dcdde0] flex gap-1.5
+                   hover:cursor-pointer
+                   "
         >
+            <span class="flex h-5 w-5 shrink-0 items-center justify-center text-base">
+                <x-icon name="cancel" class="text-[#6B7280]" size="35"/>
+            </span>
             Cancelar
         </button>
 
         <button
             type="submit"
-            class="rounded-lg bg-[#1a34c9]
+            class="rounded-lg bg-[#16A34A]
                    px-7 py-3
                    text-sm font-semibold text-white
                    shadow-[0_4px_12px_rgba(26,52,201,0.25)]
                    transition
-                   hover:bg-[#1429a3]
+                   hover:bg-[#046d04]
+                   hover:cursor-pointer
                    focus:outline-none
                    focus:ring-2
                    focus:ring-[#1a34c9]/30
-                   focus:ring-offset-2"
+                   focus:ring-offset-2 flex gap-1.5"
         >
+        <span class="flex h-5 w-5 shrink-0 items-center justify-center text-base">
+            <x-icon name="save" class="text-white" size="35"/>
+        </span>
             Guardar cambios
         </button>
 

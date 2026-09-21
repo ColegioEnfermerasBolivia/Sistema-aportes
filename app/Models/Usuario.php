@@ -48,4 +48,35 @@ class Usuario extends Authenticatable
     {
         return $this->hasMany(LoginLog::class, 'usuario_id');
     }
+
+    public function pagosRegistrados(): HasMany
+    {
+        return $this->hasMany(Pago::class, 'registrado_por');
+    }
+
+    public function aportesRegistrados(): HasMany
+    {
+        return $this->hasMany(Aporte::class, 'registrado_por');
+    }
+
+    public function lotesEnviados(): HasMany
+    {
+        return $this->hasMany(LoteVerificacion::class, 'enviado_por');
+    }
+
+    public function lotesVerificados(): HasMany
+    {
+        return $this->hasMany(LoteVerificacion::class, 'verificado_por');
+    }
+
+    public function aportesVerificados(): HasMany
+    {
+        return $this->hasMany(Aporte::class, 'verificado_por');
+    }
+
+    public function pagosVerificados(): HasMany
+    {
+        return $this->hasMany(Pago::class, 'verificado_por');
+    }
+   
 }

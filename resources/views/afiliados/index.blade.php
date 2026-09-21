@@ -33,10 +33,10 @@
                                focus:outline-none
                                focus:ring-2
                                focus:ring-[#1a34c9]
-                               focus:ring-offset-2"
+                               focus:ring-offset-2 hover:cursor-pointer"
                     >
-                        <span class="text-xl leading-none">
-                            +
+                        <span class="flex h-5 w-5 shrink-0 items-center justify-center text-base">
+                            <x-icon name="add" class="text-white" size="35"/>
                         </span>
                         Agregar afiliado
                     </button>
@@ -111,20 +111,7 @@
                                    flex items-center
                                    text-gray-400"
                         >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="h-5 w-5"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                stroke-width="2"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="m21 21-4.35-4.35m1.35-5.4a6.75 6.75 0 1 1-13.5 0 6.75 6.75 0 0 1 13.5 0Z"
-                                />
-                            </svg>
+                            <x-icon name="search" class="text-gray-400" size="25"/>
                         </span>
 
                         <input
@@ -198,8 +185,11 @@
                            hover:bg-[#1429a3]
                            focus:outline-none
                            focus:ring-2
-                           focus:ring-[#1a34c9]/30"
+                           focus:ring-[#1a34c9]/30 flex gap-1.5 hover:cursor-pointer"
                 >
+                    <span class="flex h-5 w-5 shrink-0 items-center justify-center text-base">
+                        <x-icon name="search" class="text-white" size="35"/>
+                    </span>
                     Buscar
                 </button>
 
@@ -213,19 +203,22 @@
                            text-center
                            text-sm font-semibold text-gray-700
                            transition
-                           hover:bg-gray-50"
+                           hover:bg-gray-50 flex gap-1.5 hover:cursor-pointer"
                 >
+                    <span class="flex h-5 w-5 shrink-0 items-center justify-center text-base">
+                        <x-icon name="eraser" class="text-gray-700" size="35"/>
+                    </span>
                     Limpiar
                 </a>
             </form>
         </div>
 
         {{-- TABLA --}}
-        <div class="overflow-x-auto">
-            <table class="min-w-[1200px] w-full">
-                <thead class="border-b border-gray-200 bg-[#f1f3f8]">
+        <div class="max-h-125 overflow-y-auto overflow-x-auto">
+            <table class="min-w-300 w-full">
+                <thead class="sticky top-0 z-0 border-b border-gray-200 bg-[#f1f3f8]">
                     <tr>
-                        <th class="px-5 py-4 text-left text-sm font-semibold text-gray-800">
+                        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-800">
                             Registro departamental
                         </th>
                         <th class="px-5 py-4 text-left text-sm font-semibold text-gray-800">
@@ -257,7 +250,7 @@
 
                 <tbody class="divide-y divide-gray-100">
                     @forelse ($afiliados as $afiliado)
-                        <tr class="transition hover:bg-gray-50">
+                        <tr class="transition hover:bg-gray-200">
 
                             {{-- REGISTRO --}}
                             <td class="whitespace-nowrap px-5 py-5 text-sm text-gray-700">
@@ -275,22 +268,9 @@
                             </td>
 
                             {{-- AFILIADO --}}
-                            <td class="px-5 py-5">
+                            <td class="px-4 py-4">
                                 <div class="flex items-center gap-3">
-                                    <div
-                                        class="flex h-11 w-11 shrink-0
-                                               items-center justify-center
-                                               rounded-full
-                                               bg-[#e8ecff]
-                                               text-sm font-bold
-                                               text-[#1a34c9]"
-                                    >
-                                        {{ mb_strtoupper(
-                                            mb_substr($afiliado->nombres, 0, 1, 'UTF-8') .
-                                            mb_substr($afiliado->apellidos, 0, 1, 'UTF-8'),
-                                            'UTF-8'
-                                        ) }}
-                                    </div>
+                                    
                                     <div class="min-w-0">
                                         <p class="whitespace-nowrap text-sm font-semibold text-gray-900">
                                             {{ $afiliado->nombres }}
@@ -301,7 +281,7 @@
                             </td>
 
                             {{-- COLEGIO --}}
-                            <td class="px-5 py-5 text-sm text-gray-700">
+                            <td class="px-4 py-4 text-sm text-gray-700">
                                 {{ $afiliado->colegio?->nombre ?? 'Sin colegio' }}
                             </td>
 
@@ -346,24 +326,27 @@
 
                             {{-- ACCIONES --}}
                             <td class="px-5 py-5">
-                                <div class="flex flex-wrap items-center gap-2">
+                                <div class="flex items-center gap-2">
 
                                     {{-- VER INFORMACIÓN --}}
                                     <x-modal titulo="Información del afiliado" ancho="max-w-5xl">
                                         <x-slot:trigger>
                                             <button
                                                 type="button"
-                                                class="inline-flex items-center
+                                                class="inline-flex items-center gap-1.5
                                                        rounded-lg
-                                                       border border-gray-300
+                                                       border border-sky-500
                                                        bg-white
                                                        px-3 py-2
                                                        text-xs font-semibold
-                                                       text-gray-700
+                                                       text-sky-500
                                                        transition
-                                                       hover:bg-gray-50
-                                                       hover:text-[#1a34c9]"
+                                                       hover:bg-gray-200
+                                                       hover:cursor-pointer"
                                             >
+                                                <span class="flex h-5 w-5 shrink-0 items-center justify-center text-base">
+                                                    <x-icon name="see" class="text-sky-500" size="25"/>
+                                                </span>
                                                 Ver
                                             </button>
                                         </x-slot:trigger>
@@ -385,15 +368,18 @@
                                                     type="button"
                                                     class="inline-flex items-center
                                                            rounded-lg
-                                                           border border-gray-300
+                                                           border border-blue-500
                                                            bg-white
                                                            px-3 py-2
                                                            text-xs font-semibold
-                                                           text-gray-700
+                                                           text-blue-500
                                                            transition
-                                                           hover:bg-gray-50
-                                                           hover:text-[#1a34c9]"
+                                                           hover:bg-blue-100
+                                                           hover:cursor-pointer"
                                                 >
+                                                    <span class="flex h-5 w-5 shrink-0 items-center justify-center text-base">
+                                                        <x-icon name="edit" class="text-[#3B82F6]" size="35"/>
+                                                    </span>
                                                     Editar
                                                 </button>
                                             </x-slot:trigger>
@@ -420,18 +406,23 @@
                                                 type="submit"
                                                 class="inline-flex items-center
                                                        rounded-lg
-                                                       border border-gray-300
                                                        bg-white
                                                        px-3 py-2
                                                        text-xs font-semibold
-                                                       text-gray-700
-                                                       transition
-                                                       hover:bg-gray-50"
+                                                       hover:cursor-pointer
+                                                       hover:bg-gray-50
+                                                        {{ $afiliado->estado === 'ACTIVO'
+                                                            ? 'text-amber-500 border border-amber-500'
+                                                            : 'text-green-600 border border-green-600'
+                                                        }}"
                                             >
-                                                {{ $afiliado->estado === 'ACTIVO'
-                                                    ? 'Desactivar'
-                                                    : 'Activar'
-                                                }}
+                                                @if ($afiliado->estado === 'ACTIVO')
+                                                    <x-icon name="userOff" size="20" />
+                                                    Desactivar
+                                                @else
+                                                    <x-icon name="userUp" size="20" />
+                                                    Activar
+                                                @endif
                                             </button>
                                         </form>
                                     @endif

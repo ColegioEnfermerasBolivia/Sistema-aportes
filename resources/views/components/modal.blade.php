@@ -5,7 +5,9 @@
 ])
 
 <div
-    x-data="{ abierto: {{ $abiertoInicial ? 'true' : 'false' }} }"
+    x-data="{ abierto: @js($abiertoInicial) }"
+    x-modelable="abierto"
+    {{ $attributes }}
     @keydown.escape.window="abierto = false"
 >
     {{-- TRIGGER --}}
@@ -17,10 +19,8 @@
 
     @endisset
 
-
     {{-- MODAL TELETRANSPORTADO AL BODY --}}
     <template x-teleport="body">
-
         <div
             x-show="abierto"
             x-cloak
@@ -53,13 +53,11 @@
                            border-b border-gray-200
                            bg-white px-8 py-6"
                 >
-
                     <h2
                         class="m-0 text-2xl font-semibold tracking-tight text-gray-900"
                     >
                         {{ $titulo }}
                     </h2>
-
                     <button
                         type="button"
                         @click="abierto = false"
@@ -72,14 +70,12 @@
                                hover:text-gray-800
                                focus:outline-none
                                focus:ring-2
-                               focus:ring-[#1a34c9]/30"
+                               focus:ring-[#1a34c9]/30 hover:cursor-pointer"
                         aria-label="Cerrar"
                     >
-                        ×
+                        <x-icon name="x" size="35"/>
                     </button>
-
                 </div>
-
 
                 {{-- BODY --}}
                 <div
@@ -87,11 +83,7 @@
                 >
                     {{ $slot }}
                 </div>
-
             </div>
-
         </div>
-
     </template>
-
 </div>

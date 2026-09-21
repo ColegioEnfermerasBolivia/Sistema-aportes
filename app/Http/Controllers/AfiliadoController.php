@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Afiliado;
 use App\Models\Colegio;
 use App\Models\Postgrado;
+use App\Models\Aporte;
 use App\Services\AuditoriaService;
 use App\Models\GradoAcademico;
 use Illuminate\Http\Request;
@@ -434,5 +435,67 @@ class AfiliadoController extends Controller
                     ? 'Afiliado activado correctamente.'
                     : 'Afiliado desactivado correctamente.'
             );
+    }
+
+    public function buscarPorCi(Request $request)
+    {
+        $datos = $request->validate([
+            'ci' => ['required', 'string', 'max:50'],
+        ]);
+
+        $usuario = auth()->user();
+        $query = Afiliado::query()
+            ->where('ci', trim($datos['ci']));
+
+        /*Restricción por colegio para usuarios USUARIO*/
+        if ($usuario->rol?->nombre === 'USUARIO') {
+            $colegio = $usuario->colegio;
+
+            if (!$colegio) {
+                return response()->json([
+                    'message' => 'El usuario no tiene un colegio asignado.',
+                ], 403);
+            }
+
+            if ($colegio->tipo === 'DEPARTAMENTAL') {
+                $colegiosPermitidos = $colegio->hijos
+                    ->pluck('id')
+                    ->push($colegio->id);
+
+                $query->whereIn('colegio_id', $colegiosPermitidos);
+            } else {
+                $query->where('colegio_id', $colegio->id);
+            }
+        }
+
+        $afiliado = $query->first();
+        if (!$afiliado) {
+            return response()->json([
+                'message' => 'No se encontró ningún afiliado con ese CI.',
+            ], 404);
+        }
+
+        /*Último aporte verificado*/
+        $ultimoAporte = Aporte::query()
+            ->where('afiliado_id', $afiliado->id)
+            ->where('estado', 'VERIFICADO')
+            ->orderByDesc('year')
+            ->orderByDesc('mes')
+            ->first();
+
+        return response()->json([
+            'id' => $afiliado->id,
+            'ci' => $afiliado->ci,
+            'nombres' => $afiliado->nombres,
+            'apellidos' => $afiliado->apellidos,
+            'estado' => $afiliado->estado,
+            'ultimo_aporte' => $ultimoAporte
+                ? [
+                    'monto' => $ultimoAporte->monto,
+                    'mes' => $ultimoAporte->mes,
+                    'year' => $ultimoAporte->year,
+                ]
+                : null,
+        ]);
     }
 }

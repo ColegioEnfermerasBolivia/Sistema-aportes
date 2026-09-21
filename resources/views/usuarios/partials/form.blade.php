@@ -353,12 +353,14 @@
         <button
             type="button"
             @click="abierto = false"
-            class="rounded-lg border border-[#1a34c9]
-                   bg-white px-7 py-3
-                   text-sm font-semibold text-[#1a34c9]
-                   transition
-                   hover:bg-[#f4f6ff]"
+            class="rounded-lg border-none
+                   bg-red-500 px-7 py-3
+                   text-sm font-semibold text-white
+                   hover:cursor-pointer"
         >
+            <span class="text-xl leading-none">
+                <x-icon name="cancel" class="text-white" size="20"/>
+            </span>
             Cancelar
         </button>
 
@@ -373,9 +375,13 @@
                    focus:outline-none
                    focus:ring-2
                    focus:ring-[#1a34c9]/30
+                   hover:cursor-pointer
                    focus:ring-offset-2"
         >
-            Guardar usuario
+            <span class="text-xl leading-none">
+                <x-icon name="createUser" class="text-white" size="20"/>
+            </span>
+            crear usuario
         </button>
 
     </div>

@@ -15,6 +15,7 @@ class Colegio extends Model
 
     protected $fillable = [
         'nombre',
+        'codigo',
         'tipo',
         'colegio_padre_id',
         'estado',
@@ -38,5 +39,15 @@ class Colegio extends Model
     public function afiliados(): HasMany
     {
         return $this->hasMany(Afiliado::class, 'colegio_id');
+    }
+
+    public function lotesVerificacion(): HasMany
+    {
+        return $this->hasMany(LoteVerificacion::class, 'colegio_id');
+    }
+
+    public function aportes(): HasMany
+    {
+        return $this->hasMany(Aporte::class, 'colegio_id');
     }
 }
