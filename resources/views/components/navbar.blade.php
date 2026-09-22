@@ -142,13 +142,13 @@
         {{-- Informes --}}
         <details
             class="group"
-            {{-- request()->routeIs('informes.*') ? 'open' : '' --}}
+            {{ request()->routeIs('afiliadosReports.*', 'aportesReports.*') ? 'open' : '' }}
         >
             <summary
-                class="{{-- request()->routeIs('aportes.*', 'lotes.*')
+                class="{{request()->routeIs('reports.*', 'afiliadosReports.*', 'aportesReports.*')
                     ? 'bg-[#1a34c9] text-white font-semibold shadow-[0_6px_16px_rgba(26,52,201,0.35)]'
                     : 'text-[#2b2b2b] hover:bg-[#f7f7f9]'
-                --}} flex cursor-pointer list-none items-center gap-3.5 rounded-xl px-4.5 py-3.5 text-[15px] font-medium transition"
+                }} flex cursor-pointer list-none items-center gap-3.5 rounded-xl px-4.5 py-3.5 text-[15px] font-medium transition"
             >
                 <span class="flex h-5 w-5 shrink-0 items-center justify-center text-base">
                     <x-icon name="report" size="35" />
@@ -165,13 +165,13 @@
 
             <div class="mt-1.5 flex flex-col gap-1 pl-11">
 
-                {{-- Ver afiliados --}}
+                {{-- Ver informe de afiliados --}}
                 <a
-                    href={{-- route('aportes.index') --}}
-                    class="{{-- request()->routeIs('aportes.index')
+                    href="{{ route('afiliadosReports.index') }}"
+                    class="{{request()->routeIs('afiliadosReports.index')
                         ? 'font-semibold text-[#1a34c9]'
                         : 'text-[#555] hover:text-[#1a34c9]'
-                    --}} rounded-lg px-3 py-2 text-sm no-underline transition flex gap-1.5"
+                    }} rounded-lg px-3 py-2 text-sm no-underline transition flex gap-1.5"
                 >
                     <span class="flex h-5 w-5 shrink-0 items-center justify-center text-base">
                         <x-icon name="userInforme" size="35"/>
@@ -181,11 +181,11 @@
 
                 {{-- Ver informacion de aportes --}}
                 <a
-                    href="{{-- route('lotes.index') --}}"
-                    class="{{-- request()->routeIs('lotes.index')
+                    href="{{ route('aportesReports.index') }}"
+                    class="{{ request()->routeIs('aportesReports.index')
                         ? 'font-semibold text-[#1a34c9]'
                         : 'text-[#555] hover:text-[#1a34c9]'
-                    --}} rounded-lg px-3 py-2 text-sm no-underline transition flex gap-0.5"
+                    }} rounded-lg px-3 py-2 text-sm no-underline transition flex gap-0.5"
                 >
                     <span class="flex h-5 w-5 shrink-0 items-center justify-center text-base">
                         <x-icon name="userAportes" size="35"/>
@@ -220,15 +220,13 @@
             action="{{ route('logout') }}"
         >
             @csrf
-
             <button
                 type="submit"
-                class="flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-xl border-0 bg-[#f7f7f9] px-[18px] py-[13px] text-[15px] font-semibold text-[#d64545] transition hover:bg-[#fbe4e4]"
+                class="flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-xl border-0 bg-[#f7f7f9] px-4.5 py-3.25 text-[15px] font-semibold text-[#d64545] transition hover:bg-[#fbe4e4]"
             >
                 <span class="flex h-5 w-5 items-center justify-center text-base">
                     <x-icon name="logout" size="25"/>
                 </span>
-
                 Cerrar sesión
             </button>
         </form>

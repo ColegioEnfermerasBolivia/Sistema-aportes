@@ -8,6 +8,7 @@ use App\Http\Controllers\AfiliadoPostgradoController;
 use App\Http\Controllers\LoteVerificacionController;
 use App\Http\Controllers\PagoController;
 use App\Http\Controllers\AportesController;
+use App\Http\Controllers\InformeController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -270,3 +271,56 @@ Route::get('/afiliados/buscar-ci', [AfiliadoController::class, 'buscarPorCi'])
         'rol:SUPER ADMIN,ADMIN,USUARIO',
     ])
     ->name('afiliados.buscar-ci');
+
+//Rutas de Informes Afiliados
+Route::get('reports/afiliados', [InformeController::class,'afiliados'])
+    ->middleware([
+        'auth', 
+        'debe-cambiar-password',
+        'rol:SUPER ADMIN,ADMIN,USUARIO',
+    ])
+    ->name('afiliadosReports.index');
+
+//Rutas de exportacion de informes
+Route::get('/reports/afiliados/excel', [InformeController::class, 'afiliadosExcel'])
+    ->middleware(([
+        'auth',
+        'debe-cambiar-password',
+        'rol:SUPER ADMIN,ADMIN,USUARIO',
+    ]))
+    ->name('afiliadosReports.excel');
+
+Route::get('/reports/afiliados/pdf', [InformeController::class, 'afiliadosPdf'])
+    ->middleware(([
+        'auth',
+        'debe-cambiar-password',
+        'rol:SUPER ADMIN,ADMIN,USUARIO',
+    ]))
+    ->name('afiliadosReports.pdf');
+
+//Rutas de Informes de Aportes
+Route::get('/reports/aportes', [InformeController::class, 'aportes'])
+    ->middleware([
+        'auth',
+        'debe-cambiar-password',
+        'rol:SUPER ADMIN,ADMIN,USUARIO',
+    ])
+    ->name('aportesReports.index');
+
+//Informes Aportes Excel
+Route::get('/reports/aportes/excel',[InformeController::class, 'aportesExcel'])
+    ->middleware([
+        'auth',
+        'debe-cambiar-password',
+        'rol:SUPER ADMIN,ADMIN,USUARIO',
+    ])
+    ->name('aportesReports.excel');
+
+//Informes Aportes PDF
+Route::get('/reports/aportes/pdf',[InformeController::class, 'aportesPdf'])
+    ->middleware([
+        'auth',
+        'debe-cambiar-password',
+        'rol:SUPER ADMIN,ADMIN,USUARIO',
+    ])
+    ->name('aportesReports.pdf');
