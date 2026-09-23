@@ -59,11 +59,7 @@ class AportesExport implements
     ) {
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Consulta normal
-    |--------------------------------------------------------------------------
-    */
+    /*Consulta normal*/
 
     public function query(): Builder
     {
@@ -71,7 +67,6 @@ class AportesExport implements
             ->with([
                 'colegio',
                 'aportes' => function ($query) {
-
                     $query
                         ->where('estado', 'VERIFICADO')
                         ->when(
@@ -91,11 +86,7 @@ class AportesExport implements
             ->orderBy('nombres');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Encabezados de la tabla normal
-    |--------------------------------------------------------------------------
-    */
+    /*Encabezados de la tabla normal */
 
     public function headings(): array
     {
@@ -118,11 +109,7 @@ class AportesExport implements
         ];
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Mapeo de la tabla normal
-    |--------------------------------------------------------------------------
-    */
+    /*Mapeo de la tabla normal*/
 
     public function map($afiliado): array
     {
@@ -153,11 +140,7 @@ class AportesExport implements
         return $fila;
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Estilos de encabezado normal
-    |--------------------------------------------------------------------------
-    */
+    /*Estilos de encabezado normal*/
 
     public function styles(Worksheet $sheet): array
     {
@@ -196,11 +179,7 @@ class AportesExport implements
         ];
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Encabezado institucional
-    |--------------------------------------------------------------------------
-    */
+    /*Encabezado institucional*/
 
     private function generarEncabezadoInstitucional(
         Worksheet $sheet
@@ -208,22 +187,14 @@ class AportesExport implements
 
         $ultimaColumna = self::ULTIMA_COLUMNA;
 
-        /*
-        |--------------------------------------------------------------------------
-        | Espacio para encabezado
-        |--------------------------------------------------------------------------
-        */
+        /*Espacio para encabezado*/
 
         $sheet->insertNewRowBefore(
             1,
             self::FILAS_ENCABEZADO
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Logo
-        |--------------------------------------------------------------------------
-        */
+        /*Logo*/
 
         $logo = new Drawing();
 
@@ -245,11 +216,7 @@ class AportesExport implements
         $logo->setOffsetY(8);
         $logo->setWorksheet($sheet);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Títulos
-        |--------------------------------------------------------------------------
-        */
+        /*Títulos*/
 
         $sheet->setCellValue(
             'A1',
@@ -307,11 +274,7 @@ class AportesExport implements
         $sheet->getRowDimension(2)
             ->setRowHeight(22);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Información del reporte
-        |--------------------------------------------------------------------------
-        */
+        /*Información del reporte*/
 
         $sheet->setCellValue(
             'A4',
@@ -381,11 +344,7 @@ class AportesExport implements
         ]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Excel: CI + Todos los años
-    |--------------------------------------------------------------------------
-    */
+    /*Excel: CI + Todos los años*/
 
     private function generarTodosLosAnios(
         Worksheet $sheet
@@ -393,11 +352,7 @@ class AportesExport implements
 
         $afiliada = $this->afiliada;
 
-        /*
-        |--------------------------------------------------------------------------
-        | Limpiar la tabla generada automáticamente por FromQuery
-        |--------------------------------------------------------------------------
-        */
+        /*Limpiar la tabla generada automáticamente por FromQuery*/
 
         $ultimaFilaInicial =
             $sheet->getHighestRow();
@@ -409,19 +364,11 @@ class AportesExport implements
             );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Encabezado institucional
-        |--------------------------------------------------------------------------
-        */
+        /*Encabezado institucional*/
 
         $this->generarEncabezadoInstitucional($sheet);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Aportes verificados agrupados por gestión
-        |--------------------------------------------------------------------------
-        */
+        /*Aportes verificados agrupados por gestión*/
 
         $aportesPorGestion = $afiliada->aportes
             ->where('estado', 'VERIFICADO')
@@ -431,11 +378,7 @@ class AportesExport implements
             })
             ->sortKeysDesc();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Información de la afiliada
-        |--------------------------------------------------------------------------
-        */
+        /*Información de la afiliada*/
 
         $fila = 8;
 
@@ -510,11 +453,7 @@ class AportesExport implements
 
         $fila += 2;
 
-        /*
-        |--------------------------------------------------------------------------
-        | Si no existen aportes verificados
-        |--------------------------------------------------------------------------
-        */
+        /*Si no existen aportes verificados*/
 
         if ($aportesPorGestion->isEmpty()) {
 
@@ -539,21 +478,13 @@ class AportesExport implements
             return;
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Una tabla por gestión
-        |--------------------------------------------------------------------------
-        */
+        /*Una tabla por gestión*/
 
         foreach (
             $aportesPorGestion as $year => $aportes
         ) {
 
-            /*
-            |--------------------------------------------------------------------------
-            | Título de la gestión
-            |--------------------------------------------------------------------------
-            */
+            /*Título de la gestión*/
 
             $sheet->mergeCells(
                 "A{$fila}:P{$fila}"
@@ -584,11 +515,7 @@ class AportesExport implements
 
             $fila++;
 
-            /*
-            |--------------------------------------------------------------------------
-            | Encabezados
-            |--------------------------------------------------------------------------
-            */
+            /*Encabezados*/
 
             $encabezados = [
                 'N.º',
@@ -616,11 +543,7 @@ class AportesExport implements
 
             $filaEncabezado = $fila;
 
-            /*
-            |--------------------------------------------------------------------------
-            | Estilo encabezado
-            |--------------------------------------------------------------------------
-            */
+            /*Estilo encabezado*/
 
             $sheet->getStyle(
                 "A{$filaEncabezado}:P{$filaEncabezado}"
@@ -658,11 +581,7 @@ class AportesExport implements
 
             $fila++;
 
-            /*
-            |--------------------------------------------------------------------------
-            | Datos
-            |--------------------------------------------------------------------------
-            */
+            /*Datos*/
 
             $filaDatos = [
                 1,
@@ -693,11 +612,7 @@ class AportesExport implements
                 "A{$fila}"
             );
 
-            /*
-            |--------------------------------------------------------------------------
-            | Estilo datos
-            |--------------------------------------------------------------------------
-            */
+            /*Estilo datos*/
 
             $sheet->getStyle(
                 "A{$fila}:P{$fila}"
@@ -750,11 +665,7 @@ class AportesExport implements
             $sheet->getRowDimension($fila)
                 ->setRowHeight(20);
 
-            /*
-            |--------------------------------------------------------------------------
-            | Espacio antes de la siguiente gestión
-            |--------------------------------------------------------------------------
-            */
+            /*Espacio antes de la siguiente gestión*/
 
             $fila += 3;
         }
@@ -764,11 +675,7 @@ class AportesExport implements
         );
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Configuración de página para Todos los años
-    |--------------------------------------------------------------------------
-    */
+    /*Configuración de página para Todos los años*/
 
     private function configurarPaginaTodosLosAnios(
         Worksheet $sheet
@@ -777,11 +684,7 @@ class AportesExport implements
         $ultimaColumna = self::ULTIMA_COLUMNA;
         $ultimaFila = $sheet->getHighestRow();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Anchos
-        |--------------------------------------------------------------------------
-        */
+        /*Anchos*/
 
         $sheet->getColumnDimension('A')
             ->setWidth(8);
@@ -797,11 +700,7 @@ class AportesExport implements
                 ->setWidth(12);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Página
-        |--------------------------------------------------------------------------
-        */
+        /*Página*/
 
         $pageSetup = $sheet->getPageSetup();
 
@@ -828,31 +727,19 @@ class AportesExport implements
             ->setHeader(0.2)
             ->setFooter(0.2);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Área de impresión
-        |--------------------------------------------------------------------------
-        */
+        /*Área de impresión*/
 
         $sheet->getPageSetup()
             ->setPrintArea(
                 "A1:{$ultimaColumna}{$ultimaFila}"
             );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Congelar encabezado institucional
-        |--------------------------------------------------------------------------
-        */
+        /*Congelar encabezado institucional*/
 
         $sheet->freezePane('A9');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Anchos de columna
-    |--------------------------------------------------------------------------
-    */
+    /*Anchos de columna*/
 
     public function columnWidths(): array
     {
@@ -877,11 +764,7 @@ class AportesExport implements
         ];
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Eventos
-    |--------------------------------------------------------------------------
-    */
+    /*Eventos*/
 
     public function registerEvents(): array
     {
@@ -912,30 +795,18 @@ class AportesExport implements
                     return;
                 }
 
-                /*
-                |--------------------------------------------------------------------------
-                | INFORME NORMAL
-                |--------------------------------------------------------------------------
-                */
+                /*INFORME NORMAL*/
 
                 $ultimaColumna =
                     self::ULTIMA_COLUMNA;
 
-                /*
-                |--------------------------------------------------------------------------
-                | Encabezado institucional
-                |--------------------------------------------------------------------------
-                */
+                /*Encabezado institucional*/
 
                 $this->generarEncabezadoInstitucional(
                     $sheet
                 );
 
-                /*
-                |--------------------------------------------------------------------------
-                | Autofiltro
-                |--------------------------------------------------------------------------
-                */
+                /*Autofiltro*/
 
                 $filaTitulos =
                     self::FILA_TITULOS_TABLA;
@@ -948,11 +819,7 @@ class AportesExport implements
                     $filaTitulos
                 )->setRowHeight(22);
 
-                /*
-                |--------------------------------------------------------------------------
-                | Bordes y bandas
-                |--------------------------------------------------------------------------
-                */
+                /*Bordes y bandas*/
 
                 $primeraFilaDatos =
                     $filaTitulos + 1;
@@ -990,11 +857,7 @@ class AportesExport implements
                         ],
                     ]);
 
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Bandas alternas
-                    |--------------------------------------------------------------------------
-                    */
+                    /*Bandas alternas*/
 
                     for (
                         $fila = $primeraFilaDatos;
@@ -1028,11 +891,7 @@ class AportesExport implements
                         )->setRowHeight(18);
                     }
 
-                    /*
-                    |--------------------------------------------------------------------------
-                    | N.º
-                    |--------------------------------------------------------------------------
-                    */
+                    /*N.º*/
 
                     $sheet->getStyle(
                         "A{$primeraFilaDatos}:A{$ultimaFila}"
@@ -1041,11 +900,7 @@ class AportesExport implements
                             Alignment::HORIZONTAL_CENTER
                         );
 
-                    /*
-                    |--------------------------------------------------------------------------
-                    | CI
-                    |--------------------------------------------------------------------------
-                    */
+                    /*CI*/
 
                     $sheet->getStyle(
                         "C{$primeraFilaDatos}:C{$ultimaFila}"
@@ -1059,11 +914,7 @@ class AportesExport implements
                     )->getNumberFormat()
                         ->setFormatCode('@');
 
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Montos
-                    |--------------------------------------------------------------------------
-                    */
+                    /*Montos*/
 
                     $sheet->getStyle(
                         "D{$primeraFilaDatos}:P{$ultimaFila}"
@@ -1073,11 +924,7 @@ class AportesExport implements
                         );
                 }
 
-                /*
-                |--------------------------------------------------------------------------
-                | Configuración de página
-                |--------------------------------------------------------------------------
-                */
+                /*Configuración de página*/
 
                 $pageSetup =
                     $sheet->getPageSetup();
@@ -1118,11 +965,7 @@ class AportesExport implements
         ];
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Freeze pane
-    |--------------------------------------------------------------------------
-    */
+    /*Freeze pane*/
 
     public function freezePane(): string
     {

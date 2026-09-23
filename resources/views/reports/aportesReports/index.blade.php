@@ -108,17 +108,19 @@
             <div class="flex items-end gap-2">
                 <button
                     type="submit"
-                    class="rounded-lg bg-[#1a34c9] px-4 py-2 text-sm font-medium
+                    class="rounded-lg bg-[#1a34c9] px-4 py-2 text-sm font-medium inline-flex gap-1.5
                            text-white transition hover:bg-blue-800 hover:cursor-pointer"
-                >
+                >   
+                    <x-icon name="search" size="20"/>
                     Buscar
                 </button>
                 <a
                     href="{{ route('aportesReports.index') }}"
-                    class="rounded-lg border border-gray-300 bg-white px-4 py-2
+                    class="rounded-lg border border-gray-300 bg-white px-4 py-2 inline-flex gap-1.5
                            text-sm font-medium text-gray-700 transition
                            hover:bg-gray-50 hover:cursor-pointer"
                 >
+                    <x-icon name="eraser" size="20"/>
                     Limpiar
                 </a>
             </div>
@@ -126,20 +128,22 @@
     </div>
 
     {{-- EXPORTACIONES --}}
-    <div class="flex flex-wrap justify-end gap-2">
+    <div class="flex flex-wrap justify-end gap-2 px-4 py-2">
         <a
             href="{{ route('aportesReports.excel', request()->query()) }}"
             class="inline-flex items-center rounded-lg bg-green-600 px-4 py-2
                    text-sm font-medium text-white transition hover:bg-green-700"
         >
-            Exportar Excel
+            <x-icon name="download" class="text-white" size="20"/>
+            Excel
         </a>
         <a
             href="{{ route('aportesReports.pdf', request()->query()) }}"
             class="inline-flex items-center rounded-lg bg-red-600 px-4 py-2
                    text-sm font-medium text-white transition hover:bg-red-700"
         >
-            Exportar PDF
+            <x-icon name="download" class="text-white" size="20"/>
+            PDF
         </a>
     </div>
 

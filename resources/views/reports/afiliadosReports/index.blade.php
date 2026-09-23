@@ -227,11 +227,7 @@
                     href="{{ route('afiliadosReports.excel', request()->query()) }}"
                     class="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700"
                 >
-                    <x-icon
-                        name="download"
-                        class="text-white"
-                        size="20"
-                    />
+                    <x-icon name="download" class="text-white" size="20"/>
                     Excel
                 </a>
 
@@ -240,11 +236,7 @@
                     href="{{ route('afiliadosReports.pdf', request()->query()) }}"
                     class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700"
                 >
-                    <x-icon
-                        name="download"
-                        class="text-white"
-                        size="20"
-                    />
+                    <x-icon name="download" class="text-white" size="20"/>
                     PDF
                 </a>
             </div>

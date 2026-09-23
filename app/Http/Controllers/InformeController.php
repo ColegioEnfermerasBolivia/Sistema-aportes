@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exports\AfiliadosExport;
 use App\Exports\AportesExport;
+use App\PDF\AportesPdf;
 use App\Models\Afiliado;
 use App\Models\Postgrado;
 use App\Models\Aporte;
@@ -214,9 +215,7 @@ class InformeController extends Controller
         );
     }
 
-    /**
-     * Exportar informe de afiliadas a PDF.
-     */
+    /*Exportar informe de afiliadas a PDF.*/
    public function afiliadosPdf(Request $request)
     {
         Gate::authorize('viewAny', Afiliado::class);
@@ -456,17 +455,7 @@ class InformeController extends Controller
             $colegio = $usuario->colegio;
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Si se busca por CI
-        |--------------------------------------------------------------------------
-        |
-        | Necesitamos obtener la afiliada para poder construir:
-        |
-        | CI + año       -> una tabla
-        | CI + todos     -> una tabla por cada año
-        |
-        */
+        /*Si se busca por CI*/
 
         $afiliada = null;
 
@@ -475,11 +464,7 @@ class InformeController extends Controller
                 ->first();
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Información del reporte
-        |--------------------------------------------------------------------------
-        */
+        /*Información del reporte*/
 
         $informacionReporte = [
             'usuario' => $usuario->username,
@@ -492,11 +477,7 @@ class InformeController extends Controller
                 : 'Sin búsqueda',
         ];
 
-        /*
-        |--------------------------------------------------------------------------
-        | Exportar
-        |--------------------------------------------------------------------------
-        */
+        /*Exportar*/
 
         return Excel::download(
             new AportesExport(
@@ -506,6 +487,99 @@ class InformeController extends Controller
                 $informacionReporte
             ),
             'informe-aportes.xlsx'
+        );
+    }
+
+    /* Aportes en PDF */
+    public function aportesPdf(Request $request)
+    {
+        Gate::authorize('viewAny', Afiliado::class);
+
+        $query = $this->consultaAportes($request);
+
+        $usuario = auth()->user();
+
+        $year = $request->filled('year')
+            ? (int) $request->input('year')
+            : null;
+
+        $colegio = null;
+
+        if ($request->filled('colegio_id')) {
+            $colegio = Colegio::find(
+                $request->input('colegio_id')
+            );
+        }
+
+        if (
+            !$colegio &&
+            $usuario->rol?->nombre === 'USUARIO'
+        ) {
+            $colegio = $usuario->colegio;
+        }
+
+        /*Afiliada buscada por CI*/
+
+        $afiliada = null;
+
+        if ($request->filled('buscar')) {
+            $afiliada = (clone $query)->first();
+        }
+
+        /*Año para el informe general*/
+
+        $yearParaReporte = $year ?? now()->year;
+
+        /*Información del reporte*/
+
+        $informacionReporte = [
+            'usuario' => $usuario->username,
+
+            'fecha' => now()->format(
+                'd/m/Y H:i'
+            ),
+
+            'year' => $year ?? 'Todos los años',
+
+            'colegio' => $colegio?->nombre
+                ?? 'Todos los colegios',
+
+            'buscar' => $request->filled('buscar')
+                ? $request->input('buscar')
+                : 'Sin búsqueda',
+        ];
+
+        /*Obtener afiliados*/
+
+        $afiliados = $query->get();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Si es informe general, necesitamos solamente
+        | los aportes de la gestión seleccionada.
+        |--------------------------------------------------------------------------
+        */
+
+        if (!$afiliada) {
+
+            $afiliados->each(function ($afiliado) use ($yearParaReporte) {
+
+                $afiliado->aportesDelYear =
+                    $afiliado->aportes
+                        ->where('year', $yearParaReporte)
+                        ->keyBy('mes');
+            });
+        }
+
+        /*Generar PDF*/
+
+        return AportesPdf::generar(
+            $afiliados,
+            $year,
+            $informacionReporte,
+            $afiliada
+        )->download(
+            'informe-aportes.pdf'
         );
     }
 }
