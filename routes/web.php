@@ -9,6 +9,7 @@ use App\Http\Controllers\LoteVerificacionController;
 use App\Http\Controllers\PagoController;
 use App\Http\Controllers\AportesController;
 use App\Http\Controllers\InformeController;
+use App\Http\Controllers\CargaDatosController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -324,3 +325,12 @@ Route::get('/reports/aportes/pdf',[InformeController::class, 'aportesPdf'])
         'rol:SUPER ADMIN,ADMIN,USUARIO',
     ])
     ->name('aportesReports.pdf');
+
+//CARGA DE DATOS
+Route::get('/carga-datos',[CargaDatosController::class, 'index'])
+    ->middleware([
+        'auth',
+        'debe-cambiar-password',
+        'rol:SUPER ADMIN',
+    ])
+    ->name('carga-datos.index');
