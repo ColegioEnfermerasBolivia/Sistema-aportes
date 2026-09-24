@@ -334,3 +334,20 @@ Route::get('/carga-datos',[CargaDatosController::class, 'index'])
         'rol:SUPER ADMIN',
     ])
     ->name('carga-datos.index');
+
+
+Route::post('/carga-datos/afiliados/validar', [CargaDatosController::class, 'validarAfiliados'])
+    ->middleware([
+            'auth',
+            'debe-cambiar-password',
+            'rol:SUPER ADMIN',
+        ])
+    ->name('carga-datos.afiliados.validar');
+
+Route::post('/carga-datos/afiliados/confirmar', [CargaDatosController::class, 'confirmarAfiliados'])
+    ->middleware([
+            'auth',
+            'debe-cambiar-password',
+            'rol:SUPER ADMIN',
+        ])
+    ->name('carga-datos.afiliados.confirmar');
