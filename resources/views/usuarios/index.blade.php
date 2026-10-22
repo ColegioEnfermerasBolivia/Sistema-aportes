@@ -105,10 +105,10 @@
 
     {{-- TABLA DE USUARIOS --}}
     <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-        <div class="overflow-x-auto">
+        <div class="max-h-190 overflow-y-auto">
             <table class="min-w-full">
                 {{-- CABECERA --}}
-                <thead class="border-b border-gray-200 bg-[#f1f3f8]">
+                <thead class="sticky top-0 border-b border-gray-200 bg-[#f1f3f8]">
                     <tr>
                         <th
                             class="px-6 py-5 text-left text-sm font-semibold text-gray-800"
@@ -146,7 +146,7 @@
                 {{-- CUERPO --}}
                 <tbody class="divide-y divide-gray-100">
                     @forelse ($usuarios as $usuario)
-                        <tr class="transition hover:bg-gray-50">
+                        <tr class="transition  hover:bg-gray-200">
                             {{-- USUARIO --}}
                             <td class="px-6 py-5">
                                 <div class="flex items-center gap-3">

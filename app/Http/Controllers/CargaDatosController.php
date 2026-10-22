@@ -40,24 +40,15 @@ class CargaDatosController extends Controller
 
         foreach ($formatos as $formato) {
 
-            $fechaValida = \DateTime::createFromFormat(
-                $formato,
-                $fecha
-            );
-
+            $fechaValida = \DateTime::createFromFormat($formato, $fecha);
             $errores = \DateTime::getLastErrors();
 
-            if (
-                $fechaValida !== false &&
-                (
-                    $errores === false ||
-                    (
-                        $errores['warning_count'] === 0 &&
-                        $errores['error_count'] === 0
-                    )
-                ) &&
-                $fechaValida->format($formato) === $fecha
-            ) {
+            $sinErrores = $errores === false || (
+                $errores['warning_count'] === 0 &&
+                $errores['error_count'] === 0
+            );
+
+            if ($fechaValida !== false && $sinErrores) {
                 return $fechaValida->format('Y-m-d');
             }
         }
@@ -156,7 +147,7 @@ class CargaDatosController extends Controller
 
     private function leerEncabezadosCsv($handle): array
     {
-        $encabezados = fgetcsv($handle);
+        $encabezados = fgetcsv($handle, 0, ';');
 
         if ($encabezados === false) {
             throw new \RuntimeException(
@@ -171,10 +162,12 @@ class CargaDatosController extends Controller
             $encabezados[0]
         );
 
-        return array_map(
-            fn ($encabezado) => trim($encabezado),
-            $encabezados
-        );
+        // Normalizar encabezados
+        $encabezados = array_map(function ($encabezado) {
+            return mb_strtolower(trim($encabezado));
+        }, $encabezados);
+
+        return $encabezados;
     }
 
     private function validarEncabezados(array $encabezados): ?string
@@ -232,7 +225,7 @@ class CargaDatosController extends Controller
 
         $numeroFila = 1;
 
-        while (($datos = fgetcsv($handle)) !== false) {
+        while (($datos = fgetcsv($handle, 0, ';')) !== false) {
 
             $numeroFila++;
 
@@ -667,7 +660,8 @@ class CargaDatosController extends Controller
                 ->route('carga-datos.index')
                 ->withErrors([
                     'archivo_afiliadas' =>
-                        'Ocurrió un error durante la carga de las afiliadas.'
+                        'Ocurrió un error durante la carga: '
+                        . $e->getMessage()
                 ]);
         }
     }

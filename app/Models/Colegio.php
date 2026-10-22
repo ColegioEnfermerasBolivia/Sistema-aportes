@@ -50,4 +50,26 @@ class Colegio extends Model
     {
         return $this->hasMany(Aporte::class, 'colegio_id');
     }
+
+    /**
+ * Transferencias en las que este colegio es el origen.
+ */
+    public function transferenciasOrigen(): HasMany
+    {
+        return $this->hasMany(
+            TransferenciaAfiliado::class,
+            'colegio_id_origen'
+        );
+    }
+
+    /**
+     * Transferencias en las que este colegio es el destino.
+     */
+    public function transferenciasDestino(): HasMany
+    {
+        return $this->hasMany(
+            TransferenciaAfiliado::class,
+            'colegio_id_destino'
+        );
+    }
 }

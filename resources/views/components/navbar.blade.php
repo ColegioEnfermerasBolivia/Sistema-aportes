@@ -1,9 +1,13 @@
-<aside class="flex h-screen w-[280px] shrink-0 flex-col border-r border-gray-200 bg-white px-5 py-[30px] font-sans">
+<aside class="flex h-screen w-70 shrink-0 flex-col border-r border-gray-200 bg-white px-5 py-7.5 font-sans">
 
     {{-- HEADER --}}
-    <div class="mb-[30px] text-center">
-        <div class="mx-auto mb-3.5 flex h-16 w-16 items-center justify-center rounded-full border-[3px] border-[#1a34c9] text-[26px] text-[#1a34c9]">
-            ⚕
+    <div class="mb-7.5 text-center">
+        <div class="mx-auto mb-3.5 flex h-26 w-26 items-center justify-center text-[#1a34c9]">
+            <img
+                        src="{{ asset('images/logo.png') }}"
+                        alt="CNEB"
+                        class="mx-auto mb-3 h-25 w-25"
+                    >
         </div>
         <h2 class="m-0 text-xl font-extrabold leading-tight text-[#0d1b6e]">
             Colegio de Enfermeras
@@ -23,7 +27,7 @@
             class="{{ request()->routeIs('dashboard')
                 ? 'bg-[#1a34c9] text-white font-semibold shadow-[0_6px_16px_rgba(26,52,201,0.35)]'
                 : 'text-[#2b2b2b] hover:bg-[#f7f7f9]'
-            }} flex items-center gap-3.5 rounded-xl px-[18px] py-3.5 text-[15px] font-medium no-underline transition"
+            }} flex items-center gap-3.5 rounded-xl px-4.5 py-3.5 text-[15px] font-medium no-underline transition"
         >
             <span class="flex h-5 w-5 shrink-0 items-center justify-center text-base">
                 <x-icon name="dashboard" size="35"/>
@@ -42,7 +46,7 @@
                 class="{{ request()->routeIs('usuarios.*')
                     ? 'bg-[#1a34c9] text-white font-semibold shadow-[0_6px_16px_rgba(26,52,201,0.35)]'
                     : 'text-[#2b2b2b] hover:bg-[#f7f7f9]'
-                }} flex items-center gap-2.5 rounded-xl px-[18px] py-3.5 text-[15px] font-medium no-underline transition"
+                }} flex items-center gap-2.5 rounded-xl px-4.5 py-3.5 text-[15px] font-medium no-underline transition"
             >
                 <span class="flex h-5 w-5 shrink-0 items-center justify-center text-base">
                     <x-icon name="users" size="35" />
@@ -194,6 +198,25 @@
                 </a>
             </div>
         </details>
+        {{-- Carga de aportes --}}
+        @if (auth()->user()->rol->nombre == 'SUPER ADMIN')
+
+            <a
+                href="{{ route('carga-datos.index') }}"
+                class="{{ request()->routeIs('carga-datos.*')
+                    ? 'bg-[#1a34c9] text-white font-semibold shadow-[0_6px_16px_rgba(26,52,201,0.35)]'
+                    : 'text-[#2b2b2b] hover:bg-[#f7f7f9]'
+                }} flex items-center gap-2.5 rounded-xl px-4.5 py-3.5 text-[15px] font-medium no-underline transition"
+            >
+                <span class="flex h-5 w-5 shrink-0 items-center justify-center text-base">
+                    <x-icon name="upload" size="35" />
+                </span>
+
+                <span class="whitespace-nowrap">
+                    Cargar Datos
+                </span>
+            </a>
+        @endif
     </nav>
 
     {{-- FOOTER --}}

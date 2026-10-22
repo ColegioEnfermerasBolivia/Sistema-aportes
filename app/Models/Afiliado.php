@@ -59,4 +59,15 @@ class Afiliado extends Model
         return $this->hasMany(Aporte::class, 'afiliado_id');
     }
 
+    /**
+     * Historial de transferencias de la afiliada.
+     */
+    public function transferencias(): HasMany
+    {
+        return $this->hasMany(
+            TransferenciaAfiliado::class,
+            'afiliado_id'
+        )->orderBy('fecha_transferencia');
+    }
+
 }

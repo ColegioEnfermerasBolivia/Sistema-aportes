@@ -213,7 +213,7 @@
         </div>
     </div>
 
-    {{-- COLEGIO --}}
+{{-- COLEGIO --}}
     @if (
         auth()->user()->rol?->nombre === 'SUPER ADMIN'
         ||
@@ -226,21 +226,25 @@
             <h3 class="mb-5 text-base font-semibold text-[#0d1b6e]">
                 Colegio
             </h3>
+
             <label
                 for="{{ $esEdicion ? 'editar_colegio' : 'colegio_id' }}"
                 class="mb-2 block text-sm font-medium text-gray-700"
             >
                 Colegio
             </label>
+
             <select
-                id="{{ $esEdicion ? 'editar_colegio' : 'colegio_id' }}"
+                id="editar_colegio"
                 name="colegio_id"
+                data-colegio-original="{{ $esEdicion ? $afiliado->colegio_id : '' }}"
                 required
                 class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-3 text-sm text-gray-900 outline-none transition focus:border-[#1a34c9] focus:ring-2 focus:ring-[#1a34c9]/10"
             >
                 <option value="">
                     Seleccione un colegio
                 </option>
+
                 @foreach ($colegios as $colegio)
                     <option
                         value="{{ $colegio->id }}"
@@ -257,13 +261,48 @@
                     </option>
                 @endforeach
             </select>
+
             @error('colegio_id')
                 <p class="mt-1.5 text-xs text-red-600">
                     {{ $message }}
                 </p>
             @enderror
+
+            {{-- FECHA DE TRANSFERENCIA --}}
+            @if ($esEdicion && auth()->user()->rol?->nombre === 'SUPER ADMIN')
+                <div
+                    id="contenedor_fecha_transferencia"
+                    class="mt-5 hidden"
+                >
+                    <label
+                        for="fecha_transferencia"
+                        class="mb-2 block text-sm font-medium text-gray-700"
+                    >
+                        Fecha de transferencia
+                    </label>
+
+                    <input
+                        type="date"
+                        id="fecha_transferencia"
+                        name="fecha_transferencia"
+                        class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-3 text-sm text-gray-900 outline-none transition focus:border-[#1a34c9] focus:ring-2 focus:ring-[#1a34c9]/10"
+                    >
+
+                    <p class="mt-1.5 text-xs text-gray-500">
+                        Indique la fecha en que se realizó efectivamente
+                        la transferencia de la afiliada al nuevo colegio.
+                    </p>
+
+                    @error('fecha_transferencia')
+                        <p class="mt-1.5 text-xs text-red-600">
+                            {{ $message }}
+                        </p>
+                    @enderror
+                </div>
+            @endif
         </div>
     @endif
+
 
     {{-- FECHA DE AFILIACIÓN --}}
     <div>

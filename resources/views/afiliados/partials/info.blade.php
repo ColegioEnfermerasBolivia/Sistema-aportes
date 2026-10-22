@@ -797,7 +797,8 @@
                                        px-5 py-2.5
                                        text-sm font-semibold
                                        text-white
-                                       hover:bg-[#1429a3]"
+                                       hover:bg-[#1429a3]
+                                       hover:cursor-pointer"
                             >
                                 <x-icon name="register" class="text-blue-700" size="30"/>
 
@@ -1102,7 +1103,8 @@
                                        px-5 py-2.5
                                        text-sm font-semibold
                                        text-gray-700
-                                       hover:bg-gray-50"
+                                       hover:bg-gray-50
+                                       hover:cursor-pointer"
                             >
                                 <x-icon name="cancel" class="text-gray-700" size="20"/>
                                 Cancelar
@@ -1115,7 +1117,8 @@
                                        px-5 py-2.5
                                        text-sm font-semibold
                                        text-white
-                                       hover:bg-[#1429a3]"
+                                       hover:bg-[#1429a3]
+                                       hover:cursor-pointer"
                             >
 
                                 <span

@@ -1,5 +1,6 @@
 @props([
     'titulo',
+    'tituloAlpine' => null,
     'abiertoInicial' => false,
     'ancho' => 'max-w-2xl',
 ])
@@ -56,7 +57,11 @@
                     <h2
                         class="m-0 text-2xl font-semibold tracking-tight text-gray-900"
                     >
-                        {{ $titulo }}
+                        @if ($tituloAlpine)
+                            <span x-text="{{ $tituloAlpine }}">{{ $titulo }}</span>
+                        @else
+                            {{ $titulo }}
+                        @endif
                     </h2>
                     <button
                         type="button"

@@ -8,8 +8,10 @@ use App\Models\Postgrado;
 use App\Models\Aporte;
 use App\Services\AuditoriaService;
 use App\Models\GradoAcademico;
+use App\Models\TransferenciaAfiliado;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class AfiliadoController extends Controller
@@ -25,14 +27,7 @@ class AfiliadoController extends Controller
 
         $usuario = auth()->user();
 
-        $query = Afiliado::with([
-            'colegio',
-            'informacionesLaborales' => function ($query) {
-                $query->orderByDesc('fecha_ingreso_trabajo');
-            },
-            'afiliadosPostgrados.postgrado',
-            'afiliadosPostgrados.gradoAcademico',
-        ]);
+        $query = Afiliado::with('colegio');
 
         $postgrados = Postgrado::where('estado', 'ACTIVO')
             ->orderBy('nombre')
@@ -113,7 +108,8 @@ class AfiliadoController extends Controller
         $afiliados = $query
             ->orderBy('apellidos')
             ->orderBy('nombres')
-            ->get();
+            ->paginate(50)
+            ->withQueryString();
 
         $colegios = collect();
 
@@ -286,8 +282,8 @@ class AfiliadoController extends Controller
         ];
 
         $usuario = auth()->user();
-        $datos = $request->validate([
 
+        $datos = $request->validate([
             'registro_departamental' => [
                 'required',
                 'string',
@@ -342,31 +338,129 @@ class AfiliadoController extends Controller
             ],
         ]);
 
+        /*
+        * ---------------------------------------------------------
+        * DETERMINAR EL COLEGIO
+        * ---------------------------------------------------------
+        *
+        * Solamente SUPER ADMIN puede cambiar el colegio.
+        */
         if ($usuario->rol?->nombre === 'SUPER ADMIN') {
-                $request->validate([
-                    'colegio_id' => [
-                        'required',
-                        Rule::exists('colegios', 'id')
-                            ->where(function ($query) {
-                                $query->where(
-                                    'estado',
-                                    'ACTIVO'
-                                );
-                            }),
-                    ],
+
+            $request->validate([
+                'colegio_id' => [
+                    'required',
+                    Rule::exists('colegios', 'id')
+                        ->where(function ($query) {
+                            $query->where(
+                                'estado',
+                                'ACTIVO'
+                            );
+                        }),
+                ],
+
+                /*
+                * La fecha solamente será necesaria cuando
+                * realmente se produzca una transferencia.
+                */
+                'fecha_transferencia' => [
+                    'nullable',
+                    'date',
+                ],
+            ]);
+
+            $datos['colegio_id'] = $request->input(
+                'colegio_id'
+            );
+
+        } else {
+
+            /*
+            * Los demás usuarios no pueden cambiar
+            * el colegio de la afiliada.
+            */
+            $datos['colegio_id'] = $afiliado->colegio_id;
+        }
+
+        /*
+        * El estado no se modifica desde este formulario.
+        */
+        $datos['estado'] = $afiliado->estado;
+
+        /*
+        * ---------------------------------------------------------
+        * DETERMINAR SI EXISTE UNA TRANSFERENCIA
+        * ---------------------------------------------------------
+        */
+        $huboTransferencia =
+            (int) $afiliado->colegio_id
+            !== (int) $datos['colegio_id'];
+        
+        if ($huboTransferencia) {
+            $request->validate([
+                'fecha_transferencia' => [
+                    'required',
+                    'date',
+                    'before_or_equal:today',
+                ],
+            ]);
+        }
+
+        /*
+        * Guardamos los datos de transferencia antes de
+        * modificar la afiliada.
+        */
+        $transferencia = null;
+
+        /*
+        * ---------------------------------------------------------
+        * ACTUALIZACIÓN ATÓMICA
+        * ---------------------------------------------------------
+        *
+        * La actualización de la afiliada y el registro de la
+        * transferencia deben realizarse juntos.
+        */
+        DB::transaction(function () use (
+            $afiliado,
+            $datos,
+            $huboTransferencia,
+            $request,
+            &$transferencia
+        ) {
+
+            /*
+            * Si cambió el colegio, primero guardamos
+            * los datos necesarios para el historial.
+            */
+            if ($huboTransferencia) {
+                $transferencia = TransferenciaAfiliado::create([
+                    'afiliado_id' =>
+                        $afiliado->id,
+
+                    'colegio_id_origen' =>
+                        $afiliado->colegio_id,
+
+                    'colegio_id_destino' =>
+                        $datos['colegio_id'],
+
+                    'fecha_transferencia' =>
+                        $request->input(
+                            'fecha_transferencia'
+                        ) ?? now()->toDateString(),
                 ]);
-
-                $datos['colegio_id'] = $request->input(
-                    'colegio_id'
-                );
-
-            } else {
-                $datos['colegio_id'] = $afiliado->colegio_id;
             }
 
-        $datos['estado'] = $afiliado->estado;
-        $afiliado->update($datos);
+            /*
+            * Finalmente actualizamos la afiliada.
+            */
+            $afiliado->update($datos);
+        });
 
+        /*
+        * ---------------------------------------------------------
+        * DATOS NUEVOS
+        * ---------------------------------------------------------
+        */
         $datosNuevos = [
             'registro_departamental' => $afiliado->registro_departamental,
             'matricula_profesional' => $afiliado->matricula_profesional,
@@ -379,7 +473,13 @@ class AfiliadoController extends Controller
             'estado' => $afiliado->estado,
         ];
 
+        /*
+        * ---------------------------------------------------------
+        * AUDITORÍA DEL AFILIADO
+        * ---------------------------------------------------------
+        */
         if ($datosAnteriores !== $datosNuevos) {
+
             $this->auditoria->registrar(
                 auth()->id(),
                 'ACTUALIZAR',
@@ -390,11 +490,46 @@ class AfiliadoController extends Controller
             );
         }
 
+        /*
+        * ---------------------------------------------------------
+        * AUDITORÍA DE LA TRANSFERENCIA
+        * ---------------------------------------------------------
+        *
+        * La transferencia es un hecho independiente de la
+        * actualización general de la afiliada, por lo que también
+        * dejamos registrada su creación.
+        */
+        if ($transferencia !== null) {
+
+            $this->auditoria->registrar(
+                auth()->id(),
+                'CREAR',
+                'transferencias_afiliados',
+                $transferencia->id,
+                null,
+                [
+                    'afiliado_id' =>
+                        $transferencia->afiliado_id,
+
+                    'colegio_id_origen' =>
+                        $transferencia->colegio_id_origen,
+
+                    'colegio_id_destino' =>
+                        $transferencia->colegio_id_destino,
+
+                    'fecha_transferencia' =>
+                        $transferencia->fecha_transferencia,
+                ]
+            );
+        }
+
         return redirect()
             ->route('afiliados.index')
             ->with(
                 'success',
-                'Afiliado actualizado correctamente.'
+                $huboTransferencia
+                    ? 'Afiliado actualizado y transferencia registrada correctamente.'
+                    : 'Afiliado actualizado correctamente.'
             );
     }
 
@@ -496,6 +631,50 @@ class AfiliadoController extends Controller
                     'year' => $ultimoAporte->year,
                 ]
                 : null,
+        ]);
+    }
+
+    public function detalle(Afiliado $afiliado)
+    {
+        Gate::authorize('viewLaboral', $afiliado);
+
+        $afiliado->load([
+            'colegio',
+            'informacionesLaborales' => function ($query) {
+                $query->orderByDesc('fecha_ingreso_trabajo');
+            },
+            'afiliadosPostgrados.postgrado',
+            'afiliadosPostgrados.gradoAcademico',
+        ]);
+
+        $postgrados = Postgrado::where('estado', 'ACTIVO')
+            ->orderBy('nombre')
+            ->get();
+
+        $gradosAcademicos = GradoAcademico::where('estado', 'ACTIVO')
+            ->orderBy('nombre')
+            ->get();
+
+        return view(
+            'afiliados.partials.info',
+            compact('afiliado', 'postgrados', 'gradosAcademicos')
+        );
+    }
+
+    public function formularioEdicion(Afiliado $afiliado)
+    {
+        Gate::authorize('update', $afiliado);
+
+        $colegios = auth()->user()->rol?->nombre === 'SUPER ADMIN'
+            ? Colegio::where('estado', 'ACTIVO')
+                ->orderBy('nombre')
+                ->get()
+            : collect();
+
+        return view('afiliados.partials.form', [
+            'modo' => 'editar',
+            'afiliado' => $afiliado,
+            'colegios' => $colegios,
         ]);
     }
 }

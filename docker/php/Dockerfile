@@ -17,6 +17,10 @@ RUN apt-get update \
         pdo_mysql \
         zip \
         gd \
+        opcache \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+COPY docker/php/uploads.ini /usr/local/etc/php/conf.d/uploads.ini
+COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini

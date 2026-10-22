@@ -11,15 +11,21 @@
     <div class="flex min-h-screen">
 
         {{-- Columna izquierda: imagen --}}
-        <div class="relative hidden w-1/2 lg:block">
+        <div class="relative overflow-hidden w-1/2 lg:block">
             <img
                 src="{{ asset('images/enfermera.webp') }}"
                 alt="Sistema de Aportes"
-                class="h-full w-full object-cover"
+                class="absolute inset-0 h-full w-full object-cover"
             >
 
             {{-- Overlay para oscurecer un poco la imagen --}}
-            <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-black/0 to-black/0"></div>
+            <div 
+                class="absolute inset-0 
+                    bg-gradient-to-r 
+                    from-white from-0% 
+                    via-white/60 via-30% 
+                    to-transparent to-70%"
+            ></div>
 
             {{-- Tarjeta de bienvenida --}}
             <div class="absolute bottom-10 left-10 right-10 rounded-2xl border-l-4 border-blue-800 bg-white/90 p-6 backdrop-blur-sm">
@@ -49,7 +55,7 @@
                         alt="CNEB"
                         class="mx-auto mb-3 h-20 w-20"
                     >
-                    <h1 class="text-2xl font-extrabold text-blue-900">ColEnf Bolivia</h1>
+                    <h1 class="text-2xl font-extrabold text-blue-900">Colegio de Enfermeras de Bolivia</h1>
                     <p class="text-sm text-gray-600">Portal de Gestión Profesional</p>
                 </div>
 

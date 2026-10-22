@@ -10,6 +10,8 @@ use App\Http\Controllers\PagoController;
 use App\Http\Controllers\AportesController;
 use App\Http\Controllers\InformeController;
 use App\Http\Controllers\CargaDatosController;
+use App\Http\Controllers\AportesHistoricosController;
+use App\Http\Controllers\TransferenciasController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -75,6 +77,14 @@ Route::put('/afiliados/{afiliado}', [AfiliadoController::class, 'update'])
 Route::patch('/afiliados/{afiliado}/estado', [AfiliadoController::class, 'cambiarEstado'])
     ->middleware(['auth', 'debe-cambiar-password', 'rol:SUPER ADMIN,ADMIN,USUARIO'])
     ->name('afiliados.estado');
+
+Route::get('/afiliados/{afiliado}/detalle',[AfiliadoController::class, 'detalle'])
+    ->middleware(['auth', 'debe-cambiar-password', 'rol:SUPER ADMIN,ADMIN,USUARIO'])
+    ->name('afiliados.detalle');
+
+Route::get('/afiliados/{afiliado}/editar', [AfiliadoController::class, 'formularioEdicion'])
+    ->middleware(['auth', 'debe-cambiar-password', 'rol:SUPER ADMIN,ADMIN,USUARIO'])
+    ->name('afiliados.editar');
 
 Route::get(
     '/afiliados/{afiliado}/informacion-laboral',
@@ -351,3 +361,54 @@ Route::post('/carga-datos/afiliados/confirmar', [CargaDatosController::class, 'c
             'rol:SUPER ADMIN',
         ])
     ->name('carga-datos.afiliados.confirmar');
+
+Route::middleware(['auth','debe-cambiar-password','rol:SUPER ADMIN',])->group(function() {
+     Route::get(
+        '/aportes-historicos',
+        [AportesHistoricosController::class, 'index']
+    )->name('aportesHistoricos.index');
+
+    Route::post(
+        '/aportes-historicos/analizar',
+        [AportesHistoricosController::class, 'analizar']
+    )->name('aportesHistoricos.analizar');
+
+    Route::post(
+        '/aportes-historicos/importar',
+        [AportesHistoricosController::class, 'importar']
+    )->name('aportesHistoricos.importar');
+
+    Route::post(
+        '/aportes-historicos/cancelar',
+        [AportesHistoricosController::class, 'cancelar']
+    )->name('aportesHistoricos.cancelar');
+});
+
+Route::middleware(['auth','debe-cambiar-password','rol:SUPER ADMIN',])
+    ->prefix('transferencias')
+    ->name('transferencias.')
+    ->controller(TransferenciasController::class)
+    ->group(function () {
+        // Pantalla principal
+        Route::get('/', 'index')
+            ->name('index');
+
+        // Subir y analizar el CSV
+        Route::post('/analizar', 'analizar')
+            ->name('analizar');
+
+        // Ver resultados del análisis
+        Route::get('/revision', 'revision')
+            ->name('revision');
+
+        // Confirmar la importación
+        Route::post('/confirmar', 'confirmar')
+            ->name('confirmar');
+
+        // Cancelar la importación pendiente
+        Route::post('/cancelar', 'cancelar')
+            ->name('cancelar');
+
+        Route::post('/validar-fila', 'validarFila')
+            ->name('validar-fila');
+    });

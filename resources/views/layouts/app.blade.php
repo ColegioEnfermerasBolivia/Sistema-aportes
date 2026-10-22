@@ -10,6 +10,8 @@
 <title>
     @yield('title', 'Sistema de Aportes')
 </title>
+<link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+
 @vite(['resources/css/app.css', 'resources/js/app.js'])
 <script
     defer
@@ -32,5 +34,6 @@
             </main>
         </div>
         @stack('scripts')
+        @include('partials.alertas')
     </body>
 </html>

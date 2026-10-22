@@ -2,7 +2,55 @@
 @section('title', 'Afiliados')
 @section('content')
 
-<div class="min-h-screen bg-[#f7f7f9] px-6 py-8 lg:px-12">
+<div
+    class="min-h-screen bg-[#f7f7f9] px-6 py-8 lg:px-12"
+    x-data="{
+        afiliadoModalAbierto: false,
+        afiliadoModalCargando: false,
+        afiliadoModalError: '',
+        afiliadoModalTitulo: 'Información del afiliado',
+        afiliadoModalRequest: 0,
+        async cargarContenidoAfiliado(url, titulo) {
+            const requestId = ++this.afiliadoModalRequest;
+            const contenido = document.getElementById('afiliado-modal-contenido');
+
+            this.afiliadoModalAbierto = true;
+            this.afiliadoModalCargando = true;
+            this.afiliadoModalError = '';
+            this.afiliadoModalTitulo = titulo;
+
+            if (contenido) {
+                Alpine.destroyTree(contenido);
+                contenido.replaceChildren();
+            }
+
+            try {
+                const response = await fetch(url, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                if (!response.ok) {
+                    throw new Error('No se pudo cargar el contenido del afiliado.');
+                }
+
+                const html = await response.text();
+
+                if (requestId !== this.afiliadoModalRequest) return;
+
+                contenido.innerHTML = html;
+                Alpine.initTree(contenido);
+            } catch (error) {
+                if (requestId === this.afiliadoModalRequest) {
+                    this.afiliadoModalError = error.message;
+                }
+            } finally {
+                if (requestId === this.afiliadoModalRequest) {
+                    this.afiliadoModalCargando = false;
+                }
+            }
+        }
+    }"
+>
 
     {{-- ENCABEZADO --}}
     <div class="mb-8 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
@@ -48,17 +96,6 @@
             </x-modal>
         @endif
     </div>
-
-    {{-- MENSAJE DE ÉXITO --}}
-    @if (session('success'))
-        <div
-            class="mb-6 rounded-xl border border-green-200
-                   bg-green-50 px-5 py-4
-                   text-sm font-medium text-green-700"
-        >
-            {{ session('success') }}
-        </div>
-    @endif
 
     {{-- ERRORES DE VALIDACIÓN --}}
 
@@ -230,9 +267,11 @@
                         <th class="px-5 py-4 text-left text-sm font-semibold text-gray-800">
                             Afiliado
                         </th>
+                        @if (auth()->user()->rol?->nombre === 'ADMIN' || auth()->user()->rol?->nombre === 'SUPER ADMIN')
                         <th class="px-5 py-4 text-left text-sm font-semibold text-gray-800">
                             Colegio
                         </th>
+                        @endif
                         <th class="px-5 py-4 text-left text-sm font-semibold text-gray-800">
                             Celular
                         </th>
@@ -273,17 +312,18 @@
                                     
                                     <div class="min-w-0">
                                         <p class="whitespace-nowrap text-sm font-semibold text-gray-900">
-                                            {{ $afiliado->nombres }}
                                             {{ $afiliado->apellidos }}
+                                            {{ $afiliado->nombres }}
                                         </p>
                                     </div>
                                 </div>
                             </td>
-
+                            @if (auth()->user()->rol?->nombre === 'ADMIN' || auth()->user()->rol?->nombre === 'SUPER ADMIN')
                             {{-- COLEGIO --}}
                             <td class="px-4 py-4 text-sm text-gray-700">
                                 {{ $afiliado->colegio?->nombre ?? 'Sin colegio' }}
                             </td>
+                            @endif
 
                             {{-- CELULAR --}}
                             <td class="whitespace-nowrap px-5 py-5 text-sm text-gray-700">
@@ -329,31 +369,28 @@
                                 <div class="flex items-center gap-2">
 
                                     {{-- VER INFORMACIÓN --}}
-                                    <x-modal titulo="Información del afiliado" ancho="max-w-5xl">
-                                        <x-slot:trigger>
-                                            <button
-                                                type="button"
-                                                class="inline-flex items-center gap-1.5
-                                                       rounded-lg
-                                                       border border-sky-500
-                                                       bg-white
-                                                       px-3 py-2
-                                                       text-xs font-semibold
-                                                       text-sky-500
-                                                       transition
-                                                       hover:bg-gray-200
-                                                       hover:cursor-pointer"
-                                            >
-                                                <span class="flex h-5 w-5 shrink-0 items-center justify-center text-base">
-                                                    <x-icon name="see" class="text-sky-500" size="25"/>
-                                                </span>
-                                                Ver
-                                            </button>
-                                        </x-slot:trigger>
-                                        @include('afiliados.partials.info', [
-                                            'afiliado' => $afiliado
-                                        ])
-                                    </x-modal>
+                                    <button
+                                        type="button"
+                                        @click="cargarContenidoAfiliado(
+                                            '{{ route('afiliados.detalle', $afiliado) }}',
+                                            'Información del afiliado'
+                                        )"
+                                        class="inline-flex items-center gap-1.5
+                                               rounded-lg
+                                               border border-sky-500
+                                               bg-white
+                                               px-3 py-2
+                                               text-xs font-semibold
+                                               text-sky-500
+                                               transition
+                                               hover:bg-gray-200
+                                               hover:cursor-pointer"
+                                    >
+                                        <span class="flex h-5 w-5 shrink-0 items-center justify-center text-base">
+                                            <x-icon name="see" class="text-sky-500" size="25"/>
+                                        </span>
+                                        Ver
+                                    </button>
 
                                     {{-- EDITAR --}}
                                     @if (in_array(auth()->user()->rol?->nombre, [
@@ -362,32 +399,28 @@
                                         'USUARIO'
                                     ]))
 
-                                        <x-modal titulo="Editar afiliado">
-                                            <x-slot:trigger>
-                                                <button
-                                                    type="button"
-                                                    class="inline-flex items-center
-                                                           rounded-lg
-                                                           border border-blue-500
-                                                           bg-white
-                                                           px-3 py-2
-                                                           text-xs font-semibold
-                                                           text-blue-500
-                                                           transition
-                                                           hover:bg-blue-100
-                                                           hover:cursor-pointer"
-                                                >
-                                                    <span class="flex h-5 w-5 shrink-0 items-center justify-center text-base">
-                                                        <x-icon name="edit" class="text-[#3B82F6]" size="35"/>
-                                                    </span>
-                                                    Editar
-                                                </button>
-                                            </x-slot:trigger>
-                                            @include('afiliados.partials.form', [
-                                                'modo' => 'editar',
-                                                'afiliado' => $afiliado
-                                            ])
-                                        </x-modal>
+                                        <button
+                                            type="button"
+                                            @click="cargarContenidoAfiliado(
+                                                '{{ route('afiliados.editar', $afiliado) }}',
+                                                'Editar afiliado'
+                                            )"
+                                            class="inline-flex items-center
+                                                   rounded-lg
+                                                   border border-blue-500
+                                                   bg-white
+                                                   px-3 py-2
+                                                   text-xs font-semibold
+                                                   text-blue-500
+                                                   transition
+                                                   hover:bg-blue-100
+                                                   hover:cursor-pointer"
+                                        >
+                                            <span class="flex h-5 w-5 shrink-0 items-center justify-center text-base">
+                                                <x-icon name="edit" class="text-[#3B82F6]" size="35"/>
+                                            </span>
+                                            Editar
+                                        </button>
                                     @endif
 
                                     {{-- ACTIVAR / DESACTIVAR --}}
@@ -445,73 +478,93 @@
             </table>
         </div>
 
+        <x-modal
+            titulo="Información del afiliado"
+            ancho="max-w-5xl"
+            titulo-alpine="afiliadoModalTitulo"
+            x-model="afiliadoModalAbierto"
+        >
+            <div
+                x-show="afiliadoModalCargando"
+                class="py-10 text-center text-sm text-gray-600"
+            >
+                Cargando...
+            </div>
+            <p
+                x-show="afiliadoModalError"
+                x-text="afiliadoModalError"
+                class="py-6 text-center text-sm text-red-600"
+            ></p>
+            <div id="afiliado-modal-contenido"></div>
+        </x-modal>
+
         {{-- PAGINACIÓN - SOLO VISUAL POR AHORA --}}
         <div
             class="flex flex-col gap-4
-                   border-t border-gray-200
-                   bg-white
-                   px-6 py-4
-                   sm:flex-row
-                   sm:items-center
-                   sm:justify-between"
+                border-t border-gray-200
+                bg-white
+                px-6 py-4
+                sm:flex-row
+                sm:items-center
+                sm:justify-between"
         >
             <p class="text-sm text-gray-600">
                 Mostrando
                 <span class="font-semibold text-gray-800">
-                    1
+                    {{ $afiliados->firstItem() ?? 0 }}
                 </span>
                 a
                 <span class="font-semibold text-gray-800">
-                    {{ $afiliados->count() }}
+                    {{ $afiliados->lastItem() ?? 0 }}
+                </span>
+                de
+                <span class="font-semibold text-gray-800">
+                    {{ $afiliados->total() }}
                 </span>
                 afiliados
             </p>
 
-            <div class="flex items-center gap-2">
-
-                {{-- ANTERIOR --}}
-                <button
-                    type="button"
-                    disabled
-                    class="flex h-10 w-10 items-center justify-center
-                           rounded-lg
-                           border border-gray-200
-                           bg-gray-50
-                           text-gray-300"
-                >
-                    <span class="text-lg">
-                        ‹
-                    </span>
-                </button>
-
-                {{-- PÁGINA ACTUAL --}}
-                <button
-                    type="button"
-                    class="flex h-10 w-10 items-center justify-center
-                           rounded-lg
-                           bg-[#1a34c9]
-                           text-sm font-semibold text-white"
-                >
-                    1
-                </button>
-
-                {{-- SIGUIENTE --}}
-                <button
-                    type="button"
-                    class="flex h-10 w-10 items-center justify-center
-                           rounded-lg
-                           border border-gray-300
-                           bg-white
-                           text-gray-700
-                           transition
-                           hover:bg-gray-50"
-                >
-                    <span class="text-lg">
-                        ›
-                    </span>
-                </button>
+            <div>
+                {{ $afiliados->links() }}
             </div>
         </div>
-    </div>
+        <script>
+        document.addEventListener('change', function (event) {
+            if (event.target.id !== 'editar_colegio') {
+                return;
+            }
+        
+            const colegioSelect = event.target;
+            const modal = colegioSelect.closest('form') || document;
+        
+            const contenedorFecha = modal.querySelector(
+                '#contenedor_fecha_transferencia'
+            );
+        
+            const fechaTransferencia = modal.querySelector(
+                '#fecha_transferencia'
+            );
+        
+            if (!contenedorFecha || !fechaTransferencia) {
+                console.warn('No se encontró el campo de fecha de transferencia.');
+                return;
+            }
+        
+            const colegioOriginal = colegioSelect.dataset.colegioOriginal;
+            const colegioSeleccionado = colegioSelect.value;
+        
+            const huboCambio =
+                colegioSeleccionado !== '' &&
+                colegioSeleccionado !== colegioOriginal;
+        
+            contenedorFecha.classList.toggle('hidden', !huboCambio);
+            fechaTransferencia.required = huboCambio;
+        
+            if (!huboCambio) {
+                fechaTransferencia.value = '';
+            }
+        });
+        </script>
 </div>
+
 @endsection
