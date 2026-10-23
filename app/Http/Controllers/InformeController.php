@@ -193,10 +193,10 @@ class InformeController extends Controller
             'anio' => $request->input('year_afiliacion')
                 ?: 'Todos',
 
-            'colegio' => $colegio?->nombre
+            'colegio' => $colegio->nombre
                 ?? 'Todos',
 
-            'especialidad' => $especialidad?->nombre
+            'especialidad' => $especialidad->nombre
                 ?? 'Todas',
 
             'trabaja' => $trabaja,
@@ -250,7 +250,7 @@ class InformeController extends Controller
         $informacionReporte = [
             'usuario' => $usuario->username,
             'fecha' => now()->format('d/m/Y H:i'),
-            'colegio' => $colegio?->nombre ?? 'Todos los colegios',
+            'colegio' => $colegio->nombre ?? 'Todos los colegios',
         ];
 
         /*Generar PDF*/
@@ -278,7 +278,7 @@ class InformeController extends Controller
             730,
             565,
             'Pagina {PAGE_NUM} DE {PAGE_COUNT}',
-            null,
+            'Helvetica',
             7,
             [0.45, 0.45, 0.45]
         );
@@ -293,7 +293,7 @@ class InformeController extends Controller
         $usuario = auth()->user();
         $query = Afiliado::with([
             'colegio',
-            'aportes' => function ($query) use ($request) {
+            'aportes' => function ($query) {
                 $query
                     ->where('estado', 'VERIFICADO')
                     ->orderBy('year')
@@ -470,7 +470,7 @@ class InformeController extends Controller
             'usuario' => $usuario->username,
             'fecha' => now()->format('d/m/Y H:i'),
             'year' => $year ?? 'Todos los años',
-            'colegio' => $colegio?->nombre
+            'colegio' => $colegio->nombre
                 ?? 'Todos los colegios',
             'buscar' => $request->filled('buscar')
                 ? $request->input('buscar')
@@ -541,7 +541,7 @@ class InformeController extends Controller
 
             'year' => $year ?? 'Todos los años',
 
-            'colegio' => $colegio?->nombre
+            'colegio' => $colegio->nombre
                 ?? 'Todos los colegios',
 
             'buscar' => $request->filled('buscar')

@@ -446,7 +446,7 @@ class AportesExport implements
             "A{$fila}",
             'Colegio: '
             . (
-                $afiliada->colegio?->nombre
+                $afiliada->colegio->nombre
                 ?? 'Sin colegio'
             )
         );

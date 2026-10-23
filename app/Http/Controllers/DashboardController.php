@@ -157,7 +157,7 @@ class DashboardController extends Controller
             })
             ->map(function ($aportes) {
                 return [
-                    'colegio' => $aportes->first()->afiliado->colegio?->nombre
+                    'colegio' => $aportes->first()->afiliado->colegio->nombre
                         ?? 'Sin Colegio',
                     'total' => $aportes->sum('monto')
                 ];

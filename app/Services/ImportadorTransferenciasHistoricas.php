@@ -60,7 +60,7 @@ class ImportadorTransferenciasHistoricas
                 $errores = Carbon::getLastErrors();
 
                 if (
-                    $fechaNormalizada !== false &&
+                    $fechaNormalizada !== null &&
                     ($errores === false ||
                         ($errores['warning_count'] === 0 &&
                         $errores['error_count'] === 0))

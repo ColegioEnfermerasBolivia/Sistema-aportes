@@ -20,7 +20,7 @@ class Colegio extends Model
         'colegio_padre_id',
         'estado',
     ];
-
+    /**@return BelongsTo<Colegio, $this> */
     public function padre(): BelongsTo
     {
         return $this->belongsTo(Colegio::class, 'colegio_padre_id');

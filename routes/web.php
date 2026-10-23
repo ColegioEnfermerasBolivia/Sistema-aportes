@@ -20,7 +20,7 @@ Route::get('/', function () {
 Route::get('/login', [\App\Http\Controllers\AuthController::class, 'showLogin'])
     ->name('login');
 
-Route::post('/login', [\App\Http\Controllers\AuthController::class, 'login']);
+Route::post('/login', [\App\Http\Controllers\AuthController::class, 'login'])->middleware('throttle:5,1');
 
 Route::post('/logout', [\App\Http\Controllers\AuthController::class, 'logout'])
     ->middleware('auth')

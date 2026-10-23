@@ -426,7 +426,7 @@ class PagoController extends Controller
 
             $lote->decrement(
                 'monto_total',
-                $pago->monto_total
+                (float) $pago->monto_total
             );
 
             $lote->decrement(

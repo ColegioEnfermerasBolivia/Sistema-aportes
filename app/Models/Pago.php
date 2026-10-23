@@ -6,6 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property string $monto_total
+ * @property int $cantidad_periodos
+ * @property int $registrado_por
+ * @property-read Afiliado $afiliado
+ */
 class Pago extends Model
 {
     protected $table = 'pagos';

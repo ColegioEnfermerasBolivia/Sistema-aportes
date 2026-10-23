@@ -80,7 +80,7 @@ class AportesPdf
             730,
             565,
             'Pagina {PAGE_NUM} DE {PAGE_COUNT}',
-            null,
+            'Helvetica',
             7,
             [0.45, 0.45, 0.45]
         );

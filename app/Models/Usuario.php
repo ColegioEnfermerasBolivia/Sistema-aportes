@@ -33,12 +33,17 @@ class Usuario extends Authenticatable
     protected $casts = [
         'debe_cambiar_password' => 'boolean',
     ];
-
+    /**
+     * @return BelongsTo<Rol, $this>
+     */
     public function rol(): BelongsTo
     {
         return $this->belongsTo(Rol::class);
     }
 
+    /**
+     * @return BelongsTo<Colegio, $this>
+     */
     public function colegio(): BelongsTo
     {
         return $this->belongsTo(Colegio::class);

@@ -213,7 +213,7 @@ class LoteVerificacionController extends Controller
             . '-'
             . $year
             . '-'
-            . str_pad($mes, 2, '0', STR_PAD_LEFT);
+            . str_pad((string) $mes, 2, '0', STR_PAD_LEFT);
 
         try {
             $lote = LoteVerificacion::create([
@@ -527,13 +527,23 @@ class LoteVerificacionController extends Controller
         ];
 
         try {
+            /** @var array{
+             *     pagos_procesados: int,
+             *     pagos_observados: int,
+             *     aportes_generados: int,
+             *     lote_verificado: bool,
+             *     pagos_procesados_ids: list<int>,
+             *     pagos_observados_ids: list<int>,
+             *     observaciones_pagos: array<int, string>
+             * } $resultado
+             */
             $resultado = DB::transaction(function () use (
                 $lote,
                 $usuario,
                 $pagoIds,
                 $pagosObservadosIds,
                 $observacionesPagosNormalizadas
-            ) {
+            ): array {
                 $pagos = $lote->pagos()
                     ->whereIn('id', $pagoIds)
                     ->where('estado', 'EN_LOTE')
