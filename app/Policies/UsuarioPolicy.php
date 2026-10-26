@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\Rol;
 use App\Models\Usuario;
 
 class UsuarioPolicy
@@ -33,26 +34,41 @@ class UsuarioPolicy
      */
     public function update(Usuario $usuario, Usuario $objetivo): bool
     {
-        return in_array($usuario->rol?->nombre, [
-            'SUPER ADMIN',
-            'ADMIN',
-        ]);
+        return $usuario->rol?->nombre === 'SUPER ADMIN'
+            || (
+                $usuario->rol?->nombre === 'ADMIN'
+                && $objetivo->rol?->nombre !== 'SUPER ADMIN'
+            );
+    }
+
+    /**
+     * Determina si puede asignar el rol indicado.
+     */
+    public function assignRole(Usuario $usuario, Rol $rol): bool
+    {
+        return $usuario->rol?->nombre === 'SUPER ADMIN'
+            || (
+                $usuario->rol?->nombre === 'ADMIN'
+                && $rol->nombre !== 'SUPER ADMIN'
+            );
     }
 
     /**
      * Determina si puede cambiar el rol del usuario objetivo.
      */
-    public function changeRole(Usuario $usuario, Usuario $objetivo): bool
+    public function changeRole(Usuario $usuario, Usuario $objetivo, Rol $rolObjetivo): bool
     {
-        if (!in_array($usuario->rol?->nombre, [
-            'SUPER ADMIN',
-            'ADMIN',
-        ])) {
+        if ($usuario->id === $objetivo->id) {
             return false;
         }
 
-        // Nadie puede cambiar su propio rol.
-        return $usuario->id !== $objetivo->id;
+        if ($usuario->rol?->nombre === 'SUPER ADMIN') {
+            return true;
+        }
+
+        return $usuario->rol?->nombre === 'ADMIN'
+            && $objetivo->rol?->nombre !== 'SUPER ADMIN'
+            && $this->assignRole($usuario, $rolObjetivo);
     }
 
     /**
@@ -60,15 +76,15 @@ class UsuarioPolicy
      */
     public function changeEstado(Usuario $usuario, Usuario $objetivo): bool
     {
-        if (!in_array($usuario->rol?->nombre, [
-            'SUPER ADMIN',
-            'ADMIN',
-        ])) {
+        if ($usuario->id === $objetivo->id) {
             return false;
         }
 
-        // Nadie puede cambiar su propio estado.
-        return $usuario->id !== $objetivo->id;
+        return $usuario->rol?->nombre === 'SUPER ADMIN'
+            || (
+                $usuario->rol?->nombre === 'ADMIN'
+                && $objetivo->rol?->nombre !== 'SUPER ADMIN'
+            );
     }
 
     /**
@@ -84,14 +100,14 @@ class UsuarioPolicy
      */
     public function resetPassword(Usuario $usuario, Usuario $objetivo): bool
     {
-        if (!in_array($usuario->rol?->nombre, [
-            'SUPER ADMIN',
-            'ADMIN',
-        ])) {
+        if ($usuario->id === $objetivo->id) {
             return false;
         }
 
-        // El reset administrativo será para otros usuarios.
-        return $usuario->id !== $objetivo->id;
+        return $usuario->rol?->nombre === 'SUPER ADMIN'
+            || (
+                $usuario->rol?->nombre === 'ADMIN'
+                && $objetivo->rol?->nombre !== 'SUPER ADMIN'
+            );
     }
 }

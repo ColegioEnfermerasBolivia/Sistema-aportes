@@ -233,6 +233,13 @@ class TransferenciasController extends Controller
                         );
                     }
 
+                    if (empty($fila['fecha_normalizada'])) {
+                        throw new \RuntimeException(
+                            "La transferencia de la fila {$fila['numero_fila']} "
+                            . "no tiene una fecha de transferencia válida."
+                        );
+                    }
+
                     $transferencia = TransferenciaAfiliado::create([
                         'afiliado_id' => $afiliadoId,
                         'colegio_id_origen' => $origenId,
@@ -340,24 +347,32 @@ class TransferenciasController extends Controller
                 $errores = [$errores];
             }
 
-            $fecha = (string) (
-                $fila['fecha_transferencia']
+            // El importador conserva la fecha original en fecha_original.
+            $fechaOriginal = (string) (
+                $fila['fecha_original']
                 ?? $fila['fecha']
+                ?? $fila['fecha_transferencia']
                 ?? ''
             );
 
-            $fechaNormalizada = $fila['fecha_normalizada'] ?? null;
+            // El importador devuelve la fecha normalizada en fecha_transferencia.
+            $fechaNormalizada = $fila['fecha_normalizada']
+                ?? $fila['fecha_transferencia_normalizada']
+                ?? $fila['fecha_transferencia']
+                ?? null;
 
             $resultado[] = array_merge($fila, [
                 'clave' => (string) (
                     $fila['clave']
-                    ?? sha1('transferencia-' . ($indice + 2))
+                    ?? sha1('transferencia-' . ($fila['numero_fila'] ?? ($indice + 2)))
                 ),
-                'numero_fila' => $fila['numero_fila'] ?? ($indice + 2),
+                'numero_fila' => $fila['numero_fila']
+                    ?? $fila['fila']
+                    ?? ($indice + 2),
                 'ci' => (string) ($fila['ci'] ?? ''),
                 'colegio_origen' => (string) ($fila['colegio_origen'] ?? ''),
                 'colegio_destino' => (string) ($fila['colegio_destino'] ?? ''),
-                'fecha_transferencia' => $fecha,
+                'fecha_transferencia' => $fechaOriginal,
                 'fecha_normalizada' => $fechaNormalizada,
                 'estado' => ($fila['estado'] ?? 'ERROR') === 'LISTO'
                     ? 'LISTO'

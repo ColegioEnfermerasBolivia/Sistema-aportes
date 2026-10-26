@@ -29,7 +29,11 @@ class UsuarioController extends Controller
             ->orderBy('nombre')
             ->get();
 
-        $roles = Rol::orderBy('id')->get();
+        $rolesQuery = Rol::orderBy('id');
+        if (auth()->user()->rol?->nombre !== 'SUPER ADMIN') {
+            $rolesQuery->where('nombre', '!=', 'SUPER ADMIN');
+        }
+        $roles = $rolesQuery->get();
 
         return view('usuarios.index', compact(
             'usuarios',
@@ -83,6 +87,9 @@ class UsuarioController extends Controller
                 Rule::exists('colegios', 'id'),
             ],
         ]);
+
+        $rol = Rol::findOrFail($datos['rol_id']);
+        Gate::authorize('assignRole', [Usuario::class, $rol]);
 
         // Un USUARIO debe tener colegio.
         if ($datos['rol_id'] == 3 && empty($datos['colegio_id'])) {
@@ -225,7 +232,8 @@ class UsuarioController extends Controller
         /*Rol */
 
         if ($datos['rol_id'] != $usuario->rol_id) {
-            Gate::authorize('changeRole', $usuario);
+            $rolObjetivo = Rol::findOrFail($datos['rol_id']);
+            Gate::authorize('changeRole', [$usuario, $rolObjetivo]);
             $usuario->rol_id = $datos['rol_id'];
         }
 

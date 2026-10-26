@@ -227,6 +227,7 @@
                             {{-- ACCIONES --}}
                             <td class="px-6 py-5">
                                 <div class="flex flex-wrap items-center gap-2">
+                                    @if (auth()->user()->rol?->nombre === 'SUPER ADMIN' || $usuario->rol?->nombre !== 'SUPER ADMIN')
                                     {{-- EDITAR --}}
                                     <x-modal titulo="Editar usuario">
                                         <x-slot:trigger>
@@ -314,6 +315,7 @@
                                                 Reset
                                             </button>
                                         </form>
+                                    @endif
                                     @endif
                                 </div>
                             </td>

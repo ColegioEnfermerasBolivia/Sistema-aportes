@@ -9,32 +9,30 @@ use Illuminate\Http\Request;
 
 class AportesController extends Controller
 {
+    
     public function index(Request $request)
     {
         $usuario = auth()->user();
 
-        /*Validación de filtros*/
+        /* Validación de filtros */
 
         $datos = $request->validate([
             'buscar' => ['nullable', 'string', 'max:100'],
-            'gestion' => ['nullable', 'integer', 'min:2000', 'max:2100'],
+            'gestion' => ['nullable', 'integer', 'min:1900', 'max:2100'],
             'colegio_id' => ['nullable', 'integer', 'exists:colegios,id'],
         ]);
 
-        $gestion = $datos['gestion'] ?? now()->year;
+        $buscar = trim($datos['buscar'] ?? '');
 
-        /*Consulta principal*/
+        /*
+        * Consulta base de afiliados.
+        * Primero aplicamos los permisos y filtros, sin limitar todavía
+        * por gestión, para determinar qué años corresponden a la búsqueda.
+        */
 
-        $query = Afiliado::with([
-            'aportes' => function ($query) use ($gestion) {
-                $query
-                    ->where('year', $gestion)
-                    ->where('estado', 'VERIFICADO')
-                    ->orderBy('mes');
-            },
-        ]);
+        $query = Afiliado::query();
 
-        /*Restricción para usuarios de colegio*/
+        /* Restricción para usuarios de colegio */
 
         if ($usuario->rol?->nombre === 'USUARIO') {
 
@@ -57,11 +55,9 @@ class AportesController extends Controller
             }
         }
 
-        /*Búsqueda*/
+        /* Búsqueda por CI, nombres o apellidos */
 
-        if (!empty($datos['buscar'])) {
-
-            $buscar = trim($datos['buscar']);
+        if ($buscar !== '') {
 
             $query->where(function ($q) use ($buscar) {
                 $q->where('ci', 'like', "%{$buscar}%")
@@ -70,7 +66,7 @@ class AportesController extends Controller
             });
         }
 
-        /*Filtro por colegio*/
+        /* Filtro por colegio para administradores */
 
         if (
             in_array($usuario->rol?->nombre, ['SUPER ADMIN', 'ADMIN'])
@@ -79,49 +75,65 @@ class AportesController extends Controller
             $query->where('colegio_id', $datos['colegio_id']);
         }
 
-        /*Afiliados paginados*/
+        /*
+        * Gestiones disponibles según las afiliadas que coinciden
+        * con los filtros actuales.
+        *
+        * Solo se consideran aportes verificados.
+        */
 
-        $afiliados = $query
+        $gestiones = Aporte::query()
+            ->where('estado', 'VERIFICADO')
+            ->whereIn('afiliado_id', (clone $query)->select('id'))
+            ->select('year')
+            ->distinct()
+            ->orderByDesc('year')
+            ->pluck('year')
+            ->map(fn ($year) => (int) $year);
+
+        /*
+        * Mantener la gestión solicitada si corresponde a la búsqueda.
+        * Si no corresponde, seleccionar la gestión más reciente disponible.
+        * En la primera visita, se usa la gestión más reciente con aportes.
+        */
+
+        $gestionSolicitada = $datos['gestion'] ?? null;
+
+        if (
+            $gestionSolicitada !== null
+            && $gestiones->contains((int) $gestionSolicitada)
+        ) {
+            $gestion = (int) $gestionSolicitada;
+        } else {
+            $gestion = $gestiones->first() ?? now()->year;
+        }
+
+        /*
+        * Consulta final:
+        * mostrar únicamente afiliadas con aportes verificados
+        * en la gestión seleccionada.
+        */
+
+        $afiliados = (clone $query)
+            ->whereHas('aportes', function ($q) use ($gestion) {
+                $q->where('year', $gestion)
+                    ->where('estado', 'VERIFICADO');
+            })
+            ->with([
+                'aportes' => function ($q) use ($gestion) {
+                    $q->where('year', $gestion)
+                        ->where('estado', 'VERIFICADO')
+                        ->orderBy('mes');
+                },
+            ])
             ->orderBy('apellidos')
             ->orderBy('nombres')
             ->paginate(15)
             ->withQueryString();
 
-        /*Ultimo aporte historico*/
-        $idsAfiliados = $afiliados->pluck('id'); 
-        $ultimoAportePorAfiliado = Aporte::query() 
-            ->whereIn('afiliado_id', $idsAfiliados) 
-            ->where('estado', 'VERIFICADO') 
-            ->orderByDesc('year') 
-            ->orderByDesc('mes') ->get() 
-            ->groupBy('afiliado_id') 
-            ->map(function ($aportes) { 
-                return $aportes->first(); 
-            });
-        
-        /*Colegios para el filtro */
-
-        $colegios = collect();
-
-        if (in_array($usuario->rol?->nombre, ['SUPER ADMIN', 'ADMIN'])) {
-
-            $colegios = Colegio::where('estado', 'ACTIVO')
-                ->orderBy('nombre')
-                ->get();
-        }
-
-        /*Gestiones disponibles*/
-
-        $gestiones = Aporte::query()
-            ->where('estado', 'VERIFICADO')
-            ->select('year')
-            ->distinct()
-            ->orderByDesc('year')
-            ->pluck('year');
-
-        if (!$gestiones->contains((int) $gestion)) {
-            $gestiones->prepend((int) $gestion);
-        }
+        /*
+        * Último aporte histórico de cada afiliada de la página actual.
+        */
 
         $idsAfiliados = $afiliados->pluck('id');
 
@@ -136,6 +148,17 @@ class AportesController extends Controller
                 return $aportes->first();
             });
 
+        /* Colegios para el filtro */
+
+        $colegios = collect();
+
+        if (in_array($usuario->rol?->nombre, ['SUPER ADMIN', 'ADMIN'])) {
+
+            $colegios = Colegio::where('estado', 'ACTIVO')
+                ->orderBy('nombre')
+                ->get();
+        }
+
         return view('aportes.index', compact(
             'afiliados',
             'colegios',
@@ -144,4 +167,5 @@ class AportesController extends Controller
             'ultimoAportePorAfiliado'
         ));
     }
+
 }

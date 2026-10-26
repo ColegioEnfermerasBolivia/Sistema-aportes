@@ -46,29 +46,48 @@ class ImportadorTransferenciasHistoricas
     /**
      * Convierte una fecha d/m/Y a Y-m-d.
      */
-    private function normalizarFecha(string $fecha): ?string
+    private function normalizarFecha(?string $fecha): ?string
     {
+        if ($fecha === null) {
+            return null;
+        }
+
         $fecha = trim($fecha);
 
-        foreach (['d/m/Y', 'j/n/Y'] as $formato) {
+        if ($fecha === '') {
+            return null;
+        }
+
+        $formatos = [
+            'd/m/Y',
+            'j/n/Y',
+            'd/n/Y',
+            'j/m/Y',
+        ];
+
+        foreach ($formatos as $formato) {
             try {
                 $fechaNormalizada = Carbon::createFromFormat(
-                    '!' . $formato,
+                    $formato,
                     $fecha
                 );
 
                 $errores = Carbon::getLastErrors();
 
                 if (
-                    $fechaNormalizada !== null &&
-                    ($errores === false ||
-                        ($errores['warning_count'] === 0 &&
-                        $errores['error_count'] === 0))
+                    $fechaNormalizada !== false
+                    && (
+                        $errores === false
+                        || (
+                            $errores['warning_count'] === 0
+                            && $errores['error_count'] === 0
+                        )
+                    )
                 ) {
                     return $fechaNormalizada->format('Y-m-d');
                 }
-            } catch (\Exception $e) {
-                // Continuar probando.
+            } catch (\Throwable $e) {
+                continue;
             }
         }
 

@@ -3,5 +3,5 @@
     width="{{ $size }}"
     height="{{ $size }}"
 >
-    <use xlink:href="#icon-{{ $name }}"></use>
+    <use href="#icon-{{ $name }}"></use>
 </svg>

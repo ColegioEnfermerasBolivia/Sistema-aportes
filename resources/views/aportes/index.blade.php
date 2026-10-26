@@ -282,7 +282,6 @@
                                 {{ $gestion }}
                             </td>
 
-
                             {{-- MESES --}}
                             @for ($mes = 1; $mes <= 12; $mes++)
                                 <td class="px-4 py-4 text-center">
@@ -303,22 +302,25 @@
                         </tr>
                     @empty
                         <tr>
-                            <td
-                                colspan="16"
-                                class="px-6 py-12 text-center"
-                            >
-                                <div class="flex flex-col items-center justify-center">
-                                    <div class="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400">
-                                        <span class="text-xl">
-                                            —
-                                        </span>
+                            <td colspan="100%" class="px-6 py-12 text-center">
+                                <div class="flex flex-col items-center justify-center gap-3">
+                                    <div class="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
+                                        <x-icon name="file-search" class="text-gray-400" size="28"/>
                                     </div>
-                                    <p class="text-sm font-medium text-gray-700">
-                                        No se encontraron afiliados.
-                                    </p>
-                                    <p class="mt-1 text-sm text-gray-400">
-                                        Prueba cambiando los filtros de búsqueda.
-                                    </p>
+
+                                    <div>
+                                        <p class="text-base font-semibold text-gray-700">
+                                            No se encontraron aportes
+                                        </p>
+
+                                        <p class="mt-1 text-sm text-gray-500">
+                                            @if (request()->filled('buscar'))
+                                                La afiliada o el afiliado buscado no tiene aportes registrados en el sistema.
+                                            @else
+                                                No hay afiliados con aportes verificados en la gestión {{ $gestion }}.
+                                            @endif
+                                        </p>
+                                    </div>
                                 </div>
                             </td>
                         </tr>

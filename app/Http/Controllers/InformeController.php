@@ -25,10 +25,15 @@ class InformeController extends Controller
         /* Consulta base */
         $query = $this->consultaAfiliados(($request));
 
+        $totalAfiliados = (clone $query)->count();
+
         $afiliados = $query
             ->orderBy('apellidos')
             ->orderBy('nombres')
-            ->get();
+            ->paginate(50)
+            ->withQueryString();
+
+            $totalAfiliados = (clone $query)->count();
 
         /* Años de afiliacion */
 
@@ -57,6 +62,7 @@ class InformeController extends Controller
             'reports.afiliadosReports.index',
             compact(
                 'afiliados',
+                'totalAfiliados',
                 'aniosAfiliacion',
                 'especialidades',
                 'colegios'
@@ -64,14 +70,16 @@ class InformeController extends Controller
         );
     }
 
-    private function consultaAfiliados(Request $request)
+    private function consultaAfiliados(Request $request, bool $cargarPostgrados = true)
     {
         $usuario = auth()->user();
 
-        $query = Afiliado::with([
-            'colegio',
-            'afiliadosPostgrados.postgrado',
-        ]);
+        $query = Afiliado::query()
+            ->with('colegio');
+        
+        if ($cargarPostgrados) {
+            $query->with('afiliadosPostgrados.postgrado');
+        }
 
         /*Restricción por usuario*/
 
@@ -215,29 +223,66 @@ class InformeController extends Controller
         );
     }
 
-    /*Exportar informe de afiliadas a PDF.*/
-   public function afiliadosPdf(Request $request)
+/*Exportar informe de afiliadas a PDF.*/
+    public function afiliadosPdf(Request $request)
     {
         Gate::authorize('viewAny', Afiliado::class);
-        $query = $this->consultaAfiliados($request);
-        $afiliados = $query
+
+        /*
+        * Construir la consulta respetando:
+        * - permisos
+        * - colegio
+        * - búsqueda
+        * - año de afiliación
+        * - trabaja
+        * - especialidad
+        * - demás filtros definidos en consultaAfiliados()
+        */
+        $query = $this->consultaAfiliados($request)
             ->orderBy('apellidos')
-            ->orderBy('nombres')
-            ->get();
+            ->orderBy('nombres');
+
+        /*
+        * Verificar cantidad antes de cargar los registros
+        * y antes de iniciar DomPDF.
+        */
+        $totalAfiliados = (clone $query)->count();
+
+        if ($totalAfiliados > 1000) {
+            return redirect()
+                ->back()
+                ->with(
+                    'error',
+                    "El informe contiene {$totalAfiliados} afiliados. " .
+                    "Para informes de más de 1.000 afiliados, " .
+                    "utilice la exportación a Excel."
+                );
+        }
+
+        /*
+        * Ahora sí obtenemos los registros.
+        *
+        * Como ya sabemos que hay como máximo 1.000,
+        * el consumo de memoria queda limitado.
+        */
+        $afiliados = $query->get();
 
         $usuario = auth()->user();
 
-        /*Colegio mostrado en el encabezado*/
-
+        /*
+        * Colegio mostrado en el encabezado.
+        */
         $colegio = null;
+
         if ($request->filled('colegio_id')) {
             $colegio = Colegio::find(
                 $request->input('colegio_id')
             );
         }
 
-        /*Si es USUARIO, su reporte pertenece a su colegio*/
-
+        /*
+        * Si es USUARIO, su reporte pertenece a su colegio.
+        */
         if (
             !$colegio &&
             $usuario->rol?->nombre === 'USUARIO'
@@ -245,16 +290,18 @@ class InformeController extends Controller
             $colegio = $usuario->colegio;
         }
 
-        /*Información del reporte*/
-
+        /*
+        * Información del reporte.
+        */
         $informacionReporte = [
             'usuario' => $usuario->username,
             'fecha' => now()->format('d/m/Y H:i'),
             'colegio' => $colegio->nombre ?? 'Todos los colegios',
         ];
 
-        /*Generar PDF*/
-
+        /*
+        * Generar PDF.
+        */
         $pdf = Pdf::loadView(
             'reports.afiliadosReports.pdf',
             compact(
@@ -263,14 +310,17 @@ class InformeController extends Controller
             )
         );
 
-        /*Configuración de página*/
-
+        /*
+        * Configuración de página.
+        */
         $pdf->setPaper(
             'letter',
             'landscape'
         );
 
-        /* Numeracion de Paginas */
+        /*
+        * Numeración de páginas.
+        */
         $domPdf = $pdf->getDomPDF();
         $canvas = $domPdf->getCanvas();
 
@@ -283,6 +333,9 @@ class InformeController extends Controller
             [0.45, 0.45, 0.45]
         );
 
+        /*
+        * Descargar PDF.
+        */
         return $pdf->download(
             'informe-afiliadas.pdf'
         );
@@ -494,15 +547,11 @@ class InformeController extends Controller
     public function aportesPdf(Request $request)
     {
         Gate::authorize('viewAny', Afiliado::class);
-
         $query = $this->consultaAportes($request);
-
         $usuario = auth()->user();
-
         $year = $request->filled('year')
             ? (int) $request->input('year')
             : null;
-
         $colegio = null;
 
         if ($request->filled('colegio_id')) {
@@ -552,7 +601,6 @@ class InformeController extends Controller
         /*Obtener afiliados*/
 
         $afiliados = $query->get();
-
         /*
         |--------------------------------------------------------------------------
         | Si es informe general, necesitamos solamente

@@ -105,7 +105,7 @@
                             class="bg-[#f7f7f9] px-4 py-3 text-left
                                    text-sm font-semibold text-gray-700"
                         >
-                            Colegio
+                            Colegio Actual
                         </th>
                         <td class="px-4 py-3 text-sm text-gray-900">
                             {{ $afiliado->colegio?->nombre ?? 'Sin colegio' }}
@@ -168,6 +168,64 @@
                         </th>
                         <td class="px-4 py-3 text-sm text-gray-900">
                             {{ $afiliado->fecha_afiliacion?->format('d/m/Y') }}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th
+                            scope="row"
+                            class="w-1/4 bg-[#f7f7f9] px-4 py-3 text-left align-top
+                                text-sm font-semibold text-gray-700"
+                        >
+                            Historial de Transferencias
+                        </th>
+
+                        <td class="px-4 py-3">
+                            @if ($afiliado->transferencias->isEmpty())
+                                <p class="py-2 text-center text-sm text-gray-500">
+                                    No existen transferencias registradas para esta afiliada
+                                </p>
+                            @else
+                                <div class="overflow-x-auto rounded-lg border border-gray-200">
+                                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th scope="col"
+                                                    class="px-4 py-2.5 text-left text-xs font-semibold
+                                                        uppercase tracking-wide text-gray-600">
+                                                    Fecha
+                                                </th>
+                                                <th scope="col"
+                                                    class="px-4 py-2.5 text-left text-xs font-semibold
+                                                        uppercase tracking-wide text-gray-600">
+                                                    Colegio de origen
+                                                </th>
+                                                <th scope="col"
+                                                    class="px-4 py-2.5 text-left text-xs font-semibold
+                                                        uppercase tracking-wide text-gray-600">
+                                                    Colegio de destino
+                                                </th>
+                                            </tr>
+                                        </thead>
+
+                                        <tbody class="divide-y divide-gray-100 bg-white">
+                                            @foreach ($afiliado->transferencias as $transferencia)
+                                                <tr class="transition-colors hover:bg-gray-50">
+                                                    <td class="whitespace-nowrap px-4 py-2.5 text-gray-700">
+                                                        {{ $transferencia->fecha_transferencia?->format('d/m/Y') ?? '—' }}
+                                                    </td>
+                                                    <td class="px-4 py-2.5 text-gray-700">
+                                                        {{ $transferencia->colegioOrigen?->nombre ?? '—' }}
+                                                    </td>
+                                                    <td class="px-4 py-2.5 text-gray-700">
+                                                        {{ $transferencia->colegioDestino?->nombre ?? '—' }}
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @endif
                         </td>
                     </tr>
                 </tbody>
@@ -975,21 +1033,16 @@
                                     </option>
 
                                 @endforeach
-
                             </select>
-
                         </div>
 
-
                         <div>
-
                             <label
                                 for="institucion_academica_{{ $afiliado->id }}"
                                 class="mb-2 block text-sm font-medium text-gray-800"
                             >
                                 Institución
                             </label>
-
                             <input
                                 type="text"
                                 id="institucion_academica_{{ $afiliado->id }}"
@@ -1031,12 +1084,9 @@
                                            focus:ring-2
                                            focus:ring-[#1a34c9]/15"
                                 >
-
                             </div>
 
-
                             <div>
-
                                 <label
                                     for="fecha_titulo_{{ $afiliado->id }}"
                                     class="mb-2 block text-sm font-medium text-gray-800"
@@ -1056,14 +1106,10 @@
                                            focus:ring-2
                                            focus:ring-[#1a34c9]/15"
                                 >
-
                             </div>
-
                         </div>
 
-
                         <div>
-
                             <label
                                 for="numero_certificado_{{ $afiliado->id }}"
                                 class="mb-2 block text-sm font-medium text-gray-800"
@@ -1084,9 +1130,7 @@
                                        focus:ring-2
                                        focus:ring-[#1a34c9]/15"
                             >
-
                         </div>
-
 
                         <div
                             class="flex justify-end gap-3
@@ -1120,7 +1164,6 @@
                                        hover:bg-[#1429a3]
                                        hover:cursor-pointer"
                             >
-
                                 <span
                                     x-text="modoAcademica === 'crear'
                                             ? 'Registrar'

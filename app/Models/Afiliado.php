@@ -67,7 +67,10 @@ class Afiliado extends Model
         return $this->hasMany(
             TransferenciaAfiliado::class,
             'afiliado_id'
-        )->orderBy('fecha_transferencia');
+        )->with(([
+            'colegioOrigen',
+            'colegioDestino',
+        ]))
+        ->orderBy('fecha_transferencia');
     }
-
 }

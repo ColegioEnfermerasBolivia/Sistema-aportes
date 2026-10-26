@@ -220,25 +220,38 @@
                     Genera el informe de afiliadas utilizando los filtros seleccionados.
                 </p>
             </div>
+            
             <div class="flex flex-col gap-2 sm:flex-row">
 
-                {{-- EXCEL --}}
+                {{-- EXCEL: siempre disponible --}}
                 <a
                     href="{{ route('afiliadosReports.excel', request()->query()) }}"
-                    class="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700"
+                    class="inline-flex items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700"
                 >
                     <x-icon name="download" class="text-white" size="20"/>
                     Excel
                 </a>
 
-                {{-- PDF --}}
-                <a
-                    href="{{ route('afiliadosReports.pdf', request()->query()) }}"
-                    class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700"
-                >
-                    <x-icon name="download" class="text-white" size="20"/>
-                    PDF
-                </a>
+                {{-- PDF: disponible hasta 1.000 afiliados --}}
+                @if ($totalAfiliados <= 1000)
+                    <a
+                        href="{{ route('afiliadosReports.pdf', request()->query()) }}"
+                        class="inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700"
+                    >
+                        <x-icon name="download" class="text-white" size="20"/>
+                        PDF
+                    </a>
+                @else
+                    <button
+                        type="button"
+                        disabled
+                        title="El PDF está disponible únicamente para informes de hasta 1.000 afiliados"
+                        class="inline-flex cursor-not-allowed items-center justify-center gap-2 rounded-lg bg-gray-300 px-4 py-2 text-sm font-medium text-gray-600 opacity-80"
+                    >
+                        <x-icon name="download" class="text-gray-600" size="20"/>
+                        PDF no disponible
+                    </button>
+                @endif
             </div>
         </div>
     </div>
@@ -250,8 +263,8 @@
                 Afiliados
             </h2>
             <p class="mt-1 text-sm text-gray-500">
-                {{ $afiliados->count() }}
-                {{ $afiliados->count() === 1 ? 'resultado encontrado': 'resultados encontrados' }}
+                {{ number_format($totalAfiliados, 0, ',', '.') }}
+                {{ $totalAfiliados === 1 ? 'resultado encontrado' : 'resultados encontrados' }}
             </p>
         </div>
         @if ($afiliados->isEmpty())
@@ -314,6 +327,9 @@
                         @endforeach
                     </tbody>
                 </table>
+                <div class="mt-4">
+                    {{ $afiliados->links() }}
+                </div>
             </div>
         @endif
     </div>

@@ -200,7 +200,7 @@
 
             <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
 
-                {{-- SUPER ADMIN --}}
+                @if (auth()->user()->rol?->nombre === 'SUPER ADMIN')
                 <label
                     class="flex cursor-pointer items-center gap-3
                            rounded-lg border border-gray-300
@@ -225,6 +225,7 @@
                     </span>
 
                 </label>
+                @endif
 
 
                 {{-- ADMIN --}}

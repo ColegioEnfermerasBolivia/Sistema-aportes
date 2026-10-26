@@ -141,6 +141,18 @@
             width: 19%;
         }
 
+        .tabla thead {
+            display: table-header-group;
+        }
+
+        .tabla tbody {
+            display: table-row-group;
+        }
+
+        .tabla tr {
+            page-break-inside: avoid;
+        }
+
         /*Pie de página */
 
         .pie-pagina {
@@ -155,7 +167,7 @@
     </style>
 </head>
 <body>
-
+@if ($incluirEncabezado ?? true)
     {{-- ENCABEZADO INSTITUCIONAL --}}
 
     <table class="encabezado">
@@ -193,6 +205,7 @@
             </td>
         </tr>
     </table>
+@endif
 
     {{-- INFORMACIÓN DEL REPORTE --}}
     <table class="informacion">
@@ -232,14 +245,12 @@
             @forelse ($afiliados as $afiliado)
                 @php
                     $especialidades = $afiliado->afiliadosPostgrados
-                        ->map(function ($afiliadoPostgrado) {
-                            return $afiliadoPostgrado->postgrado?->nombre;
-                        })
+                        ->pluck('postgrado.nombre')
                         ->filter()
                         ->implode(', ');
                 @endphp
                 <tr>
-                    <td class="centrado">{{ $loop->iteration }}</td>
+                    <td class="centrado">{{ ($numeroInicial ?? 1) + $loop->index }}</td>
                     <td class="centrado">{{ $afiliado->ci }}</td>
                     <td class="centrado">{{ $afiliado->matricula_profesional ?? '' }}</td>
                     <td class="centrado">{{ $afiliado->registro_departamental ?? '' }}</td>
