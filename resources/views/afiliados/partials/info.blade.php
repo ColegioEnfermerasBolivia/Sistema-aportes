@@ -174,6 +174,30 @@
                     <tr>
                         <th
                             scope="row"
+                            class="bg-[#f7f7f9] px-4 py-3 text-left align-top
+                                   text-sm font-semibold text-gray-700"
+                        >
+                            Observaciones
+                        </th>
+                        <td class="px-4 py-3 text-sm text-gray-900">
+                            @forelse ($afiliado->observaciones as $observacion)
+                                <div class="whitespace-pre-line">
+                                    {{ $observacion->observacion }}
+                                </div>
+                                @if (!$loop->last)
+                                    <hr class="my-3 border-gray-200">
+                                @endif
+                            @empty
+                                <span class="text-gray-500">
+                                    No hay observaciones registradas.
+                                </span>
+                            @endforelse
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th
+                            scope="row"
                             class="w-1/4 bg-[#f7f7f9] px-4 py-3 text-left align-top
                                 text-sm font-semibold text-gray-700"
                         >

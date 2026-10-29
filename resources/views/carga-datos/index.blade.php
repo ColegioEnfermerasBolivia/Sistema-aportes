@@ -11,23 +11,27 @@
             </p>
         </div>
 
+        {{-- CUADRÍCULA DE MÓDULOS DE CARGA --}}
+        <div class="grid grid-cols-1 items-stretch gap-6 lg:auto-rows-fr lg:grid-cols-2">
+
         {{-- CARGA DE AFILIADAS --}}
-        <div class="rounded-xl border border-gray-200 bg-white shadow-sm">
-            <div class="border-b border-gray-200 px-6 py-5">
+        <div class="flex h-full flex-col rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div class="min-h-[104px] border-b border-gray-200 px-6 py-5">
                 <h2 class="text-lg font-semibold text-gray-800">Afiliadas</h2>
                 <p class="mt-1 text-sm text-gray-500">
                     Carga las afiliadas desde un archivo CSV.
                 </p>
             </div>
 
-            <div class="px-6 py-6">
+            <div class="flex flex-1 flex-col px-6 py-6">
                 <form
                     action="{{ route('carga-datos.afiliados.validar') }}"
                     method="POST"
                     enctype="multipart/form-data"
+                    class="flex flex-1 flex-col"
                 >
                     @csrf
-                    <div class="flex flex-col gap-4 md:flex-row md:items-end">
+                    <div class="flex flex-1 flex-col justify-between gap-4 md:flex-row md:items-end">
                         {{-- ARCHIVO --}}
                         <div class="flex-1">
                             <div
@@ -50,14 +54,14 @@
                                         name="archivo_afiliadas"
                                         accept=".csv,text/csv"
                                         x-ref="archivo"
-                                        class="block w-full cursor-pointer rounded-lg
+                                        class="block h-11 w-full cursor-pointer rounded-lg
                                             border border-gray-300
                                             bg-white text-sm text-gray-600
                                             file:mr-4
                                             file:border-0
                                             file:bg-gray-100
                                             file:px-4
-                                            file:py-2.5
+                                            file:py-2
                                             file:text-sm
                                             file:font-medium
                                             file:text-gray-700
@@ -108,20 +112,21 @@
                         </div>
 
                         {{-- BOTÓN --}}
-                        <div>
+                        <div class="w-full md:w-48">
                             <button
                                 type="submit"
-                                class="inline-flex items-center gap-2
+                                class="inline-flex h-11 w-full items-center justify-center gap-2
                                        rounded-lg
                                        bg-[#1a34c9]
-                                       px-5 py-2.5
-                                       text-sm font-medium
+                                       px-5
+                                       text-sm font-semibold
                                        text-white
                                        transition
-                                       hover:bg-blue-800
+                                       hover:bg-[#1429a3]
                                        focus:outline-none
                                        focus:ring-2
                                        focus:ring-[#1a34c9]/30
+                                       focus:ring-offset-2
                                        hover:cursor-pointer"
                             >
                                 <x-icon name="upload" size="18"/>
@@ -134,9 +139,9 @@
         </div>
 
         {{-- CARGA DE APORTES HISTÓRICOS --}}
-        <div class="mt-6 rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div class="flex h-full flex-col rounded-xl border border-gray-200 bg-white shadow-sm">
 
-            <div class="border-b border-gray-200 px-6 py-5">
+            <div class="min-h-[104px] border-b border-gray-200 px-6 py-5">
                 <h2 class="text-lg font-semibold text-gray-800">
                     Aportes históricos
                 </h2>
@@ -146,36 +151,16 @@
                 </p>
             </div>
 
-            <div class="px-6 py-6">
-                @if (session('success'))
-                    <div class="mb-4 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">
-                        {{ session('success') }}
-                        @if (session('resultado_importacion'))
-                            @php($resultadoImportacion = session('resultado_importacion'))
-                            Se importaron {{ $resultadoImportacion['aportes_importados'] }} aportes
-                            de {{ $resultadoImportacion['filas_importadas'] }} afiliadas.
-                            @if (count($resultadoImportacion['errores']) > 0)
-                                {{ count($resultadoImportacion['errores']) }} aportes no se importaron
-                                porque ya existían.
-                            @endif
-                        @endif
-                    </div>
-                @endif
-
-                @if ($errors->has('archivo'))
-                    <div class="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700" role="alert">
-                        {{ $errors->first('archivo') }}
-                    </div>
-                @endif
-
+            <div class="flex flex-1 flex-col px-6 py-6">
                 <form
                     action="{{ route('aportesHistoricos.analizar') }}"
                     method="POST"
                     enctype="multipart/form-data"
+                    class="flex flex-1 flex-col"
                 >
                     @csrf
 
-                    <div class="flex flex-col gap-4 md:flex-row md:items-end">
+                    <div class="flex flex-1 flex-col justify-between gap-4 md:flex-row md:items-end">
 
                         {{-- ARCHIVO --}}
                         <div
@@ -206,7 +191,7 @@
                                         archivo = $event.target.files[0] ?? null;
                                         nombreArchivo = archivo ? archivo.name : '';
                                     "
-                                    class="block w-full cursor-pointer rounded-lg
+                                    class="block h-11 w-full cursor-pointer rounded-lg
                                         border border-gray-300
                                         bg-white
                                         text-sm text-gray-600
@@ -214,7 +199,7 @@
                                         file:border-0
                                         file:bg-gray-100
                                         file:px-4
-                                        file:py-2.5
+                                        file:py-2
                                         file:text-sm
                                         file:font-medium
                                         file:text-gray-700
@@ -264,40 +249,36 @@
                         </div>
 
                         {{-- BOTÓN --}}
-                        <div>
+                        <div class="w-full md:w-48">
 
                             <button
                                 type="submit"
-                                class="inline-flex items-center gap-2
+                                class="inline-flex h-11 w-full items-center justify-center gap-2
                                     rounded-lg
                                     bg-[#1a34c9]
-                                    px-5 py-2.5
-                                    text-sm font-medium
+                                    px-5
+                                    text-sm font-semibold
                                     text-white
                                     transition
-                                    hover:bg-blue-800
+                                    hover:bg-[#1429a3]
                                     focus:outline-none
                                     focus:ring-2
                                     focus:ring-[#1a34c9]/30
+                                    focus:ring-offset-2
                                     hover:cursor-pointer"
                             >
                                 <x-icon name="upload" size="18"/>
                                 Analizar archivo
                             </button>
-
                         </div>
-
                     </div>
-
                 </form>
-
             </div>
-
         </div>
 
         {{-- CARGA DE TRANSFERENCIAS --}}
-        <div class="rounded-xl border border-gray-200 bg-white shadow-sm">
-            <div class="border-b border-gray-200 px-6 py-5">
+        <div class="flex h-full flex-col rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div class="min-h-[104px] border-b border-gray-200 px-6 py-5">
                 <h2 class="text-lg font-semibold text-gray-800">
                     Transferencias
                 </h2>
@@ -306,15 +287,16 @@
                 </p>
             </div>
 
-            <div class="px-6 py-6">
+            <div class="flex flex-1 flex-col px-6 py-6">
                 <form
                     action="{{ route('transferencias.analizar') }}"
                     method="POST"
                     enctype="multipart/form-data"
+                    class="flex flex-1 flex-col"
                 >
                     @csrf
 
-                    <div class="flex flex-col gap-4 md:flex-row md:items-end">
+                    <div class="flex flex-1 flex-col justify-between gap-4 md:flex-row md:items-end">
 
                         {{-- ARCHIVO --}}
                         <div class="flex-1">
@@ -340,14 +322,14 @@
                                         accept=".csv,.txt,text/csv"
                                         required
                                         x-ref="archivo"
-                                        class="block w-full cursor-pointer rounded-lg
+                                        class="block h-11 w-full cursor-pointer rounded-lg
                                             border border-gray-300
                                             bg-white text-sm text-gray-600
                                             file:mr-4
                                             file:border-0
                                             file:bg-gray-100
                                             file:px-4
-                                            file:py-2.5
+                                            file:py-2
                                             file:text-sm
                                             file:font-medium
                                             file:text-gray-700
@@ -395,29 +377,24 @@
                                     class="mt-2 truncate text-xs text-gray-600"
                                 ></p>
                             </div>
-
-                            @error('archivo')
-                                <p class="mt-2 text-sm text-red-600">
-                                    {{ $message }}
-                                </p>
-                            @enderror
                         </div>
 
                         {{-- BOTÓN --}}
-                        <div>
+                        <div class="w-full md:w-48">
                             <button
                                 type="submit"
-                                class="inline-flex items-center gap-2
+                                class="inline-flex h-11 w-full items-center justify-center gap-2
                                     rounded-lg
                                     bg-[#1a34c9]
-                                    px-5 py-2.5
-                                    text-sm font-medium
+                                    px-5
+                                    text-sm font-semibold
                                     text-white
                                     transition
-                                    hover:bg-blue-800
+                                    hover:bg-[#1429a3]
                                     focus:outline-none
                                     focus:ring-2
                                     focus:ring-[#1a34c9]/30
+                                    focus:ring-offset-2
                                     hover:cursor-pointer"
                             >
                                 <x-icon name="upload" size="18"/>
@@ -429,14 +406,180 @@
             </div>
         </div>
 
-        {{-- MODAL DE PREVISUALIZACIÓN --}}
+        {{-- IMPORTACIÓN DE SALDOS HISTÓRICOS --}}
+
+        <section class="flex h-full flex-col rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div class="min-h-[104px] border-b border-gray-200 px-6 py-5">
+                <h2 class="text-lg font-semibold text-gray-800">
+                    Importar saldos históricos
+                </h2>
+                <p class="mt-1 text-sm text-gray-500">
+                    Carga un archivo CSV con el CI de cada afiliado y su saldo disponible.
+                    Antes de guardar los datos podrás revisar y corregir los registros.
+                </p>
+            </div>
+
+            <div class="flex flex-1 flex-col px-6 py-6">
+                <form
+                    method="POST"
+                    action="{{ route('saldos.preview') }}"
+                    enctype="multipart/form-data"
+                    class="flex flex-1 flex-col"
+                >
+                    @csrf
+
+                    <div class="flex flex-1 flex-col">
+                        <label
+                            for="archivo_saldos"
+                            class="mb-2 block text-sm font-medium text-gray-700"
+                        >
+                            Archivo CSV
+                        </label>
+
+                        <input
+                            type="file"
+                            id="archivo_saldos"
+                            name="archivo"
+                            accept=".csv,text/csv"
+                            required
+                            class="block h-11 w-full cursor-pointer rounded-lg border border-gray-300 bg-white text-sm text-gray-600
+                                file:mr-4 file:border-0 file:bg-gray-100 file:px-4 file:py-2
+                                file:text-sm file:font-medium file:text-gray-700
+                                hover:file:bg-gray-200
+                                focus:outline-none focus:ring-2 focus:ring-[#1a34c9]/30"
+                        >
+
+                        <p class="mt-2 text-xs text-gray-500">
+                            El archivo debe contener las columnas
+                            <span class="font-semibold">CI</span> y
+                            <span class="font-semibold">SALDO</span>.
+                            Los saldos deben expresarse como números, por ejemplo:
+                            <span class="font-semibold">125.50</span>.
+                        </p>
+                    </div>
+                    <div class="mt-auto flex justify-end border-t border-gray-200 pt-4">
+                        <button
+                            type="submit"
+                            class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg
+                                bg-[#1a34c9] px-5 text-sm font-semibold text-white transition
+                                hover:bg-[#1429a3] focus:outline-none focus:ring-2
+                                focus:ring-[#1a34c9]/30 focus:ring-offset-2 hover:cursor-pointer
+                                md:w-48"
+                        >
+                            <x-icon name="upload" size="18" />
+                            Analizar CSV
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        {{-- =========================================================
+            IMPORTACIÓN DE OBSERVACIONES HISTÓRICAS
+        ========================================================= --}}
+
+        <div class="flex h-full flex-col rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div class="min-h-[104px] border-b border-gray-200 px-6 py-5">
+                <h2 class="text-lg font-semibold text-gray-800">
+                    Observaciones históricas
+                </h2>
+                <p class="mt-1 text-sm text-gray-500">
+                    Importa las observaciones existentes de los afiliados.
+                </p>
+            </div>
+
+            <div class="flex flex-1 flex-col px-6 py-6">
+                <form
+                    action="{{ route('observacionesHistoricas.previsualizarObservaciones') }}"
+                    method="POST"
+                    enctype="multipart/form-data"
+                    class="flex flex-1 flex-col"
+                >
+                    @csrf
+
+                    <div class="flex flex-1 flex-col">
+                        <label
+                            for="archivo_observaciones"
+                            class="mb-2 block text-sm font-medium text-gray-700"
+                        >
+                            Archivo CSV
+                        </label>
+
+                        <input
+                            type="file"
+                            name="archivo"
+                            id="archivo_observaciones"
+                            accept=".csv,.txt"
+                            required
+                            class="block h-11 w-full cursor-pointer rounded-lg border border-gray-300 bg-white text-sm text-gray-600
+                                file:mr-4 file:border-0 file:bg-gray-100 file:px-4 file:py-2
+                                file:text-sm file:font-medium file:text-gray-700
+                                hover:file:bg-gray-200 focus:outline-none
+                                focus:ring-2 focus:ring-[#1a34c9]/30"
+                        >
+
+                        <p class="mt-2 text-xs text-gray-500">
+                            El CSV debe contener las columnas
+                            <span class="font-semibold">CI</span> y
+                            <span class="font-semibold">observacion</span>.
+                        </p>
+                    </div>
+
+                    <div class="mt-auto flex justify-end border-t border-gray-200 pt-4">
+                        <button
+                            type="submit"
+                            class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg
+                                bg-[#1a34c9] px-5 text-sm font-semibold text-white transition
+                                hover:bg-[#1429a3] focus:outline-none focus:ring-2
+                                focus:ring-[#1a34c9]/30 focus:ring-offset-2 hover:cursor-pointer
+                                md:w-48"
+                        >
+                            <x-icon name="upload" size="18" />
+                            Analizar CSV
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        </div> {{-- Fin de la cuadrícula de módulos de carga --}}
+
+        @php
+            $modalCargaActivo = match (true) {
+                !empty($observacionesToken ?? null) => 'observaciones',
+                isset($yaExisten) => 'saldos',
+                isset($resultado) => 'aportes',
+                !empty($mostrarPrevisualizacion ?? false) => 'afiliadas',
+                default => null,
+            };
+        @endphp
+
+        {{-- MODAL DE OBSERVACIONES: usa variables exclusivas de esta importación --}}
+        @include('carga-datos.modals.modal-observaciones', [
+            'token' => $observacionesToken ?? null,
+            'abierto' => $modalCargaActivo === 'observaciones',
+            'filas' => $observacionesFilas ?? [],
+            'total' => $observacionesTotal ?? 0,
+            'correctos' => $observacionesCorrectos ?? 0,
+            'errores' => $observacionesErrores ?? 0,
+            'noEncontrados' => $observacionesNoEncontrados ?? 0,
+        ])
+
+        {{-- MODAL DE SALDOS: solo se incluye al regresar de su previsualización --}}
+        @if (isset($yaExisten))
+            @include('carga-datos.modals.modal-preview', [
+                'abierto' => $modalCargaActivo === 'saldos',
+            ])
+        @endif
+
+        {{-- MODAL DE PREVISUALIZACIÓN DE AFILIADAS --}}
         <div
-            x-data="{mostrarPrevisualizacion: @js($mostrarPrevisualizacion ?? false),
+            x-data="{modalAfiliadasAbierto: @js($modalCargaActivo === 'afiliadas'),
             datos: @js($datosValidacion ?? null),
             filtro: 'todas'}"
         >
             <x-modal
-                x-model="mostrarPrevisualizacion"
+                x-model="modalAfiliadasAbierto"
                 titulo="Previsualización de afiliadas"
                 ancho="max-w-7xl"
             >
@@ -447,9 +590,7 @@
 
                     {{-- TOTAL --}}
                     <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                        <p class="text-sm text-gray-500">
-                            Total
-                        </p>
+                        <p class="text-sm text-gray-500">Total</p>
 
                         <p
                             class="mt-1 text-2xl font-semibold text-gray-900"
@@ -459,9 +600,7 @@
 
                     {{-- VÁLIDAS --}}
                     <div class="rounded-xl border border-green-200 bg-green-50 p-4">
-                        <p class="text-sm text-green-700">
-                            Válidas
-                        </p>
+                        <p class="text-sm text-green-700">Válidas</p>
 
                         <p
                             class="mt-1 text-2xl font-semibold text-green-700"
@@ -471,10 +610,7 @@
 
                     {{-- CON ERRORES --}}
                     <div class="rounded-xl border border-red-200 bg-red-50 p-4">
-                        <p class="text-sm text-red-700">
-                            Con errores
-                        </p>
-
+                        <p class="text-sm text-red-700">Con errores</p>
                         <p
                             class="mt-1 text-2xl font-semibold text-red-700"
                             x-text="datos?.errores ?? 0"
@@ -690,7 +826,6 @@
                             action="{{ route('carga-datos.afiliados.confirmar') }}"
                         >
                             @csrf
-
                             <button
                                 type="submit"
                                 x-bind:disabled="!datos || datos.validas === 0"
@@ -708,19 +843,18 @@
                     </div>
                 </div>
             </x-modal>
-
         </div>
 
         {{-- MODAL DE PREVISUALIZACIÓN DE APORTES HISTÓRICOS --}}
         <div
             x-data="{
-                mostrarPrevisualizacion: @js(isset($resultado)),
+                modalAportesAbierto: @js($modalCargaActivo === 'aportes'),
                 datos: @js($resultado ?? null),
                 filtro: 'todas'
             }"
         >
             <x-modal
-                x-model="mostrarPrevisualizacion"
+                x-model="modalAportesAbierto"
                 titulo="Previsualización de aportes históricos"
                 ancho="max-w-7xl"
             >

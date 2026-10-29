@@ -49,25 +49,6 @@
         @endif
     </div>
 
-    {{-- MENSAJES--}}
-
-    @if (session('success'))
-        <div class="mb-6 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-            {{ session('success') }}
-        </div>
-    @endif
-
-    @if ($errors->any())
-        <div class="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            <ul class="list-inside list-disc space-y-1">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-
-
     {{-- CONTENEDOR PRINCIPAL--}}
     <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
 
@@ -187,6 +168,9 @@
                             Último aporte 
                         </th>
                         <th class="whitespace-nowrap px-5 py-4 text-center">
+                            Saldo disponible
+                        </th>
+                        <th class="whitespace-nowrap px-5 py-4 text-center">
                             Gestión
                         </th>
                         <th class="px-4 py-4 text-center">
@@ -277,6 +261,15 @@
                                 @endif
                             </td>
 
+                            <td class="whitespace-nowrap px-5 py-4 text-center font-medium text-amber-700">
+                                Bs. {{ number_format(
+                                    (float) $saldoDisponiblePorAfiliado->get($afiliado->id, 0),
+                                    2,
+                                    '.',
+                                    ','
+                                ) }}
+                            </td>
+
                             {{-- Gestión --}}
                             <td class="px-5 py-4 text-center font-medium text-gray-700">
                                 {{ $gestion }}
@@ -315,9 +308,9 @@
 
                                         <p class="mt-1 text-sm text-gray-500">
                                             @if (request()->filled('buscar'))
-                                                La afiliada o el afiliado buscado no tiene aportes registrados en el sistema.
+                                                La afiliada o el afiliado buscado no tiene aportes ni saldos registrados en el sistema.
                                             @else
-                                                No hay afiliados con aportes verificados en la gestión {{ $gestion }}.
+                                                No hay afiliados con aportes verificados en la gestión {{ $gestion }} ni saldos disponibles.
                                             @endif
                                         </p>
                                     </div>

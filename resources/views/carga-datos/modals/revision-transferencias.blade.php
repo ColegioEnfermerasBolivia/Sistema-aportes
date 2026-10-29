@@ -290,7 +290,7 @@
 <script>
     function revisionTransferencias() {
         return {
-            abierto: @json(session('mostrar_revision_transferencias', false)),
+            abierto: @json(session('mostrar_revision_transferencias_una_vez', false)),
             filas: @json(session('filas_revision_transferencias', [])),
             filtro: 'TODOS',
             mensaje: '',

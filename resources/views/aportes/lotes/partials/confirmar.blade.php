@@ -32,6 +32,59 @@
         </div>
     </div>
 
+    <div class="space-y-3">
+        <h4 class="text-sm font-semibold text-gray-900">
+            Aplicación de saldos
+        </h4>
+        <div class="overflow-x-auto rounded-xl border border-gray-200">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            Afiliado
+                        </th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            Saldo anterior
+                        </th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            Períodos a generar
+                        </th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            Saldo restante estimado
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
+                    <template
+                        x-for="resumen in resumenPagos"
+                        :key="resumen.pago_id"
+                    >
+                        <tr>
+                            <td class="px-4 py-3 text-sm text-gray-900">
+                                <span x-text="resumen.nombre"></span>
+                                <span class="text-gray-500">
+                                    (CI: <span x-text="resumen.ci"></span>)
+                                </span>
+                            </td>
+                            <td
+                                class="px-4 py-3 text-right text-sm text-gray-900"
+                                x-text="'Bs. ' + Number(resumen.saldo_anterior).toFixed(2)"
+                            ></td>
+                            <td
+                                class="px-4 py-3 text-right text-sm text-gray-900"
+                                x-text="resumen.cantidad_periodos"
+                            ></td>
+                            <td
+                                class="px-4 py-3 text-right text-sm font-semibold text-amber-700"
+                                x-text="'Bs. ' + Number(resumen.saldo_final_estimado).toFixed(2)"
+                            ></td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <div class="overflow-x-auto rounded-xl border border-gray-200">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">

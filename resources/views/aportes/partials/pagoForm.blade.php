@@ -9,6 +9,7 @@
 
         mensual: '',
         total: '',
+        saldoAnterior: '0.00',
 
         buscando: false,
         encontrado: false,
@@ -23,43 +24,61 @@
             this.ultimoAporte = null; 
             this.mensual = ''; 
             this.total = ''; 
+            this.saldoAnterior = '0.00';
             this.buscando = false; 
             this.encontrado = false; 
             this.mensaje = ''; 
         },
-
+        
         get periodos() {
-            const mensual = parseFloat(this.mensual);
-            const total = parseFloat(this.total);
+            const mensual = Math.round(parseFloat(this.mensual) * 100);
+            const total = Math.round(parseFloat(this.total) * 100)
+                + Math.round(parseFloat(this.saldoAnterior || 0) * 100);
 
             if (
-                !mensual ||
-                !total ||
+                !this.mensual ||
+                !this.total ||
+                !Number.isFinite(mensual) ||
+                !Number.isFinite(total) ||
                 mensual <= 0 ||
                 total <= 0
             ) {
                 return null;
             }
 
-            const resultado = total / mensual;
+            return Math.floor(total / mensual);
+        },
 
-            if (!Number.isInteger(resultado)) {
-                return '—';
+        get saldo() {
+            const mensual = Math.round(parseFloat(this.mensual) * 100);
+            const total = Math.round(parseFloat(this.total) * 100)
+                + Math.round(parseFloat(this.saldoAnterior || 0) * 100);
+
+            if (
+                !this.mensual ||
+                !this.total ||
+                !Number.isFinite(mensual) ||
+                !Number.isFinite(total) ||
+                mensual <= 0 ||
+                total <= 0
+            ) {
+                return null;
             }
 
-            return resultado;
+            return ((total % mensual) / 100).toFixed(2);
         },
 
         get puedeRegistrar() {
-            const mensual = parseFloat(this.mensual);
-            const total = parseFloat(this.total);
+            const mensual = Math.round(parseFloat(this.mensual) * 100);
+            const total = Math.round(parseFloat(this.total) * 100);
 
             return (
                 this.encontrado &&
                 this.estado === 'ACTIVO' &&
+                Number.isFinite(mensual) &&
+                Number.isFinite(total) &&
                 mensual > 0 &&
-                total > 0 &&
-                Number.isInteger(total / mensual)
+                total > 0
             );
         },
 
@@ -72,6 +91,7 @@
             this.apellidos = '';
             this.estado = '';
             this.ultimoAporte = null;
+            this.saldoAnterior = '0.00';
 
             const ciBuscado = this.ci.trim();
 
@@ -106,6 +126,7 @@
                 this.apellidos = datos.apellidos;
                 this.estado = datos.estado;
                 this.ultimoAporte = datos.ultimo_aporte;
+                this.saldoAnterior = datos.saldo_disponible ?? '0.00';
 
                 this.encontrado = true;
 
@@ -334,24 +355,60 @@
             </div>
 
             {{-- Cantidad de períodos --}}
-            <div class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+            <div class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 space-y-3">
                 <div class="flex items-center justify-between gap-4">
                     <span class="text-sm font-medium text-gray-700">
-                        Cantidad de períodos
+                        Saldo disponible anterior
                     </span>
+
+                    <span
+                        class="text-sm font-semibold text-amber-700"
+                        x-text="'Bs ' + Number(saldoAnterior).toFixed(2)"
+                    ></span>
+                </div>
+
+                <div class="flex items-center justify-between gap-4 border-t border-gray-200 pt-3">
+                    <span class="text-sm font-medium text-gray-700">
+                        Períodos a cubrir
+                    </span>
+
                     <span
                         class="text-lg font-bold text-gray-900"
                         x-text="periodos ?? '—'"
                     ></span>
                 </div>
+
+                <div class="flex items-center justify-between gap-4 border-t border-gray-200 pt-3">
+                    <span class="text-sm font-medium text-gray-700">
+                        Saldo restante estimado
+                    </span>
+
+                    <span
+                        class="text-sm font-bold"
+                        :class="Number(saldo) > 0 ? 'text-amber-700' : 'text-gray-900'"
+                        x-text="saldo !== null ? 'Bs ' + saldo : '—'"
+                    ></span>
+                </div>
+
                 <p
-                    x-show="periodos === '—'"
+                    x-show="periodos === 0"
                     x-cloak
-                    class="mt-1 text-xs text-red-600"
+                    class="text-xs text-amber-700"
                 >
-                    El monto total debe ser divisible exactamente entre el monto mensual.
+                    El saldo disponible se sumará al pago. El remanente quedará como saldo
+                    para futuros aportes una vez verificado.
+                </p>
+
+                <p
+                    x-show="periodos !== null && periodos > 0 && Number(saldo) > 0"
+                    x-cloak
+                    class="text-xs text-gray-500"
+                >
+                    Se aplicará primero el saldo anterior y el remanente podrá utilizarse
+                    para futuros aportes.
                 </p>
             </div>
+
 
             {{-- Observaciones --}}
             <div>

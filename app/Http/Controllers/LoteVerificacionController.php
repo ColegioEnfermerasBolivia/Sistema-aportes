@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Aporte;
+use App\Models\Afiliado;
 use App\Models\Colegio;
 use App\Models\LoteVerificacion;
 use App\Models\Pago;
 use App\Services\AuditoriaService;
+use App\Services\SaldoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +19,8 @@ use function PHPUnit\Framework\returnArgument;
 class LoteVerificacionController extends Controller
 {
     public function __construct(
-        private AuditoriaService $auditoria
+        private AuditoriaService $auditoria,
+        private SaldoService $saldoService
     ) {}
     public function index()
     {
@@ -31,7 +34,7 @@ class LoteVerificacionController extends Controller
                 'colegio',
                 'enviadoPor',
                 'pagos' => fn ($query) => $query
-                    ->with('afiliado')
+                    ->with(['afiliado.saldosActivos', 'saldos'])
                     ->orderBy('id'),
             ])
                 ->where('colegio_id', $usuario->colegio_id)
@@ -53,7 +56,7 @@ class LoteVerificacionController extends Controller
             'colegio',
             'enviadoPor',
             'pagos' => fn ($query) => $query
-                ->with('afiliado')
+                ->with(['afiliado.saldosActivos', 'saldos'])
                 ->orderBy('id'),
         ])
             ->whereIn('estado', [
@@ -87,7 +90,7 @@ class LoteVerificacionController extends Controller
             'verificadoPor',
             'pagos' => fn ($query) => $query
                 ->whereIn('estado', ['OBSERVADO', 'VERIFICADO'])
-                ->with('afiliado')
+                ->with(['afiliado.saldosActivos', 'saldos'])
                 ->orderBy('id'),
         ])
             ->where('estado', 'VERIFICADO');
@@ -381,9 +384,41 @@ class LoteVerificacionController extends Controller
         }
 
         $aportesPreview = [];
+        $resumenPagos = [];
 
         foreach ($pagos as $pago) {
             $afiliado = $pago->afiliado;
+
+            if (!$afiliado) {
+                return response()->json([
+                    'message' => "El pago {$pago->id} no tiene una afiliada asociada.",
+                ], 422);
+            }
+
+            if (
+                $pago->monto_mensual === null ||
+                (int) round((float) $pago->monto_mensual * 100) <= 0
+            ) {
+                return response()->json([
+                    'message' => "El pago {$pago->id} no tiene una tarifa mensual válida. Debe revisarse antes de confirmar.",
+                ], 422);
+            }
+
+            $montoMensualCentavos = (int) round(
+                (float) $pago->monto_mensual * 100
+            );
+
+            $montoTotalCentavos = (int) round(
+                (float) $pago->monto_total * 100
+            );
+
+            $saldosAnteriores = $this->saldoService
+                ->activosParaAfiliado($afiliado->id);
+            $distribucion = $this->saldoService->distribuir(
+                $saldosAnteriores,
+                $montoTotalCentavos,
+                $montoMensualCentavos
+            );
 
             $ultimoAporte = $afiliado->aportes()
                 ->where('estado', 'VERIFICADO')
@@ -403,31 +438,26 @@ class LoteVerificacionController extends Controller
                 )->startOfMonth();
             }
 
-            $montoTotalCentavos = (int) round(
-                $pago->monto_total * 100
-            );
-
-            if (
-                $montoTotalCentavos % $pago->cantidad_periodos !== 0
-            ) {
-                return response()->json([
-                    'message' => "El pago {$pago->id} no puede dividirse exactamente entre sus períodos.",
-                ], 422);
-            }
-
-            $montoPorPeriodoCentavos = intdiv(
-                $montoTotalCentavos,
-                $pago->cantidad_periodos
-            );
-
             for (
                 $i = 0;
-                $i < $pago->cantidad_periodos;
+                $i < $distribucion['cantidad_periodos'];
                 $i++
             ) {
                 $fechaPeriodo = $fechaInicio
                     ->copy()
                     ->addMonths($i);
+
+                $existe = Aporte::query()
+                    ->where('afiliado_id', $afiliado->id)
+                    ->where('mes', $fechaPeriodo->month)
+                    ->where('year', $fechaPeriodo->year)
+                    ->exists();
+
+                if ($existe) {
+                    return response()->json([
+                        'message' => "La afiliada {$afiliado->id} ya tiene un aporte registrado para {$fechaPeriodo->month}/{$fechaPeriodo->year}.",
+                    ], 422);
+                }
 
                 $aportesPreview[] = [
                     'pago_id' => $pago->id,
@@ -439,7 +469,7 @@ class LoteVerificacionController extends Controller
                     'mes' => $fechaPeriodo->month,
                     'year' => $fechaPeriodo->year,
                     'monto' => number_format(
-                        $montoPorPeriodoCentavos / 100,
+                        $montoMensualCentavos / 100,
                         2,
                         '.',
                         ''
@@ -447,12 +477,48 @@ class LoteVerificacionController extends Controller
                     'seleccionado' => true,
                 ];
             }
+
+            $resumenPagos[] = [
+                'pago_id' => $pago->id,
+                'monto_total' => number_format(
+                    $montoTotalCentavos / 100,
+                    2,
+                    '.',
+                    ''
+                ),
+                'monto_mensual' => number_format(
+                    $montoMensualCentavos / 100,
+                    2,
+                    '.',
+                    ''
+                ),
+                'nombre' => $afiliado->nombres
+                    . ' '
+                    . $afiliado->apellidos,
+                'ci' => $afiliado->ci,
+                'saldo_anterior' => number_format(
+                    $distribucion['saldo_anterior_centavos'] / 100,
+                    2,
+                    '.',
+                    ''
+                ),
+                'cantidad_periodos' =>
+                    $distribucion['cantidad_periodos'],
+                'saldo_final_estimado' => number_format(
+                    $distribucion['saldo_final_centavos'] / 100,
+                    2,
+                    '.',
+                    ''
+                ),
+            ];
         }
+
         return response()->json([
             'aportes' => $aportesPreview,
+            'resumen_pagos' => $resumenPagos,
         ]);
     }
-
+    
     public function confirmarAportes(
         Request $request,
         LoteVerificacion $lote
@@ -470,7 +536,6 @@ class LoteVerificacionController extends Controller
                 'integer',
                 'distinct',
             ],
-
             'pagos_observados' => [
                 'nullable',
                 'array',
@@ -484,7 +549,6 @@ class LoteVerificacionController extends Controller
                 'nullable',
                 'array',
             ],
-
             'observaciones_pagos.*' => [
                 'nullable',
                 'string',
@@ -498,7 +562,9 @@ class LoteVerificacionController extends Controller
         $observacionesPagosNormalizadas = [];
 
         foreach ($pagosObservadosIds as $pagoId) {
-            $observacion = trim($observacionesPagos[$pagoId] ?? '');
+            $observacion = trim(
+                $observacionesPagos[$pagoId] ?? ''
+            );
 
             if ($observacion === '') {
                 return response()->json([
@@ -506,7 +572,8 @@ class LoteVerificacionController extends Controller
                 ], 422);
             }
 
-            $observacionesPagosNormalizadas[$pagoId] = $observacion;
+            $observacionesPagosNormalizadas[$pagoId] =
+                $observacion;
         }
 
         if (!empty(array_diff(
@@ -527,16 +594,6 @@ class LoteVerificacionController extends Controller
         ];
 
         try {
-            /** @var array{
-             *     pagos_procesados: int,
-             *     pagos_observados: int,
-             *     aportes_generados: int,
-             *     lote_verificado: bool,
-             *     pagos_procesados_ids: list<int>,
-             *     pagos_observados_ids: list<int>,
-             *     observaciones_pagos: array<int, string>
-             * } $resultado
-             */
             $resultado = DB::transaction(function () use (
                 $lote,
                 $usuario,
@@ -544,7 +601,13 @@ class LoteVerificacionController extends Controller
                 $pagosObservadosIds,
                 $observacionesPagosNormalizadas
             ): array {
-                $pagos = $lote->pagos()
+                // Bloqueamos el lote para evitar confirmaciones simultáneas.
+                $loteBloqueado = LoteVerificacion::query()
+                    ->whereKey($lote->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                $pagos = $loteBloqueado->pagos()
                     ->whereIn('id', $pagoIds)
                     ->where('estado', 'EN_LOTE')
                     ->with('afiliado')
@@ -552,7 +615,7 @@ class LoteVerificacionController extends Controller
                     ->get();
 
                 if ($pagos->count() !== count($pagoIds)) {
-                    throw new \Exception(
+                    throw new \RuntimeException(
                         'Uno o más pagos seleccionados ya no están disponibles para procesar.'
                     );
                 }
@@ -560,9 +623,11 @@ class LoteVerificacionController extends Controller
                 $pagosProcesados = 0;
                 $pagosObservados = 0;
                 $aportesGenerados = 0;
+                $saldosGenerados = 0;
 
                 $pagosProcesadosIds = [];
                 $pagosObservadosIdsRegistrados = [];
+                $saldosGeneradosDetalle = [];
 
                 foreach ($pagos as $pago) {
                     if (in_array(
@@ -571,17 +636,59 @@ class LoteVerificacionController extends Controller
                     )) {
                         $pago->update([
                             'estado' => 'OBSERVADO',
-                            'observaciones' => $observacionesPagosNormalizadas[$pago->id],
+                            'observaciones' =>
+                                $observacionesPagosNormalizadas[$pago->id],
                             'verificado_por' => $usuario->id,
                             'fecha_verificacion' => now(),
                         ]);
+
                         $pagosObservadosIdsRegistrados[] = $pago->id;
                         $pagosObservados++;
+
                         continue;
                     }
 
-                    /*PAGO VERIFICADO*/
                     $afiliado = $pago->afiliado;
+
+                    if (!$afiliado) {
+                        throw new \RuntimeException(
+                            "El pago {$pago->id} no tiene una afiliada asociada."
+                        );
+                    }
+
+                    Afiliado::query()
+                        ->whereKey($afiliado->id)
+                        ->lockForUpdate()
+                        ->firstOrFail();
+
+                    if (
+                        $pago->monto_mensual === null ||
+                        (int) round(
+                            (float) $pago->monto_mensual * 100
+                        ) <= 0
+                    ) {
+                        throw new \RuntimeException(
+                            "El pago {$pago->id} no tiene una tarifa mensual válida. Debe revisarse antes de confirmar."
+                        );
+                    }
+
+                    $montoMensualCentavos = (int) round(
+                        (float) $pago->monto_mensual * 100
+                    );
+
+                    $montoTotalCentavos = (int) round(
+                        (float) $pago->monto_total * 100
+                    );
+
+                    $saldosAnteriores = $this->saldoService
+                        ->activosParaAfiliado($afiliado->id, true);
+                    $distribucion = $this->saldoService->distribuir(
+                        $saldosAnteriores,
+                        $montoTotalCentavos,
+                        $montoMensualCentavos
+                    );
+                    $cantidadPeriodos =
+                        $distribucion['cantidad_periodos'];
 
                     $ultimoAporte = $afiliado->aportes()
                         ->where('estado', 'VERIFICADO')
@@ -601,52 +708,25 @@ class LoteVerificacionController extends Controller
                         )->startOfMonth();
                     }
 
-                    $montoTotalCentavos = (int) round(
-                        $pago->monto_total * 100
-                    );
-
-                    if (
-                        $montoTotalCentavos
-                        % $pago->cantidad_periodos !== 0
-                    ) {
-                        throw new \Exception(
-                            "El pago {$pago->id} no puede dividirse exactamente entre sus períodos."
-                        );
-                    }
-
-                    $montoPorPeriodoCentavos = intdiv(
-                        $montoTotalCentavos,
-                        $pago->cantidad_periodos
-                    );
-
-                    /*Generamos los períodos consecutivos.*/
+                    // Validamos y generamos los períodos completos.
                     for (
                         $i = 0;
-                        $i < $pago->cantidad_periodos;
+                        $i < $cantidadPeriodos;
                         $i++
                     ) {
                         $fechaPeriodo = $fechaInicio
                             ->copy()
                             ->addMonths($i);
 
-                        /*Protección adicional contra duplicados.*/
-                        $existe = Aporte::where(
-                                'afiliado_id',
-                                $afiliado->id
-                            )
-                            ->where(
-                                'mes',
-                                $fechaPeriodo->month
-                            )
-                            ->where(
-                                'year',
-                                $fechaPeriodo->year
-                            )
+                        $existe = Aporte::query()
+                            ->where('afiliado_id', $afiliado->id)
+                            ->where('mes', $fechaPeriodo->month)
+                            ->where('year', $fechaPeriodo->year)
                             ->exists();
 
                         if ($existe) {
-                            throw new \Exception(
-                                "El afiliado {$afiliado->id} ya tiene un aporte registrado para {$fechaPeriodo->month}/{$fechaPeriodo->year}."
+                            throw new \RuntimeException(
+                                "La afiliada {$afiliado->id} ya tiene un aporte registrado para {$fechaPeriodo->month}/{$fechaPeriodo->year}."
                             );
                         }
 
@@ -656,7 +736,7 @@ class LoteVerificacionController extends Controller
                             'pago_id' => $pago->id,
                             'mes' => $fechaPeriodo->month,
                             'year' => $fechaPeriodo->year,
-                            'monto' => $montoPorPeriodoCentavos / 100,
+                            'monto' => $montoMensualCentavos / 100,
                             'estado' => 'VERIFICADO',
                             'observaciones' => null,
                             'registrado_por' => $pago->registrado_por,
@@ -668,27 +748,98 @@ class LoteVerificacionController extends Controller
                         $aportesGenerados++;
                     }
 
-                    /*El pago queda definitivamente verificado.*/
+                    /*
+                    * Consumimos primero los saldos anteriores.
+                    * Solo se utiliza de ellos lo necesario para cubrir
+                    * los períodos generados.
+                    */
+                    $this->saldoService->consumir(
+                        $saldosAnteriores,
+                        $distribucion['costo_periodos_centavos']
+                    );
+
+                    /*
+                    * Lo que no cubren los saldos anteriores se cubre
+                    * con el pago actual.
+                    */
+                    $consumoPagoCentavos = max(
+                        0,
+                        $distribucion['costo_periodos_centavos']
+                            - $distribucion['saldo_anterior_centavos']
+                    );
+
+                    if ($consumoPagoCentavos > $montoTotalCentavos) {
+                        throw new \RuntimeException(
+                            "No se pudo cuadrar el cálculo del pago {$pago->id}."
+                        );
+                    }
+
+                    $remanentePagoCentavos = max(
+                        0,
+                        $montoTotalCentavos - $consumoPagoCentavos
+                    );
+
+                    // Solo generamos el saldo nuevo al confirmar el pago.
+                    if ($remanentePagoCentavos > 0) {
+                        $saldoNuevo = $this->saldoService
+                            ->registrarRemanente(
+                                $afiliado->id,
+                                $pago->id,
+                                $remanentePagoCentavos
+                            );
+
+                        $saldosGenerados++;
+                        $saldosGeneradosDetalle[] = [
+                            'pago_id' => $pago->id,
+                            'saldo_id' => $saldoNuevo?->id,
+                            'monto' => number_format(
+                                $remanentePagoCentavos / 100,
+                                2,
+                                '.',
+                                ''
+                            ),
+                        ];
+                    }
+
+                    // Actualizamos el número real de períodos generados.
+                    $cantidadPeriodosAnterior = (int) $pago->cantidad_periodos;
+
                     $pago->update([
+                        'cantidad_periodos' => $cantidadPeriodos,
                         'estado' => 'VERIFICADO',
                         'verificado_por' => $usuario->id,
                         'fecha_verificacion' => now(),
                     ]);
+
+                    // El lote ya contabilizó los períodos originales al registrar el pago.
+                    $diferenciaPeriodos =
+                        $cantidadPeriodos - $cantidadPeriodosAnterior;
+
+                    if ($diferenciaPeriodos > 0) {
+                        $loteBloqueado->increment(
+                            'cantidad_aportes',
+                            $diferenciaPeriodos
+                        );
+                    } elseif ($diferenciaPeriodos < 0) {
+                        $loteBloqueado->decrement(
+                            'cantidad_aportes',
+                            abs($diferenciaPeriodos)
+                        );
+                    }
+
                     $pagosProcesadosIds[] = $pago->id;
                     $pagosProcesados++;
                 }
 
-                $pagosPendientes = Pago::where(
-                        'lote_verificacion_id',
-                        $lote->id
-                    )
+                $pagosPendientes = Pago::query()
+                    ->where('lote_verificacion_id', $loteBloqueado->id)
                     ->where('estado', 'EN_LOTE')
                     ->count();
 
                 $loteVerificado = false;
 
                 if ($pagosPendientes === 0) {
-                    $lote->update([
+                    $loteBloqueado->update([
                         'estado' => 'VERIFICADO',
                         'verificado_por' => $usuario->id,
                         'fecha_verificacion' => now(),
@@ -701,14 +852,18 @@ class LoteVerificacionController extends Controller
                     'pagos_procesados' => $pagosProcesados,
                     'pagos_observados' => $pagosObservados,
                     'aportes_generados' => $aportesGenerados,
+                    'saldos_generados' => $saldosGenerados,
+                    'saldos_generados_detalle' => $saldosGeneradosDetalle,
                     'lote_verificado' => $loteVerificado,
-
-                    //Auditoria
                     'pagos_procesados_ids' => $pagosProcesadosIds,
-                    'pagos_observados_ids' => $pagosObservadosIdsRegistrados,
-                    'observaciones_pagos' => $observacionesPagosNormalizadas,
+                    'pagos_observados_ids' =>
+                        $pagosObservadosIdsRegistrados,
+                    'observaciones_pagos' =>
+                        $observacionesPagosNormalizadas,
                 ];
             });
+
+            $lote->refresh();
 
             $datosNuevos = [
                 'estado_lote' => $lote->estado,
@@ -718,6 +873,9 @@ class LoteVerificacionController extends Controller
                 'cantidad_pagos_verificados' => $resultado['pagos_procesados'],
                 'cantidad_pagos_observados' => $resultado['pagos_observados'],
                 'cantidad_aportes_generados' => $resultado['aportes_generados'],
+                'cantidad_saldos_generados' => $resultado['saldos_generados'],
+                'saldos_generados_detalle' =>
+                    $resultado['saldos_generados_detalle'],
             ];
 
             $this->auditoria->registrar(
@@ -733,12 +891,15 @@ class LoteVerificacionController extends Controller
                 'message' => 'La revisión del lote se procesó correctamente.',
                 'resultado' => $resultado,
             ]);
-
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            report($e);
 
             return response()->json([
-                'message' => $e->getMessage(),
+                'message' => $e instanceof \RuntimeException
+                    ? $e->getMessage()
+                    : 'No se pudo procesar la revisión del lote. Verifica los datos e inténtalo nuevamente.',
             ], 422);
         }
     }
+
 }

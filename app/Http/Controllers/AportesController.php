@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Afiliado;
 use App\Models\Aporte;
 use App\Models\Colegio;
+use App\Models\Saldo;
 use Illuminate\Http\Request;
 
 class AportesController extends Controller
@@ -115,9 +116,11 @@ class AportesController extends Controller
         */
 
         $afiliados = (clone $query)
-            ->whereHas('aportes', function ($q) use ($gestion) {
-                $q->where('year', $gestion)
-                    ->where('estado', 'VERIFICADO');
+            ->where(function ($q) use ($gestion) {
+                $q->whereHas('aportes', function ($aportes) use ($gestion) {
+                    $aportes->where('year', $gestion)
+                        ->where('estado', 'VERIFICADO');
+                })->orWhereHas('saldosActivos');
             })
             ->with([
                 'aportes' => function ($q) use ($gestion) {
@@ -148,6 +151,16 @@ class AportesController extends Controller
                 return $aportes->first();
             });
 
+        $saldoDisponiblePorAfiliado = Saldo::query()
+            ->whereIn('afiliado_id', $idsAfiliados)
+            ->where('estado', 'ACTIVO')
+            ->where('monto_disponible', '>', 0)
+            ->selectRaw(
+                'afiliado_id, SUM(monto_disponible) as saldo_disponible'
+            )
+            ->groupBy('afiliado_id')
+            ->pluck('saldo_disponible', 'afiliado_id');
+
         /* Colegios para el filtro */
 
         $colegios = collect();
@@ -164,7 +177,8 @@ class AportesController extends Controller
             'colegios',
             'gestiones',
             'gestion',
-            'ultimoAportePorAfiliado'
+            'ultimoAportePorAfiliado',
+            'saldoDisponiblePorAfiliado'
         ));
     }
 

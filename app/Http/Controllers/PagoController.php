@@ -7,6 +7,7 @@ use App\Models\Afiliado;
 use App\Models\LoteVerificacion;
 use App\Models\Pago;
 use App\Services\AuditoriaService;
+use App\Services\SaldoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -16,7 +17,8 @@ use Carbon\Carbon;
 class PagoController extends Controller
 {
     public function __construct(
-        private AuditoriaService $auditoria
+        private AuditoriaService $auditoria,
+        private SaldoService $saldoService
     ) {}
 
     public function store(Request $request)
@@ -72,30 +74,24 @@ class PagoController extends Controller
             $datos['monto_total'] * 100
         );
 
-        if (
-            $montoTotalCentavos % $montoMensualCentavos !== 0
-        ) {
+        if ($montoMensualCentavos <= 0 || $montoTotalCentavos <= 0) {
             return back()
                 ->withErrors([
                     'monto_total' =>
-                        'El monto total debe ser divisible exactamente entre el monto mensual.',
+                        'Los montos deben ser de al menos Bs. 0,01.',
                 ])
                 ->withInput();
         }
 
-        $cantidadPeriodos = intdiv(
+        $saldosActivos = $this->saldoService->activosParaAfiliado(
+            $afiliado->id
+        );
+        $distribucion = $this->saldoService->distribuir(
+            $saldosActivos,
             $montoTotalCentavos,
             $montoMensualCentavos
         );
-
-        if ($cantidadPeriodos < 1) {
-            return back()
-                ->withErrors([
-                    'monto_total' =>
-                        'El pago debe corresponder al menos a un período.',
-                ])
-                ->withInput();
-        }
+        $cantidadPeriodos = $distribucion['cantidad_periodos'];
 
         /*FLUJO USUARIO*/
         if ($usuario->rol?->nombre === 'USUARIO') {
@@ -146,14 +142,30 @@ class PagoController extends Controller
                 $usuario,
                 $afiliado,
                 $lote,
-                $cantidadPeriodos,
                 $montoTotalCentavos,
+                $montoMensualCentavos,
+                &$cantidadPeriodos,
                 &$pago
             ) {
+                Afiliado::query()
+                    ->whereKey($afiliado->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                $saldosActivos = $this->saldoService
+                    ->activosParaAfiliado($afiliado->id, true);
+                $distribucion = $this->saldoService->distribuir(
+                    $saldosActivos,
+                    $montoTotalCentavos,
+                    $montoMensualCentavos
+                );
+                $cantidadPeriodos = $distribucion['cantidad_periodos'];
+
                 $pago = Pago::create([
                     'afiliado_id' => $afiliado->id,
                     'lote_verificacion_id' => $lote->id,
                     'monto_total' => $montoTotalCentavos / 100,
+                    'monto_mensual' => $montoMensualCentavos/ 100,
                     'cantidad_periodos' => $cantidadPeriodos,
                     'estado' => 'EN_LOTE',
                     'observaciones' =>
@@ -185,6 +197,7 @@ class PagoController extends Controller
                     'afiliado_id' => $afiliado->id,
                     'lote_verificacion_id' => $lote->id,
                     'monto_total' => $pago->monto_total,
+                    'monto_mensual' => $montoMensualCentavos / 100,
                     'cantidad_periodos' => $pago->cantidad_periodos,
                     'estado' => $pago->estado,
                     'observaciones' => $pago->observaciones,
@@ -206,21 +219,39 @@ class PagoController extends Controller
             try {
                 $pago = null;
                 $aportesGenerados = 0;
+                $saldoGeneradoCentavos = 0;
 
                 DB::transaction(function () use (
                     $datos,
                     $usuario,
                     $afiliado,
-                    $cantidadPeriodos,
                     $montoTotalCentavos,
+                    $montoMensualCentavos,
+                    &$cantidadPeriodos,
                     &$pago,
-                    &$aportesGenerados
+                    &$aportesGenerados,
+                    &$saldoGeneradoCentavos
                 ) {
+                    Afiliado::query()
+                        ->whereKey($afiliado->id)
+                        ->lockForUpdate()
+                        ->firstOrFail();
+
+                    $saldosActivos = $this->saldoService
+                        ->activosParaAfiliado($afiliado->id, true);
+                    $distribucion = $this->saldoService->distribuir(
+                        $saldosActivos,
+                        $montoTotalCentavos,
+                        $montoMensualCentavos
+                    );
+                    $cantidadPeriodos =
+                        $distribucion['cantidad_periodos'];
 
                     $pago = Pago::create([
                         'afiliado_id' => $afiliado->id,
                         'lote_verificacion_id' => null,
                         'monto_total' => $montoTotalCentavos / 100,
+                        'monto_mensual' => $montoMensualCentavos / 100,
                         'cantidad_periodos' => $cantidadPeriodos,
                         'estado' => 'VERIFICADO',
                         'observaciones' =>
@@ -247,20 +278,6 @@ class PagoController extends Controller
                             $afiliado->fecha_afiliacion
                         )->startOfMonth();
                     }
-
-                    if (
-                        $montoTotalCentavos
-                        % $cantidadPeriodos !== 0
-                    ) {
-                        throw new \Exception(
-                            'El monto total no puede dividirse exactamente entre los períodos.'
-                        );
-                    }
-
-                    $montoPorPeriodoCentavos = intdiv(
-                        $montoTotalCentavos,
-                        $cantidadPeriodos
-                    );
 
                     for (
                         $i = 0;
@@ -299,7 +316,7 @@ class PagoController extends Controller
                             'mes' => $fechaPeriodo->month,
                             'year' => $fechaPeriodo->year,
                             'monto' =>
-                                $montoPorPeriodoCentavos / 100,
+                                $montoMensualCentavos / 100,
                             'estado' => 'VERIFICADO',
                             'observaciones' => null,
                             'registrado_por' => $usuario->id,
@@ -310,6 +327,19 @@ class PagoController extends Controller
 
                         $aportesGenerados++;
                     }
+
+                    $this->saldoService->consumir(
+                        $saldosActivos,
+                        $distribucion['costo_periodos_centavos']
+                    );
+                    $saldoGeneradoCentavos =
+                        $montoTotalCentavos
+                        - $distribucion['consumo_pago_centavos'];
+                    $this->saldoService->registrarRemanente(
+                        $afiliado->id,
+                        $pago->id,
+                        $saldoGeneradoCentavos
+                    );
                 });
 
                 //Auditoria
@@ -323,6 +353,7 @@ class PagoController extends Controller
                         'afiliado_id' => $afiliado->id,
                         'lote_verificacion_id' => null,
                         'monto_total' => $pago->monto_total,
+                        'monto_mensual' => $montoMensualCentavos / 100,
                         'cantidad_periodos' => $pago->cantidad_periodos,
                         'estado' => $pago->estado,
                         'observaciones' => $pago->observaciones,
@@ -330,6 +361,8 @@ class PagoController extends Controller
                         'verificado_por' => $pago->verificado_por,
                         'fecha_verificacion' => $pago->fecha_verificacion,
                         'aportes_generados' => $aportesGenerados,
+                        'saldo_generado' =>
+                            $saldoGeneradoCentavos / 100,
                     ]
                 );
 
@@ -382,30 +415,24 @@ class PagoController extends Controller
             $datos['monto_total'] * 100
         );
 
-        if (
-            $montoTotalCentavos % $montoMensualCentavos !== 0
-        ) {
+        if ($montoMensualCentavos <= 0 || $montoTotalCentavos <= 0) {
             return back()
                 ->withErrors([
                     'monto_total' =>
-                        'El monto total debe ser divisible exactamente entre el monto mensual.',
+                        'Los montos deben ser de al menos Bs. 0,01.',
                 ])
                 ->withInput();
         }
 
-        $cantidadPeriodos = intdiv(
+        $saldosActivos = $this->saldoService->activosParaAfiliado(
+            $pago->afiliado_id
+        );
+        $distribucion = $this->saldoService->distribuir(
+            $saldosActivos,
             $montoTotalCentavos,
             $montoMensualCentavos
         );
-
-        if ($cantidadPeriodos < 1) {
-            return back()
-                ->withErrors([
-                    'monto_total' =>
-                        'El pago debe corresponder al menos a un período.',
-                ])
-                ->withInput();
-        }
+        $cantidadPeriodos = $distribucion['cantidad_periodos'];
 
         $lote = $pago->loteVerificacion;
 
@@ -420,9 +447,24 @@ class PagoController extends Controller
             $pago,
             $lote,
             $montoTotalCentavos,
-            $cantidadPeriodos,
+            $montoMensualCentavos,
+            &$cantidadPeriodos,
             $datos
         ) {
+            Afiliado::query()
+                ->whereKey($pago->afiliado_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $saldosActivos = $this->saldoService
+                ->activosParaAfiliado($pago->afiliado_id, true);
+            $distribucion = $this->saldoService->distribuir(
+                $saldosActivos,
+                $montoTotalCentavos,
+                $montoMensualCentavos
+            );
+            $cantidadPeriodos = $distribucion['cantidad_periodos'];
+
 
             $lote->decrement(
                 'monto_total',
@@ -435,12 +477,10 @@ class PagoController extends Controller
             );
 
             $pago->update([
-                'monto_total' =>
-                    $montoTotalCentavos / 100,
-                'cantidad_periodos' =>
-                    $cantidadPeriodos,
-                'observaciones' =>
-                    $datos['observaciones'] ?? null,
+                'monto_total' => $montoTotalCentavos / 100,
+                'monto_mensual' => $montoMensualCentavos / 100,
+                'cantidad_periodos' => $cantidadPeriodos,
+                'observaciones' => $datos['observaciones'] ?? null,
             ]);
 
             $lote->increment(

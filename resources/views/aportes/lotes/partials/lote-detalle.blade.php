@@ -219,15 +219,21 @@
                         </th>
                         <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                             CI
+                        </th>                       
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            Monto mensual
                         </th>
                         <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                            Monto
+                            Monto total
                         </th>
                         <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                             Períodos
                         </th>
                         <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                             Estado
+                        </th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            Saldo
                         </th>
                         <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                             Observaciones
@@ -245,28 +251,84 @@
                             </td> 
                             {{-- CI --}} 
                             <td class="px-4 py-4 text-sm text-gray-600"> {{ $pago->afiliado->ci }} 
-                            </td> 
-                            {{-- MONTO --}} 
-                            <td class="px-4 py-4 text-sm font-medium text-gray-900"> Bs. {{ number_format($pago->monto_total, 2) }}
-                            </td> 
+                            </td>                             
+                            {{-- MONTO MENSUAL --}}
+                            <td class="px-4 py-4 text-sm text-gray-900">
+                                @if ($pago->monto_mensual !== null && $pago->monto_mensual > 0)
+                                    Bs. {{ number_format($pago->monto_mensual, 2) }}
+                                @else
+                                    <span class="text-gray-400">No registrado</span>
+                                @endif
+                            </td>
+                            
+                            
+                            {{-- MONTO TOTAL --}}
+                            <td class="px-4 py-4 text-sm font-medium text-gray-900">
+                                Bs. {{ number_format($pago->monto_total, 2) }}
+                            </td>
+                            
                             {{-- PERÍODOS --}} 
                             <td class="px-4 py-4 text-sm text-gray-900"> {{ $pago->cantidad_periodos }} 
-                            </td> 
-                            {{-- ESTADO --}} 
-                            <td class="px-4 py-4"> 
-                                @if ($pago->estado === 'EN_LOTE') 
+                                </td> 
+                                {{-- ESTADO --}} 
+                                <td class="px-4 py-4"> 
+                                    @if ($pago->estado === 'EN_LOTE') 
                                     <span class="inline-flex rounded-full bg-yellow-100 px-2.5 py-1 text-xs font-semibold text-yellow-800" > EN LOTE 
-                                    </span> 
-                                @elseif ($pago->estado === 'OBSERVADO') 
-                                    <span class="inline-flex rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-800" > OBSERVADO 
-                                    </span> 
-                                @elseif ($pago->estado === 'VERIFICADO') 
-                                    <span class="inline-flex rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700" > VERIFICADO 
-                                    </span> @else 
-                                    <span class="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700" > 
-                                    {{ $pago->estado }} 
-                                    </span> @endif 
-                            </td>
+                                        </span> 
+                                        @elseif ($pago->estado === 'OBSERVADO') 
+                                        <span class="inline-flex rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-800" > OBSERVADO 
+                                            </span> 
+                                            @elseif ($pago->estado === 'VERIFICADO') 
+                                            <span class="inline-flex rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700" > VERIFICADO 
+                                                </span> @else 
+                                                <span class="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700" > 
+                                                    {{ $pago->estado }} 
+                                                </span> @endif 
+                                            </td>
+                                            {{-- SALDO ESTIMADO DEL PAGO --}}
+                                            <td class="px-4 py-4 text-sm">
+                                                @if ($pago->monto_mensual !== null && $pago->monto_mensual > 0)
+                                                    @php
+                                                        $mensualCentavos = (int) round(
+                                                            (float) $pago->monto_mensual * 100
+                                                        );
+                    
+                                                        $totalCentavos = (int) round(
+                                                            (float) $pago->monto_total * 100
+                                                        );
+                    
+                                                        if ($pago->estado === 'EN_LOTE') {
+                                                            $saldoAnteriorCentavos = $pago->afiliado
+                                                                ->saldosActivos
+                                                                ->sum(fn ($saldo) => (int) round(
+                                                                    (float) $saldo->monto_disponible * 100
+                                                                ));
+                                                            $saldoEstimadoCentavos =
+                                                                ($saldoAnteriorCentavos + $totalCentavos)
+                                                                % $mensualCentavos;
+                                                        } else {
+                                                            $saldoEstimadoCentavos = (int) round(
+                                                                (float) $pago->saldos->sum('monto') * 100
+                                                            );
+                                                        }
+                                                    @endphp
+                    
+                                                    @if ($saldoEstimadoCentavos > 0)
+                                                        <span class="font-semibold text-amber-700">
+                                                            Bs. {{ number_format($saldoEstimadoCentavos / 100, 2) }}
+                                                        </span>
+                                                        @if ($pago->estado === 'EN_LOTE')
+                                                            <p class="mt-1 text-xs text-gray-400">
+                                                                Estimado
+                                                            </p>
+                                                        @endif
+                                                    @else
+                                                        <span class="text-gray-500">Bs. 0,00</span>
+                                                    @endif
+                                                @else
+                                                    <span class="text-gray-400">No disponible</span>
+                                                @endif
+                                            </td>
                             {{-- OBSERVACIONES --}}
                             <td class="px-4 py-4 text-sm">
                                 @if ($pago->observaciones)
@@ -313,7 +375,7 @@
                             @endif
                          @empty 
                             <tr> 
-                                <td colspan="{{ auth()->user()->rol?->nombre === 'USUARIO' && $lote->estado === 'ABIERTO' ? 7 : 6 }}" class="px-4 py-10 text-center text-sm text-gray-500" > Este lote no tiene pagos registrados. 
+                                <td colspan="{{ auth()->user()->rol?->nombre === 'USUARIO' && $lote->estado === 'ABIERTO' ? 8 : 7 }}" class="px-4 py-10 text-center text-sm text-gray-500" > Este lote no tiene pagos registrados. 
                                 </td> 
                             </tr>
                     @endforelse

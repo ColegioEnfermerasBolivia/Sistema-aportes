@@ -6,6 +6,7 @@ use App\Models\Afiliado;
 use App\Models\Colegio;
 use App\Models\Postgrado;
 use App\Models\Aporte;
+use App\Models\Saldo;
 use App\Services\AuditoriaService;
 use App\Models\GradoAcademico;
 use App\Models\TransferenciaAfiliado;
@@ -192,7 +193,19 @@ class AfiliadoController extends Controller
                 'required',
                 'date',
             ],
+
+            'observacion' => [
+                'nullable',
+                'string',
+                'max:5000',
+            ],
         ];
+
+        $mensajes = [
+                    'registro_departamental.unique' => 'Ya existe un afiliado registrado con ese registro departamental.',
+                    'matricula_profesional.unique'  => 'Ya existe un afiliado registrado con esa matrícula profesional.',
+                    'ci.unique'                     => 'Ya existe un afiliado registrado con ese CI.',
+                ];
 
         if ($usuario->rol?->nombre === 'ADMIN') {
 
@@ -208,7 +221,9 @@ class AfiliadoController extends Controller
             ];
         }
 
-        $datos = $request->validate($reglas);
+        $datos = $request->validate($reglas, $mensajes);
+        $observacion = $datos['observacion'] ?? null;
+        unset($datos['observacion']);
 
         if ($usuario->rol?->nombre === 'USUARIO') {
 
@@ -229,7 +244,22 @@ class AfiliadoController extends Controller
 
         $datos['estado'] = 'ACTIVO';
 
-        $afiliado = Afiliado::create($datos);
+        $afiliado = DB::transaction(function () use (
+            $datos,
+            $observacion,
+            $usuario
+        ) {
+            $afiliado = Afiliado::create($datos);
+
+            if (filled($observacion)) {
+                $afiliado->observaciones()->create([
+                    'observacion' => $observacion,
+                    'usuario_id' => $usuario->id,
+                ]);
+            }
+
+            return $afiliado;
+        });
 
         $datosNuevos = [
             'registro_departamental' => $afiliado->registro_departamental,
@@ -336,7 +366,15 @@ class AfiliadoController extends Controller
                 'required',
                 'date',
             ],
+
+            'observacion' => [
+                'nullable',
+                'string',
+                'max:5000',
+            ],
         ]);
+        $observacion = $datos['observacion'] ?? null;
+        unset($datos['observacion']);
 
         /*
         * ---------------------------------------------------------
@@ -425,6 +463,8 @@ class AfiliadoController extends Controller
             $datos,
             $huboTransferencia,
             $request,
+            $observacion,
+            $usuario,
             &$transferencia
         ) {
 
@@ -454,6 +494,13 @@ class AfiliadoController extends Controller
             * Finalmente actualizamos la afiliada.
             */
             $afiliado->update($datos);
+
+            if (filled($observacion)) {
+                $afiliado->observaciones()->create([
+                    'observacion' => $observacion,
+                    'usuario_id' => $usuario->id,
+                ]);
+            }
         });
 
         /*
@@ -618,12 +665,24 @@ class AfiliadoController extends Controller
             ->orderByDesc('mes')
             ->first();
 
+        $saldoDisponible = Saldo::query()
+            ->where('afiliado_id', $afiliado->id)
+            ->where('estado', 'ACTIVO')
+            ->where('monto_disponible', '>', 0)
+            ->sum('monto_disponible');
+
         return response()->json([
             'id' => $afiliado->id,
             'ci' => $afiliado->ci,
             'nombres' => $afiliado->nombres,
             'apellidos' => $afiliado->apellidos,
             'estado' => $afiliado->estado,
+            'saldo_disponible' => number_format(
+                (float) $saldoDisponible,
+                2,
+                '.',
+                ''
+            ),
             'ultimo_aporte' => $ultimoAporte
                 ? [
                     'monto' => $ultimoAporte->monto,
@@ -645,6 +704,10 @@ class AfiliadoController extends Controller
             },
             'afiliadosPostgrados.postgrado',
             'afiliadosPostgrados.gradoAcademico',
+            'observaciones' => function ($query) {
+                $query->orderByDesc('creado_en')
+                    ->orderByDesc('id');
+            },
         ]);
 
         $postgrados = Postgrado::where('estado', 'ACTIVO')

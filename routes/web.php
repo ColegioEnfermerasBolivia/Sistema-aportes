@@ -12,7 +12,8 @@ use App\Http\Controllers\InformeController;
 use App\Http\Controllers\CargaDatosController;
 use App\Http\Controllers\AportesHistoricosController;
 use App\Http\Controllers\TransferenciasController;
-
+use App\Http\Controllers\SaldoHistoricoController;
+use App\Http\Controllers\ObservacionesHistoricasController;
 Route::get('/', function () {
     return view('welcome');
 });
@@ -411,4 +412,26 @@ Route::middleware(['auth','debe-cambiar-password','rol:SUPER ADMIN',])
 
         Route::post('/validar-fila', 'validarFila')
             ->name('validar-fila');
+    });
+
+Route::middleware(['auth','debe-cambiar-password','rol:SUPER ADMIN',])
+    ->prefix('saldos-historicos')
+    ->name('saldos.')
+    ->controller(SaldoHistoricoController::class)
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/previsualizar', 'preview')->name('preview');
+        Route::put('/{token}/corregir', 'corregir')->name('corregir');
+        Route::post('/{token}/confirmar', 'confirmar')->name('confirmar');
+    });
+
+Route::middleware(['auth','debe-cambiar-password','rol:SUPER ADMIN',])
+    ->prefix('observaciones-historicas')
+     ->name('observacionesHistoricas.')
+    ->controller(ObservacionesHistoricasController::class)
+    ->group(function () {
+        Route::post('/previsualizar', 'preview')
+            ->name('previsualizarObservaciones');
+        Route::post('/{token}/confirmar', 'confirmar')
+            ->name('confirmar');
     });

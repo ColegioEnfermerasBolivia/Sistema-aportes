@@ -59,6 +59,13 @@ class Afiliado extends Model
         return $this->hasMany(Aporte::class, 'afiliado_id');
     }
 
+    public function saldosActivos(): HasMany
+    {
+        return $this->hasMany(Saldo::class, 'afiliado_id')
+            ->where('estado', 'ACTIVO')
+            ->where('monto_disponible', '>', 0);
+    }
+
     /**
      * Historial de transferencias de la afiliada.
      */
@@ -72,5 +79,12 @@ class Afiliado extends Model
             'colegioDestino',
         ]))
         ->orderBy('fecha_transferencia');
+    }
+
+    public function observaciones() {
+        return $this->hasMany(
+            ObservacionAfiliado::class,
+            'afiliado_id'
+        );
     }
 }

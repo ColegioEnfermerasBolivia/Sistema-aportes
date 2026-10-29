@@ -18,6 +18,7 @@ class TransferenciasController extends Controller
 {
     private const SESION_FILAS = 'filas_revision_transferencias';
     private const SESION_RUTA = 'transferencias_importacion.ruta';
+    private const SESION_MOSTRAR_MODAL = 'mostrar_revision_transferencias_una_vez';
 
     public function __construct(
         private ImportadorTransferenciasHistoricas $importador,
@@ -67,8 +68,8 @@ class TransferenciasController extends Controller
             session([
                 self::SESION_RUTA => $ruta,
                 self::SESION_FILAS => $filas,
-                'mostrar_revision_transferencias' => true,
             ]);
+            session()->flash(self::SESION_MOSTRAR_MODAL, true);
 
             return back()->with(
                 'success',
@@ -147,7 +148,6 @@ class TransferenciasController extends Controller
 
             session([
                 self::SESION_FILAS => $filasActualizadas,
-                'mostrar_revision_transferencias' => true,
             ]);
 
             $filaActualizada = collect($filasActualizadas)->first(
@@ -498,6 +498,7 @@ class TransferenciasController extends Controller
             self::SESION_RUTA,
             self::SESION_FILAS,
             'mostrar_revision_transferencias',
+            self::SESION_MOSTRAR_MODAL,
         ]);
     }
 

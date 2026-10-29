@@ -147,8 +147,9 @@
             {{-- INFORMACIÓN --}}
             <div class="rounded-xl border border-gray-200 bg-gray-50 px-5 py-4">
                 <p class="text-sm text-gray-600">
-                    El monto total debe ser divisible exactamente entre
-                    el monto mensual de referencia.
+                    Los períodos se recalcularán al guardar, aplicando el saldo
+                    disponible del afiliado. Cualquier remanente quedará como
+                    saldo para futuros aportes cuando se verifique el pago.
                 </p>
             </div>
 

@@ -135,16 +135,17 @@
 
                         {{-- Cerrar lote --}}
                         @if ($loteActual->estado === 'ABIERTO')
-
                             <form
                                 method="POST"
                                 action="{{ route('lotes.cerrar', $loteActual) }}"
+                                data-confirm-title="¿Enviar lote a revisión?"
+                                data-confirm-text="Una vez enviado no podrás modificar sus pagos."
+                                data-confirm-button="Sí, enviar"
                             >
                                 @csrf
                                 @method('PATCH')
                                 <button
                                     type="submit"
-                                    onclick="return confirm('¿Deseas enviar este lote para revisión? Una vez enviado no podrás modificar sus pagos.')"
                                     class="rounded-lg bg-[#1a34c9] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1428a0] hover:cursor-pointer inline-flex items-center gap-1.5"
                                 >
                                     <x-icon name="send" class="text-white" size="20"/>
@@ -408,48 +409,66 @@
 
 <script>
     document.addEventListener('alpine:init', () => {
+
+        // Helpers de SweetAlert2
+        const alerta = (icon, title, text) =>
+            Swal.fire({
+                icon,
+                title,
+                text,
+                confirmButtonText: 'Aceptar',
+            });
+
+        const confirmar = async (title, text) => {
+            const resultado = await Swal.fire({
+                icon: 'question',
+                title,
+                text,
+                showCancelButton: true,
+                confirmButtonText: 'Sí, continuar',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true,
+            });
+
+            return resultado.isConfirmed;
+        };
+
         Alpine.data('revisionLotes', () => ({
             seleccionados: [],
             loteSeleccionadoId: null,
             aportesPreview: [],
+            resumenPagos: [],
             cargandoPreview: false,
             mostrarPreview: false,
             observacionesPagos: {},
 
-            // MONTO TOTAL DE LA PREVISUALIZACIÓN
             montoSeleccionado() {
                 return this.aportesPreview
                     .filter(aporte => aporte.seleccionado)
-                    .reduce(
-                        (total, aporte) =>
-                            total + Number(aporte.monto),
-                        0
-                    )
+                    .reduce((total, aporte) => total + Number(aporte.monto), 0)
                     .toFixed(2);
             },
 
-            //ABRIR PREVISUALIZACIÓN
             async abrirPrevisualizacion() {
                 if (this.seleccionados.length === 0) {
                     return;
                 }
 
                 if (!this.loteSeleccionadoId) {
-
-                    alert(
+                    await alerta(
+                        'warning',
+                        'Lote no identificado',
                         'No se pudo determinar el lote que se está revisando.'
                     );
-
                     return;
                 }
+
                 this.cargandoPreview = true;
+
                 try {
                     const response = await fetch(
                         '{{ route('lotes.preview-aportes', '__LOTE__') }}'
-                            .replace(
-                                '__LOTE__',
-                                this.loteSeleccionadoId
-                            ),
+                            .replace('__LOTE__', this.loteSeleccionadoId),
                         {
                             method: 'POST',
                             headers: {
@@ -464,34 +483,31 @@
                     );
 
                     const data = await response.json();
+
                     if (!response.ok) {
                         throw new Error(
-                            data.message ??
-                            'No se pudo generar la previsualización.'
+                            data.message ?? 'No se pudo generar la previsualización.'
                         );
                     }
+
                     this.aportesPreview = data.aportes;
+                    this.resumenPagos = data.resumen_pagos;
                     this.mostrarPreview = true;
                 } catch (error) {
                     console.error(error);
-                    alert(error.message);
+                    alerta('error', 'Error', error.message);
                 } finally {
                     this.cargandoPreview = false;
                 }
             },
-            //Datos de pago
+
             datosPago(pagoId) {
                 const aportes = this.aportesPreview.filter(
                     aporte => Number(aporte.pago_id) === Number(pagoId)
                 );
 
                 if (aportes.length === 0) {
-                    return {
-                        nombre: '',
-                        ci: '',
-                        periodos: 0,
-                        monto: '0.00',
-                    };
+                    return { nombre: '', ci: '', periodos: 0, monto: '0.00' };
                 }
 
                 const monto = aportes.reduce(
@@ -507,88 +523,84 @@
                 };
             },
 
-            // PAGOS COMPLETAMENTE PROCESABLES
             pagosProcesables() {
-               const pagos = {};
-                this.aportesPreview.forEach(aporte => {
-                    if (!pagos[aporte.pago_id]) {
-                        pagos[aporte.pago_id] = {
-                            total: 0,
-                            seleccionados: 0,
-                        };
-                    }
-                    pagos[aporte.pago_id].total++;
-                    if (aporte.seleccionado) {
-                        pagos[aporte.pago_id].seleccionados++;
-                    }
-                });
-                return Object.entries(pagos)
-                    .filter(([pagoId, datos]) =>
-                        datos.total === datos.seleccionados
-                    )
-                    .map(([pagoId]) => Number(pagoId));
+                const pagosObservados = this.pagosObservados();
+
+                return this.seleccionados.filter(
+                    pagoId => !pagosObservados.includes(Number(pagoId))
+                );
             },
-            // PAGOS OBSERVADOS
+
             pagosObservados() {
                 const pagos = {};
+
                 this.aportesPreview.forEach(aporte => {
                     if (!pagos[aporte.pago_id]) {
-                        pagos[aporte.pago_id] = {
-                            total: 0,
-                            seleccionados: 0,
-                        };
+                        pagos[aporte.pago_id] = { total: 0, seleccionados: 0 };
                     }
+
                     pagos[aporte.pago_id].total++;
+
                     if (aporte.seleccionado) {
                         pagos[aporte.pago_id].seleccionados++;
                     }
                 });
+
                 return Object.entries(pagos)
-                    .filter(([pagoId, datos]) =>
-                        datos.seleccionados < datos.total
-                    )
+                    .filter(([pagoId, datos]) => datos.seleccionados < datos.total)
                     .map(([pagoId]) => Number(pagoId));
             },
-            // CERRAR PREVISUALIZACIÓN
+
             cerrarPrevisualizacion() {
                 this.mostrarPreview = false;
                 this.aportesPreview = [];
+                this.resumenPagos = [];
                 this.observacionesPagos = {};
             },
-            // CONFIRMAR REVISIÓN
+
             async confirmarPrevisualizacion() {
-               if (this.seleccionados.length === 0) {
+                if (this.seleccionados.length === 0) {
                     return;
                 }
+
                 if (!this.loteSeleccionadoId) {
-                    alert(
+                    await alerta(
+                        'warning',
+                        'Lote no identificado',
                         'No se pudo determinar el lote que se está revisando.'
                     );
                     return;
                 }
+
                 const pagosObservados = this.pagosObservados();
+
                 const pagosSinObservacion = pagosObservados.filter(
                     pagoId => !this.observacionesPagos[pagoId]?.trim()
                 );
+
                 if (pagosSinObservacion.length > 0) {
-                    alert('Debes ingresar una observacion para cada pago que sera observado');
+                    await alerta(
+                        'warning',
+                        'Faltan observaciones',
+                        'Debes ingresar una observación para cada pago que será observado.'
+                    );
                     return;
                 }
 
                 const mensaje = pagosObservados.length > 0
-                    ? `Se procesarán ${this.pagosProcesables().length} pago(s) y se observarán ${pagosObservados.length} pago(s). ¿Deseas continuar?`
-                    : `Se procesarán ${this.pagosProcesables().length} pago(s). ¿Deseas continuar?`;
+                    ? `Se procesarán ${this.pagosProcesables().length} pago(s) y se observarán ${pagosObservados.length} pago(s).`
+                    : `Se procesarán ${this.pagosProcesables().length} pago(s).`;
 
-                if (!confirm(mensaje)) {
+                const aceptado = await confirmar('¿Deseas continuar?', mensaje);
+
+                if (!aceptado) {
                     return;
                 }
+
                 try {
                     const response = await fetch(
                         '{{ route('lotes.confirmar-aportes', '__LOTE__') }}'
-                            .replace(
-                                '__LOTE__',
-                                this.loteSeleccionadoId
-                            ),
+                            .replace('__LOTE__', this.loteSeleccionadoId),
                         {
                             method: 'POST',
                             headers: {
@@ -603,26 +615,27 @@
                             }),
                         }
                     );
+
                     const data = await response.json();
+
                     if (!response.ok) {
                         throw new Error(
-                            data.message ??
-                            'No se pudo confirmar la revisión.'
+                            data.message ?? 'No se pudo confirmar la revisión.'
                         );
                     }
-                    alert(data.message);
-                    // Cerramos la previsualización.
-                    this.mostrarPreview = false;
 
-                    // Limpiamos la información temporal.
+                    // Esperamos a que el usuario cierre el mensaje antes de recargar
+                    await alerta('success', 'Revisión confirmada', data.message);
+
+                    this.mostrarPreview = false;
                     this.aportesPreview = [];
                     this.seleccionados = [];
                     this.observacionesPagos = {};
-                    // Recargamos para actualizar el estado y los totales.
+
                     window.location.reload();
                 } catch (error) {
                     console.error(error);
-                    alert(error.message);
+                    alerta('error', 'Error', error.message);
                 }
             },
         }));

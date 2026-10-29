@@ -331,6 +331,32 @@
             </p>
         @enderror
     </div>
+
+    {{-- OBSERVACIÓN --}}
+    <div>
+        <label
+            for="{{ $esEdicion ? 'editar_observacion' : 'observacion' }}"
+            class="mb-2 block text-sm font-medium text-gray-700"
+        >
+            Observación
+        </label>
+        <textarea
+            id="{{ $esEdicion ? 'editar_observacion' : 'observacion' }}"
+            name="observacion"
+            rows="3"
+            maxlength="5000"
+            placeholder="Agregue una observación (opcional)"
+            class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#1a34c9] focus:ring-2 focus:ring-[#1a34c9]/10"
+        >{{ old('observacion') }}</textarea>
+        <p class="mt-1.5 text-xs text-gray-500">
+            En la edición, esta observación se agregará al historial sin eliminar las anteriores.
+        </p>
+        @error('observacion')
+            <p class="mt-1.5 text-xs text-red-600">
+                {{ $message }}
+            </p>
+        @enderror
+    </div>
     
     {{-- BOTONES --}}
     <div class="flex justify-end gap-3 border-t border-gray-200 pt-5">

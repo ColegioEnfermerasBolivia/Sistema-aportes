@@ -29,6 +29,7 @@ class Pago extends Model
         'registrado_por',
         'verificado_por',
         'fecha_verificacion',
+        'monto_mensual',
     ];
 
     protected $casts = [
@@ -41,6 +42,7 @@ class Pago extends Model
         'fecha_verificacion' => 'datetime',
         'creado_en' => 'datetime',
         'actualizado_en' => 'datetime',
+        'monto_mensual' => 'decimal:2',
     ];
 
     public function afiliado(): BelongsTo
@@ -66,5 +68,10 @@ class Pago extends Model
     public function aportes(): HasMany
     {
         return $this->hasMany(Aporte::class, 'pago_id');
+    }
+
+    public function saldos(): HasMany
+    {
+        return $this->hasMany(Saldo::class, 'pago_id');
     }
 }
