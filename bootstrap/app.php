@@ -11,6 +11,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->appendToGroup(
+            'web',
+            \App\Http\Middleware\UsuarioActivo::class
+        );
+
         $middleware->alias([
             'debe-cambiar-password' => \App\Http\Middleware\DebeCambiarPassword::class,
             'rol' => \App\Http\Middleware\RolMiddleware::class,

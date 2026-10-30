@@ -81,7 +81,7 @@ class Afiliado extends Model
         ->orderBy('fecha_transferencia');
     }
 
-    public function observaciones() {
+    public function observaciones(): HasMany {
         return $this->hasMany(
             ObservacionAfiliado::class,
             'afiliado_id'
