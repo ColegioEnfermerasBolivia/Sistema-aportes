@@ -150,7 +150,13 @@ class UsuarioController extends Controller
             ->orderBy('nombre')
             ->get();
 
-        return view('usuarios.edit', compact('usuario', 'colegios'));
+        $rolesQuery = Rol::orderBy('id');
+        if (auth()->user()->rol?->nombre !== 'SUPER ADMIN') {
+            $rolesQuery->where('nombre', '!=', 'SUPER ADMIN');
+        }
+        $roles = $rolesQuery->get();
+
+        return view('usuarios.edit', compact('usuario', 'colegios', 'roles'));
     }
 
     public function update(Request $request, Usuario $usuario)

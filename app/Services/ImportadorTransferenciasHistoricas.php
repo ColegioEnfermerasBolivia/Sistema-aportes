@@ -72,16 +72,17 @@ class ImportadorTransferenciasHistoricas
                     $fecha
                 );
 
+                if (!$fechaNormalizada) {
+                    continue;
+                }
+
                 $errores = Carbon::getLastErrors();
 
                 if (
-                    $fechaNormalizada !== false
-                    && (
-                        $errores === false
-                        || (
-                            $errores['warning_count'] === 0
-                            && $errores['error_count'] === 0
-                        )
+                    $errores === false
+                    || (
+                        $errores['warning_count'] === 0
+                        && $errores['error_count'] === 0
                     )
                 ) {
                     return $fechaNormalizada->format('Y-m-d');

@@ -95,7 +95,7 @@ class SaldoHistoricoController extends Controller
                         (string) $valor
                     )
                 ),
-                $cabecera ?? []
+                is_array($cabecera) ? $cabecera : []
             );
 
             $cabeceraNormalizada = array_map(
@@ -596,14 +596,9 @@ class SaldoHistoricoController extends Controller
                 ]);
         }
 
-        $usuario = Auth::user();
-
         try {
 
-            DB::transaction(function () use (
-                $filas,
-                $usuario
-            ) {
+            DB::transaction(function () use ($filas) {
 
                 foreach ($filas as $fila) {
 

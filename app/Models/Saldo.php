@@ -5,6 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property string $monto_disponible
+ */
 class Saldo extends Model
 {
     protected $table = 'saldos';
@@ -28,6 +31,7 @@ class Saldo extends Model
         'monto_disponible' => 'decimal:2',
     ];
 
+    /** @return BelongsTo<Afiliado, $this> */
     public function afiliado(): BelongsTo
     {
         return $this->belongsTo(
@@ -36,6 +40,7 @@ class Saldo extends Model
         );
     }
 
+    /** @return BelongsTo<Pago, $this> */
     public function pago(): BelongsTo
     {
         return $this->belongsTo(

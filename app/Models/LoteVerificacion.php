@@ -6,6 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property int $colegio_id
+ */
 class LoteVerificacion extends Model
 {
     protected $table = 'lote_verificacion';
@@ -44,21 +48,25 @@ class LoteVerificacion extends Model
         'actualizado_en' => 'datetime',
     ];
 
+    /** @return BelongsTo<Colegio, $this> */
     public function colegio(): BelongsTo
     {
         return $this->belongsTo(Colegio::class, 'colegio_id');
     }
 
+    /** @return BelongsTo<Usuario, $this> */
     public function enviadoPor(): BelongsTo
     {
         return $this->belongsTo(Usuario::class, 'enviado_por');
     }
 
+    /** @return BelongsTo<Usuario, $this> */
     public function verificadoPor(): BelongsTo
     {
         return $this->belongsTo(Usuario::class, 'verificado_por');
     }
 
+    /** @return HasMany<Pago, $this> */
     public function pagos(): HasMany
     {
         return $this->hasMany(Pago::class, 'lote_verificacion_id');

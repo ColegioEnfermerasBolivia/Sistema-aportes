@@ -29,8 +29,7 @@ class AportesExport implements
 {
     private const FILAS_ENCABEZADO = 6;
 
-    private const FILA_TITULOS_TABLA =
-        self::FILAS_ENCABEZADO + 1; // 7
+    private const FILA_TITULOS_TABLA = 7;
 
     private const ULTIMA_COLUMNA = 'P';
 
@@ -94,6 +93,7 @@ class AportesExport implements
             'N.º',
             'Afiliada',
             'CI',
+            'Gestion',
             'ENE',
             'FEB',
             'MAR',
@@ -113,31 +113,53 @@ class AportesExport implements
 
     public function map($afiliado): array
     {
-        $aportes = $afiliado->aportes->keyBy('mes');
+        $aportesPorGestion = $afiliado->aportes
+            ->groupBy('year')
+            ->sortKeysDesc();
 
-        $this->numeroFila++;
+        /*
+        |--------------------------------------------------------------------------
+        | Si no tiene aportes, igualmente mostramos una fila
+        |--------------------------------------------------------------------------
+        */
 
-        $fila = [
-            $this->numeroFila,
-            $afiliado->apellidos . ', ' . $afiliado->nombres,
-            $afiliado->ci,
-        ];
-
-        foreach ($this->meses as $numeroMes => $nombreMes) {
-
-            $aporte = $aportes->get($numeroMes);
-
-            $fila[] = $aporte
-                ? number_format(
-                    (float) $aporte->monto,
-                    2,
-                    '.',
-                    ''
-                )
-                : '—';
+        if ($aportesPorGestion->isEmpty()) {
+            $aportesPorGestion = collect([
+                $this->year ?? '—' => collect(),
+            ]);
         }
 
-        return $fila;
+        $filas = [];
+
+        foreach ($aportesPorGestion as $year => $aportes) {
+
+            $aportesPorMes = $aportes->keyBy('mes');
+
+            $fila = [
+                ++$this->numeroFila,
+                $afiliado->apellidos . ', ' . $afiliado->nombres,
+                $afiliado->ci,
+                $year,
+            ];
+
+            foreach ($this->meses as $numeroMes => $nombreMes) {
+
+                $aporte = $aportesPorMes->get($numeroMes);
+
+                $fila[] = $aporte
+                    ? number_format(
+                        (float) $aporte->monto,
+                        2,
+                        '.',
+                        ''
+                    )
+                    : '—';
+            }
+
+            $filas[] = $fila;
+        }
+
+        return $filas;
     }
 
     /*Estilos de encabezado normal*/
@@ -344,401 +366,6 @@ class AportesExport implements
         ]);
     }
 
-    /*Excel: CI + Todos los años*/
-
-    private function generarTodosLosAnios(
-        Worksheet $sheet
-    ): void {
-
-        $afiliada = $this->afiliada;
-
-        /*Limpiar la tabla generada automáticamente por FromQuery*/
-
-        $ultimaFilaInicial =
-            $sheet->getHighestRow();
-
-        if ($ultimaFilaInicial > 0) {
-            $sheet->removeRow(
-                1,
-                $ultimaFilaInicial
-            );
-        }
-
-        /*Encabezado institucional*/
-
-        $this->generarEncabezadoInstitucional($sheet);
-
-        /*Aportes verificados agrupados por gestión*/
-
-        $aportesPorGestion = $afiliada->aportes
-            ->where('estado', 'VERIFICADO')
-            ->groupBy('year')
-            ->map(function ($aportes) {
-                return $aportes->keyBy('mes');
-            })
-            ->sortKeysDesc();
-
-        /*Información de la afiliada*/
-
-        $fila = 8;
-
-        $sheet->mergeCells(
-            "A{$fila}:P{$fila}"
-        );
-
-        $sheet->setCellValue(
-            "A{$fila}",
-            'AFILIADA'
-        );
-
-        $sheet->getStyle(
-            "A{$fila}:P{$fila}"
-        )->applyFromArray([
-            'font' => [
-                'bold' => true,
-                'size' => 11,
-                'color' => ['rgb' => 'FFFFFF'],
-            ],
-
-            'fill' => [
-                'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['rgb' => '2E5B8A'],
-            ],
-
-            'alignment' => [
-                'horizontal' =>
-                    Alignment::HORIZONTAL_LEFT,
-
-                'vertical' =>
-                    Alignment::VERTICAL_CENTER,
-            ],
-        ]);
-
-        $fila++;
-
-        $sheet->mergeCells(
-            "A{$fila}:P{$fila}"
-        );
-
-        $sheet->setCellValue(
-            "A{$fila}",
-            $afiliada->apellidos
-            . ', '
-            . $afiliada->nombres
-        );
-
-        $sheet->getStyle(
-            "A{$fila}:P{$fila}"
-        )->getFont()
-            ->setBold(true)
-            ->setSize(12);
-
-        $fila++;
-
-        $sheet->setCellValue(
-            "A{$fila}",
-            'CI: ' . $afiliada->ci
-        );
-
-        $fila++;
-
-        $sheet->setCellValue(
-            "A{$fila}",
-            'Colegio: '
-            . (
-                $afiliada->colegio->nombre
-                ?? 'Sin colegio'
-            )
-        );
-
-        $fila += 2;
-
-        /*Si no existen aportes verificados*/
-
-        if ($aportesPorGestion->isEmpty()) {
-
-            $sheet->mergeCells(
-                "A{$fila}:P{$fila}"
-            );
-
-            $sheet->setCellValue(
-                "A{$fila}",
-                'No registra aportes verificados.'
-            );
-
-            $sheet->getStyle(
-                "A{$fila}:P{$fila}"
-            )->getFont()
-                ->setItalic(true);
-
-            $this->configurarPaginaTodosLosAnios(
-                $sheet
-            );
-
-            return;
-        }
-
-        /*Una tabla por gestión*/
-
-        foreach (
-            $aportesPorGestion as $year => $aportes
-        ) {
-
-            /*Título de la gestión*/
-
-            $sheet->mergeCells(
-                "A{$fila}:P{$fila}"
-            );
-
-            $sheet->setCellValue(
-                "A{$fila}",
-                "APORTES DEL AÑO: {$year}"
-            );
-
-            $sheet->getStyle(
-                "A{$fila}:P{$fila}"
-            )->applyFromArray([
-                'font' => [
-                    'bold' => true,
-                    'size' => 12,
-                    'color' => ['rgb' => '1F3F5C'],
-                ],
-
-                'alignment' => [
-                    'horizontal' =>
-                        Alignment::HORIZONTAL_CENTER,
-
-                    'vertical' =>
-                        Alignment::VERTICAL_CENTER,
-                ],
-            ]);
-
-            $fila++;
-
-            /*Encabezados*/
-
-            $encabezados = [
-                'N.º',
-                'Afiliada',
-                'CI',
-                'ENE',
-                'FEB',
-                'MAR',
-                'ABR',
-                'MAY',
-                'JUN',
-                'JUL',
-                'AGO',
-                'SEP',
-                'OCT',
-                'NOV',
-                'DIC',
-            ];
-
-            $sheet->fromArray(
-                $encabezados,
-                null,
-                "A{$fila}"
-            );
-
-            $filaEncabezado = $fila;
-
-            /*Estilo encabezado*/
-
-            $sheet->getStyle(
-                "A{$filaEncabezado}:P{$filaEncabezado}"
-            )->applyFromArray([
-                'font' => [
-                    'bold' => true,
-                    'color' => ['rgb' => 'FFFFFF'],
-                    'size' => 11,
-                ],
-
-                'fill' => [
-                    'fillType' => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => '2E5B8A'],
-                ],
-
-                'alignment' => [
-                    'horizontal' =>
-                        Alignment::HORIZONTAL_CENTER,
-
-                    'vertical' =>
-                        Alignment::VERTICAL_CENTER,
-                ],
-
-                'borders' => [
-                    'allBorders' => [
-                        'borderStyle' =>
-                            Border::BORDER_THIN,
-
-                        'color' => [
-                            'rgb' => '1F3F5C',
-                        ],
-                    ],
-                ],
-            ]);
-
-            $fila++;
-
-            /*Datos*/
-
-            $filaDatos = [
-                1,
-                $afiliada->apellidos
-                    . ', '
-                    . $afiliada->nombres,
-
-                $afiliada->ci,
-            ];
-
-            foreach ($this->meses as $numeroMes => $nombreMes) {
-
-                $aporte = $aportes->get($numeroMes);
-
-                $filaDatos[] = $aporte
-                    ? number_format(
-                        (float) $aporte->monto,
-                        2,
-                        '.',
-                        ''
-                    )
-                    : '—';
-            }
-
-            $sheet->fromArray(
-                $filaDatos,
-                null,
-                "A{$fila}"
-            );
-
-            /*Estilo datos*/
-
-            $sheet->getStyle(
-                "A{$fila}:P{$fila}"
-            )->applyFromArray([
-                'borders' => [
-                    'allBorders' => [
-                        'borderStyle' =>
-                            Border::BORDER_THIN,
-
-                        'color' => [
-                            'rgb' => 'D9D9D9',
-                        ],
-                    ],
-                ],
-
-                'alignment' => [
-                    'vertical' =>
-                        Alignment::VERTICAL_CENTER,
-
-                    'wrapText' => true,
-                ],
-            ]);
-
-            $sheet->getStyle(
-                "A{$fila}"
-            )->getAlignment()
-                ->setHorizontal(
-                    Alignment::HORIZONTAL_CENTER
-                );
-
-            $sheet->getStyle(
-                "C{$fila}"
-            )->getAlignment()
-                ->setHorizontal(
-                    Alignment::HORIZONTAL_CENTER
-                );
-
-            $sheet->getStyle(
-                "C{$fila}"
-            )->getNumberFormat()
-                ->setFormatCode('@');
-
-            $sheet->getStyle(
-                "D{$fila}:P{$fila}"
-            )->getAlignment()
-                ->setHorizontal(
-                    Alignment::HORIZONTAL_CENTER
-                );
-
-            $sheet->getRowDimension($fila)
-                ->setRowHeight(20);
-
-            /*Espacio antes de la siguiente gestión*/
-
-            $fila += 3;
-        }
-
-        $this->configurarPaginaTodosLosAnios(
-            $sheet
-        );
-    }
-
-    /*Configuración de página para Todos los años*/
-
-    private function configurarPaginaTodosLosAnios(
-        Worksheet $sheet
-    ): void {
-
-        $ultimaColumna = self::ULTIMA_COLUMNA;
-        $ultimaFila = $sheet->getHighestRow();
-
-        /*Anchos*/
-
-        $sheet->getColumnDimension('A')
-            ->setWidth(8);
-
-        $sheet->getColumnDimension('B')
-            ->setWidth(34);
-
-        $sheet->getColumnDimension('C')
-            ->setWidth(16);
-
-        foreach (range('D', 'P') as $columna) {
-            $sheet->getColumnDimension($columna)
-                ->setWidth(12);
-        }
-
-        /*Página*/
-
-        $pageSetup = $sheet->getPageSetup();
-
-        $pageSetup->setOrientation(
-            PageSetup::ORIENTATION_LANDSCAPE
-        );
-
-        $pageSetup->setPaperSize(
-            PageSetup::PAPERSIZE_LETTER
-        );
-
-        $pageSetup->setFitToPage(true);
-        $pageSetup->setFitToWidth(1);
-        $pageSetup->setFitToHeight(0);
-
-        $pageSetup->setHorizontalCentered(true);
-        $pageSetup->setVerticalCentered(false);
-
-        $sheet->getPageMargins()
-            ->setTop(0.5)
-            ->setBottom(0.5)
-            ->setLeft(0.4)
-            ->setRight(0.4)
-            ->setHeader(0.2)
-            ->setFooter(0.2);
-
-        /*Área de impresión*/
-
-        $sheet->getPageSetup()
-            ->setPrintArea(
-                "A1:{$ultimaColumna}{$ultimaFila}"
-            );
-
-        /*Congelar encabezado institucional*/
-
-        $sheet->freezePane('A9');
-    }
-
     /*Anchos de columna*/
 
     public function columnWidths(): array
@@ -775,25 +402,6 @@ class AportesExport implements
 
                 $sheet =
                     $event->sheet->getDelegate();
-
-                /*
-                |--------------------------------------------------------------------------
-                | CASO ESPECIAL:
-                | CI + Todos los años
-                |--------------------------------------------------------------------------
-                */
-
-                if (
-                    $this->afiliada
-                    && $this->year === null
-                ) {
-
-                    $this->generarTodosLosAnios(
-                        $sheet
-                    );
-
-                    return;
-                }
 
                 /*INFORME NORMAL*/
 
@@ -966,10 +574,8 @@ class AportesExport implements
     }
 
     /*Freeze pane*/
-
     public function freezePane(): string
     {
-        return 'A' .
-            (self::FILA_TITULOS_TABLA + 1);
+        return 'A8';
     }
 }

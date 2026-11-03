@@ -31,6 +31,7 @@ class Afiliado extends Model
         'colegio_id' => 'integer',
     ];
 
+    /** @return BelongsTo<Colegio, $this> */
     public function colegio(): BelongsTo
     {
         return $this->belongsTo(Colegio::class);
@@ -49,16 +50,19 @@ class Afiliado extends Model
         return $this->hasMany(AfiliadoPostgrado::class, 'afiliado_id');
     }
 
+    /** @return HasMany<Pago, $this> */
     public function pagos(): HasMany
     {
         return $this->hasMany(Pago::class, 'afiliado_id');
     }
 
+    /** @return HasMany<Aporte, $this> */
     public function aportes(): HasMany
     {
         return $this->hasMany(Aporte::class, 'afiliado_id');
     }
 
+    /** @return HasMany<Saldo, $this> */
     public function saldosActivos(): HasMany
     {
         return $this->hasMany(Saldo::class, 'afiliado_id')
@@ -81,7 +85,9 @@ class Afiliado extends Model
         ->orderBy('fecha_transferencia');
     }
 
-    public function observaciones(): HasMany {
+    /** @return HasMany<ObservacionAfiliado, $this> */
+    public function observaciones(): HasMany
+    {
         return $this->hasMany(
             ObservacionAfiliado::class,
             'afiliado_id'

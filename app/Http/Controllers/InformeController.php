@@ -33,10 +33,7 @@ class InformeController extends Controller
             ->paginate(50)
             ->withQueryString();
 
-            $totalAfiliados = (clone $query)->count();
-
         /* Años de afiliacion */
-
         $aniosAfiliacion = Afiliado::query()
             ->whereNotNull('fecha_afiliacion')
             ->selectRaw('YEAR(fecha_afiliacion) as anio')
@@ -415,6 +412,11 @@ class InformeController extends Controller
         ]);
 
         $query = $this->consultaAportes($request);
+
+        /* Cantidad total de afiliados según filtros */
+        $totalAfiliados = (clone $query)->count();
+
+        /* Obtener afiliados */
         $afiliados = $query->get();
 
         $afiliados->each(function ($afiliado) {
@@ -472,6 +474,7 @@ class InformeController extends Controller
             'reports.aportesReports.index',
             compact(
                 'afiliados',
+                'totalAfiliados',
                 'colegios',
                 'gestiones',
                 'year',
@@ -560,6 +563,19 @@ class InformeController extends Controller
             );
         }
 
+         $totalAfiliados = (clone $query)->count();
+
+        if ($totalAfiliados > 1000) {
+            return redirect()
+                ->back()
+                ->with(
+                    'error',
+                    "El informe contiene {$totalAfiliados} afiliados. " .
+                    "Para informes de más de 1.000 afiliados, " .
+                    "utilice la exportación a Excel."
+                );
+        }
+
         if (
             !$colegio &&
             $usuario->rol?->nombre === 'USUARIO'
@@ -596,7 +612,7 @@ class InformeController extends Controller
             'buscar' => $request->filled('buscar')
                 ? $request->input('buscar')
                 : 'Sin búsqueda',
-        ];
+        ];     
 
         /*Obtener afiliados*/
 
@@ -607,7 +623,6 @@ class InformeController extends Controller
         | los aportes de la gestión seleccionada.
         |--------------------------------------------------------------------------
         */
-
         if (!$afiliada) {
 
             $afiliados->each(function ($afiliado) use ($yearParaReporte) {

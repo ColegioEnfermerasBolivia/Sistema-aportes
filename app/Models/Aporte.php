@@ -44,16 +44,19 @@ class Aporte extends Model
         'fecha_verificacion' => 'datetime',
     ];
 
+    /** @return BelongsTo<Afiliado, $this> */
     public function afiliado(): BelongsTo
     {
         return $this->belongsTo(Afiliado::class, 'afiliado_id');
     }
 
+    /** @return BelongsTo<Colegio, $this> */
     public function colegio(): BelongsTo
     {
         return $this->belongsTo(Colegio::class, 'colegio_id');
     }
 
+    /** @return BelongsTo<Pago, $this> */
     public function pago(): BelongsTo
     {
         return $this->belongsTo(Pago::class, 'pago_id');

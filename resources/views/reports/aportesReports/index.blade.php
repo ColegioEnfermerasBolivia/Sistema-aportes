@@ -137,14 +137,26 @@
             <x-icon name="download" class="text-white" size="20"/>
             Excel
         </a>
-        <a
-            href="{{ route('aportesReports.pdf', request()->query()) }}"
-            class="inline-flex items-center rounded-lg bg-red-600 px-4 py-2
-                   text-sm font-medium text-white transition hover:bg-red-700"
-        >
-            <x-icon name="download" class="text-white" size="20"/>
-            PDF
-        </a>
+        @if ($totalAfiliados <= 1000)
+            <a
+                href="{{ route('aportesReports.pdf', request()->query()) }}"
+                class="inline-flex items-center rounded-lg bg-red-600 px-4 py-2
+                    text-sm font-medium text-white transition hover:bg-red-700"
+            >
+                <x-icon name="download" class="text-white" size="20"/>
+                PDF
+            </a>
+        @else
+            <button
+                type="button"
+                disabled
+                title="El PDF está disponible únicamente para informes de hasta 1.000 afiliados"
+                class="inline-flex cursor-not-allowed items-center justify-center gap-2 rounded-lg bg-gray-300 px-4 py-2 text-sm font-medium text-gray-600 opacity-80"
+            >
+                <x-icon name="download" class="text-gray-600" size="20"/>
+                PDF no disponible
+            </button>
+        @endif
     </div>
 
     {{-- RESULTADOS --}}

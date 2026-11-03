@@ -8,6 +8,9 @@ use InvalidArgumentException;
 
 class SaldoService
 {
+    /**
+     * @return Collection<int, Saldo>
+     */
     public function activosParaAfiliado(
         int $afiliadoId,
         bool $bloquear = false
@@ -25,6 +28,16 @@ class SaldoService
         return $consulta->get();
     }
 
+    /**
+     * @param Collection<int, Saldo> $saldos
+     * @return array{
+     *     saldo_anterior_centavos: int,
+     *     cantidad_periodos: int,
+     *     costo_periodos_centavos: int,
+     *     saldo_final_centavos: int,
+     *     consumo_pago_centavos: int
+     * }
+     */
     public function distribuir(
         Collection $saldos,
         int $montoPagoCentavos,
@@ -63,6 +76,7 @@ class SaldoService
         ];
     }
 
+    /** @param Collection<int, Saldo> $saldos */
     public function consumir(
         Collection $saldos,
         int $montoCentavos
