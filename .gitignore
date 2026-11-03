@@ -24,4 +24,4 @@ Homestead.yaml
 Thumbs.db
 .phpunit.xml
 .phpstan.neon
-/respaldo-binlog
+respaldo-binlog/
