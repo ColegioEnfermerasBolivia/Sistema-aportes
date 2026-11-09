@@ -85,7 +85,7 @@ class InformacionLaboralController extends Controller
         $datos['fecha_retiro'] = null;
 
         $datos['monto_aporte'] = round(
-            $datos['haber_basico'] * 0.01,
+            $datos['haber_basico'] * 0.005,
             2
         );
 
@@ -205,7 +205,7 @@ class InformacionLaboralController extends Controller
         }
 
         $datos['monto_aporte'] = round(
-            $datos['haber_basico'] * 0.01,
+            $datos['haber_basico'] * 0.005,
             2
         );
 

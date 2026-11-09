@@ -1,15 +1,39 @@
 @props([
-    'titulo',
+    'titulo' => '',
     'tituloAlpine' => null,
     'abiertoInicial' => false,
     'ancho' => 'max-w-2xl',
 ])
 
 <div
-    x-data="{ abierto: @js($abiertoInicial) }"
+    x-data="{
+        abierto: @js($abiertoInicial),
+
+        init() {
+            if (this.abierto) {
+                this.$nextTick(() => {
+                    window.modalActivo = this.$el;
+                });
+            }
+
+            this.$watch('abierto', (valor) => {
+                if (valor) {
+                    window.modalActivo = this.$el;
+                } else if (window.modalActivo === this.$el) {
+                    window.modalActivo = null;
+                }
+            });
+        },
+
+        cerrar() {
+            if (window.modalActivo === this.$el) {
+                this.abierto = false;
+            }
+        }
+    }"
     x-modelable="abierto"
     {{ $attributes }}
-    @keydown.escape.window="abierto = false"
+    @keydown.escape.window="cerrar()"
 >
     {{-- TRIGGER --}}
     @isset($trigger)
@@ -17,7 +41,6 @@
         <div @click="abierto = true">
             {{ $trigger }}
         </div>
-
     @endisset
 
     {{-- MODAL TELETRANSPORTADO AL BODY --}}
@@ -33,7 +56,7 @@
 
             {{-- CONTENEDOR DEL MODAL --}}
             <div
-                @click.outside="abierto = false"
+                @click.outside="cerrar()"
                 x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="scale-95 opacity-0"
                 x-transition:enter-end="scale-100 opacity-100"

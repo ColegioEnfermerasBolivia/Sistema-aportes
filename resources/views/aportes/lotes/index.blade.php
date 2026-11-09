@@ -121,16 +121,14 @@
                             <x-slot:trigger>
                                 <button
                                     type="button"
-                                    class="rounded-lg border border-sky-500 bg-white px-4 py-2 text-sm font-semibold text-sky-500 transition hover:bg-gray-50 inline-flex items-center gap-1.5"
+                                    class="rounded-lg border border-sky-500 bg-white px-4 py-2 text-sm font-semibold text-sky-500 transition hover:bg-gray-50 inline-flex items-center gap-1.5 hover:cursor-pointer"
                                 >
                                     <x-icon name="see" class="text-sky-500" size="20"/>
                                     Ver pagos
                                 </button>
                             </x-slot:trigger>
 
-                            @include('aportes.lotes.partials.lote-detalle', [
-                                'lote' => $loteActual
-                            ])
+                            @include('aportes.lotes.partials.lote-detalle', ['lote' => $loteActual])
                         </x-modal>
 
                         {{-- Cerrar lote --}}
@@ -403,6 +401,31 @@
         @include('aportes.lotes.partials.confirmar')
     </x-modal>
 
+    @if (auth()->user()->rol?->nombre === 'USUARIO' && $loteActual && $loteActual->estado === 'ABIERTO')
+        <div
+            x-data="{
+                modalEditarPago: false,
+                pagoSeleccionado: {
+                    id: '',
+                    afiliado: '',
+                    ci: '',
+                    montoMensual: '',
+                    montoTotal: '',
+                    cantidadPeriodos: 0,
+                    observaciones: ''
+                }
+            }"
+            @abrir-editar-pago.window="
+                pagoSeleccionado = $event.detail;
+                modalEditarPago = true;
+            "
+        >
+            <x-modal x-model="modalEditarPago" ancho="max-w-2xl">
+                @include('aportes.lotes.partials.pago-edit')
+            </x-modal>
+        </div>
+    @endif
+
 </div>
 
 @endsection
@@ -439,6 +462,7 @@
             aportesPreview: [],
             resumenPagos: [],
             cargandoPreview: false,
+            confirmandoAportes: false,
             mostrarPreview: false,
             observacionesPagos: {},
 
@@ -559,7 +583,10 @@
             },
 
             async confirmarPrevisualizacion() {
-                if (this.seleccionados.length === 0) {
+                if (
+                    this.confirmandoAportes ||
+                    this.seleccionados.length === 0
+                ) {
                     return;
                 }
 
@@ -597,6 +624,10 @@
                     return;
                 }
 
+                this.confirmandoAportes = true;
+                await this.$nextTick();
+                await new Promise(resolve => requestAnimationFrame(resolve));
+
                 try {
                     const response = await fetch(
                         '{{ route('lotes.confirmar-aportes', '__LOTE__') }}'
@@ -624,6 +655,8 @@
                         );
                     }
 
+                    this.confirmandoAportes = false;
+
                     // Esperamos a que el usuario cierre el mensaje antes de recargar
                     await alerta('success', 'Revisión confirmada', data.message);
 
@@ -634,6 +667,7 @@
 
                     window.location.reload();
                 } catch (error) {
+                    this.confirmandoAportes = false;
                     console.error(error);
                     alerta('error', 'Error', error.message);
                 }

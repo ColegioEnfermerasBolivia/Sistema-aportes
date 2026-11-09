@@ -341,12 +341,22 @@ class InformeController extends Controller
     //APORTES
     private function consultaAportes(Request $request){
         $usuario = auth()->user();
+        $year = $request->filled('year')
+            ? (int) $request->input('year')
+            : null;
+
+        $aportesDelReporte = function ($query) use ($year) {
+            $query->where('estado', 'VERIFICADO')
+                ->when($year !== null, function ($query) use ($year) {
+                    $query->where('year', $year);
+                });
+        };
+
         $query = Afiliado::with([
             'colegio',
-            'aportes' => function ($query) {
-                $query
-                    ->where('estado', 'VERIFICADO')
-                    ->orderBy('year')
+            'aportes' => function ($query) use ($aportesDelReporte) {
+                $aportesDelReporte($query);
+                $query->orderBy('year')
                     ->orderBy('mes');
             },
         ]);
@@ -381,6 +391,10 @@ class InformeController extends Controller
         //Filtro por Colegio
         if ($request->filled('colegio_id') && in_array($usuario->rol?->nombre, ['ADMIN', 'SUPER ADMIN'])) {
             $query->where('colegio_id', $request->input('colegio_id'));
+        }
+
+        if ($year !== null) {
+            $query->whereHas('aportes', $aportesDelReporte);
         }
 
         //Orden

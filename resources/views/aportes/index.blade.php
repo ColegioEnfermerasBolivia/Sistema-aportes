@@ -151,9 +151,9 @@
         </div>
 
         {{--TABLA DE APORTES--}}
-        <div class="overflow-x-auto">
-            <table class="min-w-300 w-full border-collapse text-sm">
-                <thead>
+        <div class="max-h-125 overflow-y-auto overflow-x-auto">
+            <table class="min-w-300 w-full">
+                <thead class="sticky top-0 z-0 border-b border-gray-200 bg-[#f1f3f8]">
                     <tr class="bg-[#f1f3f8] text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
                         <th class="whitespace-nowrap px-5 py-4">
                            Nombres

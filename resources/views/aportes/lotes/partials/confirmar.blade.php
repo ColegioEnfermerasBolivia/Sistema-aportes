@@ -1,4 +1,22 @@
 <div class="space-y-6">
+    <div
+        x-show="confirmandoAportes"
+        x-cloak
+        class="fixed inset-0 z-[10000] flex items-center justify-center bg-gray-900/60 px-4 backdrop-blur-sm"
+        role="status"
+        aria-live="polite"
+    >
+        <div class="w-full max-w-sm rounded-2xl bg-white p-8 text-center shadow-2xl">
+            <div class="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-[#1a34c9]"></div>
+            <p class="mt-5 text-lg font-semibold text-gray-900">
+                Procesando aportes
+            </p>
+            <p class="mt-2 text-sm text-gray-500">
+                Se están registrando los aportes del lote. No cierres esta ventana.
+            </p>
+        </div>
+    </div>
+
     <div>
         <h3 class="text-lg font-semibold text-gray-900">
             Previsualización de aportes
@@ -32,19 +50,25 @@
         </div>
     </div>
 
-    <div class="space-y-3">
+    <div
+        x-show="resumenPagos.some(resumen => Number(resumen.saldo_aplicado) > 0 && !pagosObservados().includes(Number(resumen.pago_id)))"
+        class="space-y-3"
+    >
         <h4 class="text-sm font-semibold text-gray-900">
             Aplicación de saldos
         </h4>
-        <div class="overflow-x-auto rounded-xl border border-gray-200">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+        <div class="max-h-[80vh] overflow-auto rounded-xl border border-gray-200">
+            <table class="w-full min-w-[900px] text-sm">
+                <thead class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-left font-semibold text-gray-600 shadow-[inset_0_-1px_0_#e5e7eb]">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                             Afiliado
                         </th>
                         <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
                             Saldo anterior
+                        </th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            Saldo aplicado
                         </th>
                         <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
                             Períodos a generar
@@ -56,7 +80,7 @@
                 </thead>
                 <tbody class="divide-y divide-gray-200 bg-white">
                     <template
-                        x-for="resumen in resumenPagos"
+                        x-for="resumen in resumenPagos.filter(resumen => Number(resumen.saldo_aplicado) > 0 && !pagosObservados().includes(Number(resumen.pago_id)))"
                         :key="resumen.pago_id"
                     >
                         <tr>
@@ -69,6 +93,10 @@
                             <td
                                 class="px-4 py-3 text-right text-sm text-gray-900"
                                 x-text="'Bs. ' + Number(resumen.saldo_anterior).toFixed(2)"
+                            ></td>
+                            <td
+                                class="px-4 py-3 text-right text-sm font-semibold text-blue-700"
+                                x-text="'Bs. ' + Number(resumen.saldo_aplicado).toFixed(2)"
                             ></td>
                             <td
                                 class="px-4 py-3 text-right text-sm text-gray-900"
@@ -85,9 +113,9 @@
         </div>
     </div>
 
-    <div class="overflow-x-auto rounded-xl border border-gray-200">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+    <div class="max-h-[80vh] overflow-auto rounded-xl border border-gray-200">
+        <table class="w-full min-w-[900px] text-sm">
+            <thead class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-left font-semibold text-gray-600 shadow-[inset_0_-1px_0_#e5e7eb]">
                 <tr>
                     <th class="w-12 px-4 py-3 text-center">
                         <span class="sr-only">
@@ -260,6 +288,7 @@
         <button
             type="button"
             @click="cerrarPrevisualizacion()"
+            :disabled="confirmandoAportes"
             class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100 hover:cursor-pointer inline-flex items-center gap-1.5"
         >
             <x-icon name="cancel" class="text-gray-700" size="20"/>
@@ -268,10 +297,16 @@
         <button
             type="button"
             @click="confirmarPrevisualizacion()"
-            class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#9deba1] hover:cursor-pointer inline-flex items-center gap-1.5"
+            :disabled="confirmandoAportes"
+            class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#9deba1] hover:cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 inline-flex items-center gap-1.5"
         >
-            <x-icon name="confirm" class="text-white" size="20"/>
-            Confirmar aportes
+            <span x-show="!confirmandoAportes" class="inline-flex items-center gap-1.5">
+                <x-icon name="confirm" class="text-white" size="20"/>
+                Confirmar aportes
+            </span>
+            <span x-show="confirmandoAportes" x-cloak>
+                Procesando...
+            </span>
         </button>
     </div>
 </div>

@@ -31,6 +31,32 @@ class Afiliado extends Model
         'colegio_id' => 'integer',
     ];
 
+    public static function normalizarIdentificador(?string $valor): ?string
+    {
+        if ($valor === null) {
+            return null;
+        }
+
+        return preg_replace('/[\s\p{Z}]+/u', '', $valor) ?? $valor;
+    }
+
+    public function setRegistroDepartamentalAttribute(?string $valor): void
+    {
+        $this->attributes['registro_departamental'] =
+            self::normalizarIdentificador($valor);
+    }
+
+    public function setMatriculaProfesionalAttribute(?string $valor): void
+    {
+        $this->attributes['matricula_profesional'] =
+            self::normalizarIdentificador($valor);
+    }
+
+    public function setCiAttribute(?string $valor): void
+    {
+        $this->attributes['ci'] = self::normalizarIdentificador($valor);
+    }
+
     /** @return BelongsTo<Colegio, $this> */
     public function colegio(): BelongsTo
     {
@@ -92,5 +118,9 @@ class Afiliado extends Model
             ObservacionAfiliado::class,
             'afiliado_id'
         );
+    }
+
+    public function informacionLaboral():HasOne {
+        return $this->hasOne(InformacionLaboral::class, 'afiliado_id');
     }
 }

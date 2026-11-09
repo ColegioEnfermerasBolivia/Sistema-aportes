@@ -1,3 +1,4 @@
+
 <div class="space-y-6">
 
     {{-- INFORMACIÓN DEL AFILIADO --}}
@@ -14,17 +15,18 @@
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
                 <p class="text-sm text-gray-500">Afiliado</p>
-                <p class="mt-1 font-medium text-gray-900">
-                    {{ $pago->afiliado->nombres }}
-                    {{ $pago->afiliado->apellidos }}
-                </p>
+                <p
+                    class="mt-1 font-medium text-gray-900"
+                    x-text="pagoSeleccionado.afiliado"
+                ></p>
             </div>
 
             <div>
                 <p class="text-sm text-gray-500">CI</p>
-                <p class="mt-1 font-medium text-gray-900">
-                    {{ $pago->afiliado->ci }}
-                </p>
+                <p
+                    class="mt-1 font-medium text-gray-900"
+                    x-text="pagoSeleccionado.ci"
+                ></p>
             </div>
         </div>
     </section>
@@ -42,7 +44,7 @@
 
         <form
             method="POST"
-            action="{{ route('pagos.update', $pago) }}"
+            :action="'{{ route('pagos.update', ['pago' => '__ID__']) }}'.replace('__ID__', pagoSeleccionado.id)"
             class="space-y-5"
         >
             @csrf
@@ -53,11 +55,12 @@
                 {{-- MONTO MENSUAL --}}
                 <div>
                     <label
-                        for="monto_mensual_{{ $pago->id }}"
+                        for="monto_mensual_editar"
                         class="mb-2 block text-sm font-medium text-gray-700"
                     >
                         Monto mensual de referencia
                     </label>
+
                     <div class="relative">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-gray-500">
                             Bs.
@@ -66,8 +69,8 @@
                         <input
                             type="number"
                             name="monto_mensual"
-                            id="monto_mensual_{{ $pago->id }}"
-                            value="{{ number_format($pago->monto_total / $pago->cantidad_periodos, 2, '.', '') }}"
+                            id="monto_mensual_editar"
+                            x-model="pagoSeleccionado.montoMensual"
                             min="0.01"
                             step="0.01"
                             required
@@ -79,7 +82,7 @@
                 {{-- MONTO TOTAL --}}
                 <div>
                     <label
-                        for="monto_total_{{ $pago->id }}"
+                        for="monto_total_editar"
                         class="mb-2 block text-sm font-medium text-gray-700"
                     >
                         Monto total
@@ -93,8 +96,8 @@
                         <input
                             type="number"
                             name="monto_total"
-                            id="monto_total_{{ $pago->id }}"
-                            value="{{ old('monto_total', number_format($pago->monto_total, 2, '.', '')) }}"
+                            id="monto_total_editar"
+                            x-model="pagoSeleccionado.montoTotal"
                             min="0.01"
                             step="0.01"
                             required
@@ -109,12 +112,11 @@
                 <p class="text-sm font-medium text-blue-700">
                     Cantidad de períodos
                 </p>
+
                 <p
-                    id="cantidad_periodos_{{ $pago->id }}"
                     class="mt-1 text-2xl font-bold text-blue-800"
-                >
-                    {{ $pago->cantidad_periodos }}
-                </p>
+                    x-text="pagoSeleccionado.cantidadPeriodos"
+                ></p>
 
                 <p class="mt-1 text-xs text-blue-600">
                     Este valor se calculará automáticamente al guardar el pago.
@@ -124,7 +126,7 @@
             {{-- OBSERVACIONES --}}
             <div>
                 <label
-                    for="observaciones_{{ $pago->id }}"
+                    for="observaciones_editar"
                     class="mb-2 block text-sm font-medium text-gray-700"
                 >
                     Observaciones
@@ -132,12 +134,13 @@
 
                 <textarea
                     name="observaciones"
-                    id="observaciones_{{ $pago->id }}"
+                    id="observaciones_editar"
                     rows="4"
                     maxlength="1000"
+                    x-model="pagoSeleccionado.observaciones"
                     class="w-full resize-none rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 focus:border-[#1a34c9] focus:outline-none focus:ring-2 focus:ring-[#1a34c9]/20"
                     placeholder="Observaciones adicionales sobre el pago..."
-                >{{ old('observaciones', $pago->observaciones) }}</textarea>
+                ></textarea>
 
                 <p class="mt-1 text-xs text-gray-500">
                     Máximo 1000 caracteres.
@@ -157,7 +160,7 @@
             <div class="flex justify-end gap-3 border-t border-gray-200 pt-5">
                 <button
                     type="button"
-                    @click="abierto = false"
+                    @click="modalEditarPago = false"
                     class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-100 inline-flex items-center gap-1.5"
                 >
                     <x-icon name="cancel" class="text-gray-700" size="20"/>

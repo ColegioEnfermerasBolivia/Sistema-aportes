@@ -438,22 +438,20 @@ class LoteVerificacionController extends Controller
                 )->startOfMonth();
             }
 
-            for (
-                $i = 0;
-                $i < $distribucion['cantidad_periodos'];
-                $i++
-            ) {
-                $fechaPeriodo = $fechaInicio
-                    ->copy()
-                    ->addMonths($i);
+            $periodos = $this->periodosDesde(
+                $fechaInicio,
+                $distribucion['cantidad_periodos']
+            );
+            $aportesExistentes = $this->aportesExistentesPorPeriodo(
+                $afiliado->id,
+                $periodos
+            );
 
-                $existe = Aporte::query()
-                    ->where('afiliado_id', $afiliado->id)
-                    ->where('mes', $fechaPeriodo->month)
-                    ->where('year', $fechaPeriodo->year)
-                    ->exists();
-
-                if ($existe) {
+            foreach ($periodos as $fechaPeriodo) {
+                if (isset($aportesExistentes[$this->clavePeriodo(
+                    $fechaPeriodo->year,
+                    $fechaPeriodo->month
+                )])) {
                     return response()->json([
                         'message' => "La afiliada {$afiliado->id} ya tiene un aporte registrado para {$fechaPeriodo->month}/{$fechaPeriodo->year}.",
                     ], 422);
@@ -478,39 +476,52 @@ class LoteVerificacionController extends Controller
                 ];
             }
 
-            $resumenPagos[] = [
-                'pago_id' => $pago->id,
-                'monto_total' => number_format(
-                    $montoTotalCentavos / 100,
-                    2,
-                    '.',
-                    ''
-                ),
-                'monto_mensual' => number_format(
-                    $montoMensualCentavos / 100,
-                    2,
-                    '.',
-                    ''
-                ),
-                'nombre' => $afiliado->nombres
-                    . ' '
-                    . $afiliado->apellidos,
-                'ci' => $afiliado->ci,
-                'saldo_anterior' => number_format(
-                    $distribucion['saldo_anterior_centavos'] / 100,
-                    2,
-                    '.',
-                    ''
-                ),
-                'cantidad_periodos' =>
-                    $distribucion['cantidad_periodos'],
-                'saldo_final_estimado' => number_format(
-                    $distribucion['saldo_final_centavos'] / 100,
-                    2,
-                    '.',
-                    ''
-                ),
-            ];
+            $saldoAplicadoCentavos = min(
+                $distribucion['saldo_anterior_centavos'],
+                $distribucion['costo_periodos_centavos']
+            );
+
+            if ($saldoAplicadoCentavos > 0) {
+                $resumenPagos[] = [
+                    'pago_id' => $pago->id,
+                    'monto_total' => number_format(
+                        $montoTotalCentavos / 100,
+                        2,
+                        '.',
+                        ''
+                    ),
+                    'monto_mensual' => number_format(
+                        $montoMensualCentavos / 100,
+                        2,
+                        '.',
+                        ''
+                    ),
+                    'nombre' => $afiliado->nombres
+                        . ' '
+                        . $afiliado->apellidos,
+                    'ci' => $afiliado->ci,
+                    'saldo_anterior' => number_format(
+                        $distribucion['saldo_anterior_centavos'] / 100,
+                        2,
+                        '.',
+                        ''
+                    ),
+                    'saldo_aplicado' => number_format(
+                        $saldoAplicadoCentavos / 100,
+                        2,
+                        '.',
+                        ''
+                    ),
+                    'cantidad_periodos' =>
+                        $distribucion['cantidad_periodos'],
+                    'saldo_final_estimado' => number_format(
+                        $distribucion['saldo_final_centavos'] / 100,
+                        2,
+                        '.',
+                        ''
+                    ),
+                ];
+            }
         }
 
         return response()->json([
@@ -708,29 +719,30 @@ class LoteVerificacionController extends Controller
                         )->startOfMonth();
                     }
 
-                    // Validamos y generamos los períodos completos.
-                    for (
-                        $i = 0;
-                        $i < $cantidadPeriodos;
-                        $i++
-                    ) {
-                        $fechaPeriodo = $fechaInicio
-                            ->copy()
-                            ->addMonths($i);
+                    $periodos = $this->periodosDesde(
+                        $fechaInicio,
+                        $cantidadPeriodos
+                    );
+                    $aportesExistentes = $this->aportesExistentesPorPeriodo(
+                        $afiliado->id,
+                        $periodos
+                    );
 
-                        $existe = Aporte::query()
-                            ->where('afiliado_id', $afiliado->id)
-                            ->where('mes', $fechaPeriodo->month)
-                            ->where('year', $fechaPeriodo->year)
-                            ->exists();
+                    // Validamos todos los períodos antes de insertarlos en bloque.
+                    $aportesParaInsertar = [];
+                    $ahora = now();
 
-                        if ($existe) {
+                    foreach ($periodos as $fechaPeriodo) {
+                        if (isset($aportesExistentes[$this->clavePeriodo(
+                            $fechaPeriodo->year,
+                            $fechaPeriodo->month
+                        )])) {
                             throw new \RuntimeException(
                                 "La afiliada {$afiliado->id} ya tiene un aporte registrado para {$fechaPeriodo->month}/{$fechaPeriodo->year}."
                             );
                         }
 
-                        Aporte::create([
+                        $aportesParaInsertar[] = [
                             'afiliado_id' => $afiliado->id,
                             'colegio_id' => $afiliado->colegio_id,
                             'pago_id' => $pago->id,
@@ -740,12 +752,23 @@ class LoteVerificacionController extends Controller
                             'estado' => 'VERIFICADO',
                             'observaciones' => null,
                             'registrado_por' => $pago->registrado_por,
-                            'fecha_registro' => now(),
+                            'fecha_registro' => $ahora,
                             'verificado_por' => $usuario->id,
-                            'fecha_verificacion' => now(),
-                        ]);
+                            'fecha_verificacion' => $ahora,
+                            'creado_en' => $ahora,
+                            'actualizado_en' => $ahora,
+                        ];
+                    }
 
-                        $aportesGenerados++;
+                    if ($aportesParaInsertar !== []) {
+                        foreach (
+                            array_chunk($aportesParaInsertar, 50)
+                            as $loteAportes
+                        ) {
+                            Aporte::query()->insert($loteAportes);
+                        }
+
+                        $aportesGenerados += count($aportesParaInsertar);
                     }
 
                     /*
@@ -900,6 +923,59 @@ class LoteVerificacionController extends Controller
                     : 'No se pudo procesar la revisión del lote. Verifica los datos e inténtalo nuevamente.',
             ], 422);
         }
+    }
+
+    /**
+     * @return array<int, Carbon>
+     */
+    private function periodosDesde(Carbon $fechaInicio, int $cantidad): array
+    {
+        $periodos = [];
+
+        for ($i = 0; $i < $cantidad; $i++) {
+            $periodos[] = $fechaInicio->copy()->addMonths($i);
+        }
+
+        return $periodos;
+    }
+
+    /**
+     * @param array<int, Carbon> $periodos
+     * @return array<string, true>
+     */
+    private function aportesExistentesPorPeriodo(
+        int $afiliadoId,
+        array $periodos
+    ): array {
+        if ($periodos === []) {
+            return [];
+        }
+
+        $primerPeriodo = $periodos[0];
+        $ultimoPeriodo = $periodos[\count($periodos) - 1];
+        $aportesExistentes = [];
+
+        $aportes = Aporte::query()
+            ->where('afiliado_id', $afiliadoId)
+            ->whereBetween('year', [
+                $primerPeriodo->year,
+                $ultimoPeriodo->year,
+            ])
+            ->get(['mes', 'year']);
+
+        foreach ($aportes as $aporte) {
+            $aportesExistentes[$this->clavePeriodo(
+                (int) $aporte->year,
+                (int) $aporte->mes
+            )] = true;
+        }
+
+        return $aportesExistentes;
+    }
+
+    private function clavePeriodo(int $year, int $mes): string
+    {
+        return "{$year}-{$mes}";
     }
 
 }

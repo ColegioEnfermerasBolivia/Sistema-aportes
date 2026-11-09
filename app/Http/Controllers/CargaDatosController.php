@@ -270,17 +270,23 @@ class CargaDatosController extends Controller
         return [
             'registros' => Afiliado::query()
                 ->pluck('registro_departamental')
-                ->map(fn ($valor) => $this->normalizarTexto($valor))
+                ->map(fn ($valor) => $this->normalizarTexto(
+                    Afiliado::normalizarIdentificador($valor)
+                ))
                 ->flip(),
 
             'matriculas' => Afiliado::query()
                 ->pluck('matricula_profesional')
-                ->map(fn ($valor) => $this->normalizarTexto($valor))
+                ->map(fn ($valor) => $this->normalizarTexto(
+                    Afiliado::normalizarIdentificador($valor)
+                ))
                 ->flip(),
 
             'cis' => Afiliado::query()
                 ->pluck('ci')
-                ->map(fn ($valor) => $this->normalizarTexto($valor))
+                ->map(fn ($valor) => $this->normalizarTexto(
+                    Afiliado::normalizarIdentificador($valor)
+                ))
                 ->flip(),
         ];
     }
@@ -322,15 +328,21 @@ class CargaDatosController extends Controller
         $errores = [];
 
         $registro = $this->normalizarTexto(
-            $fila['registro_departamental']
+            Afiliado::normalizarIdentificador(
+                $fila['registro_departamental']
+            )
         );
 
         $matricula = $this->normalizarTexto(
-            $fila['matricula_profesional']
+            Afiliado::normalizarIdentificador(
+                $fila['matricula_profesional']
+            )
         );
 
         $ci = $this->normalizarTexto(
-            $fila['ci']
+            Afiliado::normalizarIdentificador(
+                $fila['ci']
+            )
         );
 
         $nombreColegio = $this->normalizarTexto(

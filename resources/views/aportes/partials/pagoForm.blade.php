@@ -6,6 +6,7 @@
         apellidos: '',
         estado: '',
         ultimoAporte: null,
+        montoAporteLaboral: null,
 
         mensual: '',
         total: '',
@@ -22,6 +23,7 @@
             this.apellidos = ''; 
             this.estado = ''; 
             this.ultimoAporte = null; 
+            this.montoAporteLaboral = null;
             this.mensual = ''; 
             this.total = ''; 
             this.saldoAnterior = '0.00';
@@ -91,6 +93,7 @@
             this.apellidos = '';
             this.estado = '';
             this.ultimoAporte = null;
+            this.montoAporteLaboral = null;
             this.saldoAnterior = '0.00';
 
             const ciBuscado = this.ci.trim();
@@ -126,6 +129,7 @@
                 this.apellidos = datos.apellidos;
                 this.estado = datos.estado;
                 this.ultimoAporte = datos.ultimo_aporte;
+                this.montoAporteLaboral = datos.monto_aporte_laboral;
                 this.saldoAnterior = datos.saldo_disponible ?? '0.00';
 
                 this.encontrado = true;
@@ -233,54 +237,73 @@
                 Este afiliado se encuentra inactivo y no se puede registrar un pago.
             </div>
 
-            {{-- Último aporte --}}
-            <div
-                x-show="ultimoAporte"
-                class="mt-4 border-t border-gray-200 pt-4"
-            >
-                <p class="text-xs font-medium uppercase tracking-wide text-gray-500">
-                    Último aporte
-                </p>
-                <p class="mt-1 text-sm font-semibold text-gray-800">
-                    Bs
-                    <span
-                        x-text="ultimoAporte ? Number(ultimoAporte.monto).toFixed(2) : ''"
-                    ></span>
-                    <span class="font-normal text-gray-500">
-                        —
+            <div class="mt-4 grid gap-4 border-t border-gray-200 pt-4 sm:grid-cols-2">
+                {{-- Último aporte --}}
+                <div>
+                    <p class="text-xs font-medium uppercase tracking-wide text-gray-500">
+                        Último aporte
+                    </p>
+                    <p
+                        x-show="ultimoAporte"
+                        class="mt-1 text-sm font-semibold text-gray-800"
+                    >
+                        Bs
                         <span
-                            x-text="ultimoAporte ? [
-                                '',
-                                'ENE',
-                                'FEB',
-                                'MAR',
-                                'ABR',
-                                'MAY',
-                                'JUN',
-                                'JUL',
-                                'AGO',
-                                'SEP',
-                                'OCT',
-                                'NOV',
-                                'DIC'
-                            ][ultimoAporte.mes] : ''"
+                            x-text="ultimoAporte ? Number(ultimoAporte.monto).toFixed(2) : ''"
                         ></span>
+                        <span class="font-normal text-gray-500">
+                            —
+                            <span
+                                x-text="ultimoAporte ? [
+                                    '',
+                                    'ENE',
+                                    'FEB',
+                                    'MAR',
+                                    'ABR',
+                                    'MAY',
+                                    'JUN',
+                                    'JUL',
+                                    'AGO',
+                                    'SEP',
+                                    'OCT',
+                                    'NOV',
+                                    'DIC'
+                                ][ultimoAporte.mes] : ''"
+                            ></span>
+                            <span
+                                x-text="ultimoAporte ? ultimoAporte.year : ''"
+                            ></span>
+                        </span>
+                    </p>
+                    <p
+                        x-show="!ultimoAporte"
+                        class="mt-1 text-sm text-gray-400"
+                    >
+                        Sin aportes verificados registrados.
+                    </p>
+                </div>
+
+                {{-- Monto de aporte laboral --}}
+                <div>
+                    <p class="text-xs font-medium uppercase tracking-wide text-gray-500">
+                        Monto de aporte laboral
+                    </p>
+                    <p
+                        x-show="montoAporteLaboral !== null"
+                        class="mt-1 text-sm font-semibold text-gray-800"
+                    >
+                        Bs
                         <span
-                            x-text="ultimoAporte ? ultimoAporte.year : ''"
+                            x-text="montoAporteLaboral !== null ? Number(montoAporteLaboral).toFixed(2) : ''"
                         ></span>
-                    </span>
-                </p>
-            </div>
-            <div
-                x-show="!ultimoAporte"
-                class="mt-4 border-t border-gray-200 pt-4"
-            >
-                <p class="text-xs font-medium uppercase tracking-wide text-gray-500">
-                    Último aporte
-                </p>
-                <p class="mt-1 text-sm text-gray-400">
-                    Sin aportes verificados registrados.
-                </p>
+                    </p>
+                    <p
+                        x-show="montoAporteLaboral === null"
+                        class="mt-1 text-sm font-semibold text-gray-800"
+                    >
+                        15.00 Bs
+                    </p>
+                </div>
             </div>
         </div>
 

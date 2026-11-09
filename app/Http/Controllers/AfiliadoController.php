@@ -147,6 +147,8 @@ class AfiliadoController extends Controller
             Afiliado::class
         );
 
+        $this->normalizarIdentificadores($request);
+
         $usuario = auth()->user();
         $reglas = [
 
@@ -298,6 +300,8 @@ class AfiliadoController extends Controller
             'update',
             $afiliado
         );
+
+        $this->normalizarIdentificadores($request);
 
         $datosAnteriores = [
             'registro_departamental' => $afiliado->registro_departamental,
@@ -671,6 +675,11 @@ class AfiliadoController extends Controller
             ->where('monto_disponible', '>', 0)
             ->sum('monto_disponible');
 
+        $montoAporteLaboral = $afiliado->informacionesLaborales()
+            ->where('culminado', false)
+            ->orderByDesc('fecha_ingreso_trabajo')
+            ->value('monto_aporte');
+
         return response()->json([
             'id' => $afiliado->id,
             'ci' => $afiliado->ci,
@@ -683,6 +692,7 @@ class AfiliadoController extends Controller
                 '.',
                 ''
             ),
+            'monto_aporte_laboral' => $montoAporteLaboral,
             'ultimo_aporte' => $ultimoAporte
                 ? [
                     'monto' => $ultimoAporte->monto,
@@ -691,6 +701,23 @@ class AfiliadoController extends Controller
                 ]
                 : null,
         ]);
+    }
+
+    private function normalizarIdentificadores(Request $request): void
+    {
+        foreach ([
+            'registro_departamental',
+            'matricula_profesional',
+            'ci',
+        ] as $campo) {
+            $valor = $request->input($campo);
+
+            if (is_string($valor)) {
+                $request->merge([
+                    $campo => Afiliado::normalizarIdentificador($valor),
+                ]);
+            }
+        }
     }
 
     public function detalle(Afiliado $afiliado)

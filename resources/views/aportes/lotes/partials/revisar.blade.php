@@ -61,9 +61,9 @@
             </p>
         </div>
 
-        <div class="overflow-x-auto rounded-xl border border-gray-200">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+        <div class="max-h-[80vh] overflow-auto rounded-xl border border-gray-200">
+            <table class="w-full min-w-[900px] text-sm">
+                <thead class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-left font-semibold text-gray-600 shadow-[inset_0_-1px_0_#e5e7eb]">
                     <tr>
                         <th class="w-12 px-4 py-3 text-center">
                             <span class="sr-only">

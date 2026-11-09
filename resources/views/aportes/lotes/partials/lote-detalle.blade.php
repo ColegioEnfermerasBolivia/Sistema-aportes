@@ -210,9 +210,9 @@
             </p>
         </div>
 
-        <div class="overflow-x-auto rounded-xl border border-gray-200">
-            <table class="min-w-[900px] w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+        <div class="max-h-[60vh] overflow-auto rounded-xl border border-gray-200">
+            <table class="w-full min-w-[900px] text-sm">
+                <thead class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-left font-semibold text-gray-600 shadow-[inset_0_-1px_0_#e5e7eb]">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                             Afiliado
@@ -345,39 +345,35 @@
                             @if ( auth()->user()->rol?->nombre === 'USUARIO' 
                                 && $lote->estado === 'ABIERTO' ) 
                                 <td class="px-4 py-4 text-center"> 
-                                    <button type="button" @click="$dispatch('abrir-editar-pago', { pagoId: {{ $pago->id }} })" class="rounded-lg bg-[#1a34c9] px-3 py-2 text-sm font-medium text-white transition hover:bg-[#152ba8]" > Editar 
-                                    </button> 
-                                </td> 
-                            @endif 
-                            </tr>
-                            @if (
-                                auth()->user()->rol?->nombre === 'USUARIO'
-                                && $lote->estado === 'ABIERTO'
-                            )
-
-                                <div
-                                    x-data="{ modalEditarPago: false }"
-                                    @abrir-editar-pago.window="
-                                        if ($event.detail.pagoId === {{ $pago->id }}) {
-                                            modalEditarPago = true;
-                                        }"
-                                >
-                                    <x-modal
-                                        titulo="Editar pago"
-                                        ancho="max-w-2xl"
-                                        x-model="modalEditarPago"
+                                    <button
+                                        type="button"
+                                        @click="$dispatch('abrir-editar-pago', @js([
+                                            'id' => $pago->id,
+                                            'afiliado' => trim($pago->afiliado->nombres . ' ' . $pago->afiliado->apellidos),
+                                            'ci' => $pago->afiliado->ci,
+                                            'montoMensual' => number_format(
+                                                $pago->monto_total / max($pago->cantidad_periodos, 1),
+                                                2,
+                                                '.',
+                                                ''
+                                            ),
+                                            'montoTotal' => number_format($pago->monto_total, 2, '.', ''),
+                                            'cantidadPeriodos' => $pago->cantidad_periodos,
+                                            'observaciones' => $pago->observaciones ?? ''
+                                        ]))"
+                                        class="rounded-lg bg-[#1a34c9] px-3 py-2 text-sm font-medium text-white transition hover:bg-[#152ba8] hover:cursor-pointer"
                                     >
-                                        @include('aportes.lotes.partials.pago-edit', [
-                                            'pago' => $pago
-                                        ])
-                                    </x-modal>
-                                </div>
+                                        Editar
+                                    </button>
+                                </td>
                             @endif
-                         @empty 
-                            <tr> 
+                            </tr>
+                         @empty
+                            <tr>
                                 <td colspan="{{ auth()->user()->rol?->nombre === 'USUARIO' && $lote->estado === 'ABIERTO' ? 8 : 7 }}" class="px-4 py-10 text-center text-sm text-gray-500" > Este lote no tiene pagos registrados. 
                                 </td> 
                             </tr>
+
                     @endforelse
                 </tbody>
             </table>
