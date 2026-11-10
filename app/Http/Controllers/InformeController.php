@@ -12,6 +12,7 @@ use App\Models\Colegio;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
@@ -27,6 +28,7 @@ class InformeController extends Controller
 
         $totalAfiliados = (clone $query)->count();
 
+        /** @var LengthAwarePaginator $afiliados */
         $afiliados = $query
             ->orderBy('apellidos')
             ->orderBy('nombres')
@@ -430,8 +432,10 @@ class InformeController extends Controller
         /* Cantidad total de afiliados según filtros */
         $totalAfiliados = (clone $query)->count();
 
-        /* Obtener afiliados */
-        $afiliados = $query->get();
+        /* Obtener afiliados paginados para la vista del informe */
+        $afiliados = $query
+            ->paginate(50)
+            ->withQueryString();
 
         $afiliados->each(function ($afiliado) {
             $afiliado->aportesPorGestion = $afiliado->aportes

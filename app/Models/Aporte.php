@@ -8,12 +8,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * @property int $mes
  * @property int $year
+ * @property string $monto
  */
 class Aporte extends Model
 {
     protected $table = 'aportes';
 
     const CREATED_AT = 'creado_en';
+
     const UPDATED_AT = 'actualizado_en';
 
     protected $fillable = [

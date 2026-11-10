@@ -16,11 +16,29 @@ class LoteVerificacionPolicy
      */
     public function viewAny(Usuario $usuario): bool
     {
-        return in_array($usuario->rol?->nombre, [
+        return \in_array($usuario->rol?->nombre, [
             'SUPER ADMIN',
             'ADMIN',
             'USUARIO',
         ]);
+    }
+
+    public function viewReport(
+        Usuario $usuario,
+        LoteVerificacion $lote
+    ): bool {
+        $rol = $usuario->rol?->nombre;
+
+        if (! \in_array($rol, ['SUPER ADMIN', 'ADMIN', 'USUARIO'])) {
+            return false;
+        }
+
+        if ($lote->estado === 'ABIERTO') {
+            return false;
+        }
+
+        return $rol !== 'USUARIO'
+            || $usuario->colegio_id === $lote->colegio_id;
     }
 
     /**

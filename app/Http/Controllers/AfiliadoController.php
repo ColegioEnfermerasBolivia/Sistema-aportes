@@ -3,24 +3,24 @@
 namespace App\Http\Controllers;
 
 use App\Models\Afiliado;
-use App\Models\Colegio;
-use App\Models\Postgrado;
 use App\Models\Aporte;
-use App\Models\Saldo;
-use App\Services\AuditoriaService;
+use App\Models\Colegio;
 use App\Models\GradoAcademico;
+use App\Models\Postgrado;
+use App\Models\Saldo;
 use App\Models\TransferenciaAfiliado;
+use App\Services\AuditoriaService;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 
 class AfiliadoController extends Controller
 {
     public function __construct(
         private AuditoriaService $auditoria
-    ) {
-    }
+    ) {}
 
     public function index(Request $request)
     {
@@ -42,7 +42,7 @@ class AfiliadoController extends Controller
 
             $colegio = $usuario->colegio;
 
-            if (!$colegio) {
+            if (! $colegio) {
                 abort(403);
             }
 
@@ -79,16 +79,16 @@ class AfiliadoController extends Controller
                     'like',
                     "%{$buscar}%"
                 )
-                ->orWhere(
-                    'nombres',
-                    'like',
-                    "%{$buscar}%"
-                )
-                ->orWhere(
-                    'apellidos',
-                    'like',
-                    "%{$buscar}%"
-                );
+                    ->orWhere(
+                        'nombres',
+                        'like',
+                        "%{$buscar}%"
+                    )
+                    ->orWhere(
+                        'apellidos',
+                        'like',
+                        "%{$buscar}%"
+                    );
             });
         }
 
@@ -125,8 +125,15 @@ class AfiliadoController extends Controller
                 'estado',
                 'ACTIVO'
             )
-            ->orderBy('nombre')
-            ->get();
+                ->orderBy('nombre')
+                ->get();
+        } elseif (
+            $usuario->rol?->nombre === 'USUARIO'
+            && $usuario->colegio?->tipo === 'DEPARTAMENTAL'
+        ) {
+            $colegios = $this->colegiosPermitidosParaUsuario(
+                $usuario->colegio
+            );
         }
 
         return view(
@@ -204,10 +211,10 @@ class AfiliadoController extends Controller
         ];
 
         $mensajes = [
-                    'registro_departamental.unique' => 'Ya existe un afiliado registrado con ese registro departamental.',
-                    'matricula_profesional.unique'  => 'Ya existe un afiliado registrado con esa matrícula profesional.',
-                    'ci.unique'                     => 'Ya existe un afiliado registrado con ese CI.',
-                ];
+            'registro_departamental.unique' => 'Ya existe un afiliado registrado con ese registro departamental.',
+            'matricula_profesional.unique' => 'Ya existe un afiliado registrado con esa matrícula profesional.',
+            'ci.unique' => 'Ya existe un afiliado registrado con ese CI.',
+        ];
 
         if ($usuario->rol?->nombre === 'ADMIN') {
 
@@ -221,6 +228,21 @@ class AfiliadoController extends Controller
                         );
                     }),
             ];
+        } elseif (
+            $usuario->rol?->nombre === 'USUARIO'
+            && $usuario->colegio?->tipo === 'DEPARTAMENTAL'
+        ) {
+            $colegiosPermitidos = $this->colegiosPermitidosParaUsuario(
+                $usuario->colegio
+            );
+
+            if ($colegiosPermitidos->count() > 1) {
+                $reglas['colegio_id'] = [
+                    'required',
+                    'integer',
+                    Rule::in($colegiosPermitidos->modelKeys()),
+                ];
+            }
         }
 
         $datos = $request->validate($reglas, $mensajes);
@@ -229,18 +251,19 @@ class AfiliadoController extends Controller
 
         if ($usuario->rol?->nombre === 'USUARIO') {
 
-            if (!$usuario->colegio_id) {
+            if (! $usuario->colegio_id) {
                 abort(403);
             }
 
-            $datos['colegio_id'] = $usuario->colegio_id;
+            $datos['colegio_id'] = $datos['colegio_id']
+                ?? $usuario->colegio_id;
         }
 
         Gate::authorize(
             'createInColegio',
             [
                 Afiliado::class,
-                $datos['colegio_id']
+                $datos['colegio_id'],
             ]
         );
 
@@ -276,12 +299,12 @@ class AfiliadoController extends Controller
         ];
 
         $this->auditoria->registrar(
-                auth()->id(),
-                'CREAR',
-                'afiliados',
-                $afiliado->id,
-                null,
-                $datosNuevos
+            auth()->id(),
+            'CREAR',
+            'afiliados',
+            $afiliado->id,
+            null,
+            $datosNuevos
         );
 
         return redirect()
@@ -437,7 +460,7 @@ class AfiliadoController extends Controller
         $huboTransferencia =
             (int) $afiliado->colegio_id
             !== (int) $datos['colegio_id'];
-        
+
         if ($huboTransferencia) {
             $request->validate([
                 'fecha_transferencia' => [
@@ -478,19 +501,15 @@ class AfiliadoController extends Controller
             */
             if ($huboTransferencia) {
                 $transferencia = TransferenciaAfiliado::create([
-                    'afiliado_id' =>
-                        $afiliado->id,
+                    'afiliado_id' => $afiliado->id,
 
-                    'colegio_id_origen' =>
-                        $afiliado->colegio_id,
+                    'colegio_id_origen' => $afiliado->colegio_id,
 
-                    'colegio_id_destino' =>
-                        $datos['colegio_id'],
+                    'colegio_id_destino' => $datos['colegio_id'],
 
-                    'fecha_transferencia' =>
-                        $request->input(
-                            'fecha_transferencia'
-                        ) ?? now()->toDateString(),
+                    'fecha_transferencia' => $request->input(
+                        'fecha_transferencia'
+                    ) ?? now()->toDateString(),
                 ]);
             }
 
@@ -559,17 +578,13 @@ class AfiliadoController extends Controller
                 $transferencia->id,
                 null,
                 [
-                    'afiliado_id' =>
-                        $transferencia->afiliado_id,
+                    'afiliado_id' => $transferencia->afiliado_id,
 
-                    'colegio_id_origen' =>
-                        $transferencia->colegio_id_origen,
+                    'colegio_id_origen' => $transferencia->colegio_id_origen,
 
-                    'colegio_id_destino' =>
-                        $transferencia->colegio_id_destino,
+                    'colegio_id_destino' => $transferencia->colegio_id_destino,
 
-                    'fecha_transferencia' =>
-                        $transferencia->fecha_transferencia,
+                    'fecha_transferencia' => $transferencia->fecha_transferencia,
                 ]
             );
         }
@@ -603,14 +618,14 @@ class AfiliadoController extends Controller
         $accion = $afiliado->estado === 'ACTIVO'
             ? 'ACTIVAR'
             : 'DESACTIVAR';
-        
+
         $this->auditoria->registrar(
             auth()->id(),
             $accion,
             'afiliados',
             $afiliado->id,
-            ['estado' => $estadoAnterior,],
-            ['estado' => $afiliado->estado,]
+            ['estado' => $estadoAnterior],
+            ['estado' => $afiliado->estado]
         );
 
         return redirect()
@@ -633,11 +648,11 @@ class AfiliadoController extends Controller
         $query = Afiliado::query()
             ->where('ci', trim($datos['ci']));
 
-        /*Restricción por colegio para usuarios USUARIO*/
+        /* Restricción por colegio para usuarios USUARIO */
         if ($usuario->rol?->nombre === 'USUARIO') {
             $colegio = $usuario->colegio;
 
-            if (!$colegio) {
+            if (! $colegio) {
                 return response()->json([
                     'message' => 'El usuario no tiene un colegio asignado.',
                 ], 403);
@@ -655,13 +670,13 @@ class AfiliadoController extends Controller
         }
 
         $afiliado = $query->first();
-        if (!$afiliado) {
+        if (! $afiliado) {
             return response()->json([
                 'message' => 'No se encontró ningún afiliado con ese CI.',
             ], 404);
         }
 
-        /*Último aporte verificado*/
+        /* Último aporte verificado */
         $ultimoAporte = Aporte::query()
             ->where('afiliado_id', $afiliado->id)
             ->where('estado', 'VERIFICADO')
@@ -766,5 +781,17 @@ class AfiliadoController extends Controller
             'afiliado' => $afiliado,
             'colegios' => $colegios,
         ]);
+    }
+
+    /**
+     * @return Collection<int, Colegio>
+     */
+    private function colegiosPermitidosParaUsuario(Colegio $colegio)
+    {
+        return $colegio->hijos()
+            ->where('estado', 'ACTIVO')
+            ->orderBy('nombre')
+            ->get()
+            ->prepend($colegio);
     }
 }

@@ -121,15 +121,21 @@
             font-size: 7px;
             color: #777;
         }
+        table.aportes td.gestion-celda {
+            font-weight: bold;
+            color: #1F3F5C;
+        }
 
-        .footer {
-            position: fixed;
-            bottom: -25px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            font-size: 8px;
-            color: #777777;
+        table.aportes tr.fila-par td {
+            background: #F3F6FA;
+        }
+
+        thead {
+            display: table-header-group;
+        }
+
+        tr {
+            page-break-inside: avoid;
         }
     </style>
 </head>
@@ -168,145 +174,37 @@
 
     {{-- CI + TODOS LOS AÑOS --}}
 
-    @if ($modo === 'afiliada_todos')
-        <table class="afiliada-info">
-            <tr>
-                <th colspan="2">
-                    AFILIADA
-                </th>
-            </tr>
-            <tr>
-                <td>
-                    <strong>
-                        Nombre completo
-                    </strong>
-                </td>
-                <td>
-                    {{ $afiliada->apellidos }},
-                    {{ $afiliada->nombres }}
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <strong>CI</strong>
-                </td>
-                <td>
-                    {{ $afiliada->ci }}
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <strong>Colegio</strong>
-                </td>
-                <td>
-                    {{ $afiliada->colegio?->nombre ?? 'Sin colegio' }}
-                </td>
-            </tr>
-        </table>
-
-        @if ($aportesPorGestion->isEmpty())
-            <div class="sin-aportes">No registra aportes verificados.</div>
-        @else
-            @foreach (
-                $aportesPorGestion as $gestion => $aportes
-            )
-               <div class="gestion">APORTES DEL AÑO: {{ $gestion }}</div>
-                <table class="aportes">
-                    <thead>
-                        <tr>
-                            <th>N.º</th>
-                            <th style="width: 22%;">Afiliada</th>
-                            <th>CI</th>
-
-                            @foreach ($meses as $mes)
-                                <th>{{ $mes }}</th>
-                            @endforeach
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>1</td>
-                            <td class="afiliada">
-                                {{ $afiliada->apellidos }},
-                                {{ $afiliada->nombres }}
-                            </td>
-                            <td>{{ $afiliada->ci }}</td>
-                            @for ($mes = 1; $mes <= 12; $mes++)
-                                <td>
-                                    @if (isset($aportes[$mes]))
-                                        {{ number_format(
-                                            (float) $aportes[$mes]->monto,
-                                            2,
-                                            '.',
-                                            ''
-                                        ) }}
-                                    @else
-                                        —
-                                    @endif
-                                </td>
-                            @endfor
-                        </tr>
-                    </tbody>
-                </table>
-            @endforeach
-        @endif
-
-    {{-- INFORME GENERAL --}}
+    @if ($aportesPorGestion->isEmpty())
+        <div class="sin-aportes">No registra aportes verificados.</div>
     @else
-        <div class="gestion">APORTES DEL AÑO: {{ $year }}</div>
-        @if ($afiliados->isEmpty())
-            <div class="sin-aportes">No se encontraron afiliadas.</div>
-        @else
-            <table class="aportes">
-                <thead>
-                    <tr>
-                        <th>N.º</th>
-                        <th style="width: 22%;">Afiliada</th>
-                        <th>CI</th>
-                        @foreach ($meses as $mes)
-                            <th>{{ $mes }}</th>
-                        @endforeach
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (
-                        $afiliados as $indice => $afiliado
-                    )
-                        <tr>
-                            <td>{{ $indice + 1 }}</td>
-                            <td class="afiliada">
-                                {{ $afiliado->apellidos }},
-                                {{ $afiliado->nombres }}
-                            </td>
-                            <td>{{ $afiliado->ci }}</td>
-                            @for (
-                                $mes = 1;
-                                $mes <= 12;
-                                $mes++
-                            )
-                                <td>
-                                    @if (isset($afiliado->aportesDelYear[$mes]))
-                                        {{
-                                            number_format(
-                                                (float)
-                                                $afiliado
-                                                    ->aportesDelYear[$mes]
-                                                    ->monto,
-                                                2,
-                                                '.',
-                                                ''
-                                            )
-                                        }}
-                                    @else
-                                        —
-                                    @endif
-                                </td>
-                            @endfor
-                        </tr>
+        <div class="gestion">APORTES POR GESTIÓN</div>
+
+        <table class="aportes">
+            <thead>
+                <tr>
+                    <th style="width: 8%;">Gestión</th>
+                    @foreach ($meses as $mes)
+                        <th>{{ mb_substr($mes, 0, 3) }}</th>
                     @endforeach
-                </tbody>
-            </table>
-        @endif
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($aportesPorGestion as $gestion => $aportes)
+                    <tr class="{{ $loop->even ? 'fila-par' : '' }}">
+                        <td class="gestion-celda">{{ $gestion }}</td>
+                        @for ($mes = 1; $mes <= 12; $mes++)
+                            <td>
+                                @if (isset($aportes[$mes]))
+                                    {{ number_format((float) $aportes[$mes]->monto, 2, '.', '') }}
+                                @else
+                                    —
+                                @endif
+                            </td>
+                        @endfor
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
     @endif
 
     {{-- PIE --}}

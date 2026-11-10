@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * @property int $id
  * @property int $colegio_id
+ * @property string $codigo_lote
+ * @property string $estado
  */
 class LoteVerificacion extends Model
 {

@@ -233,7 +233,7 @@
         </div>
 
         {{-- TABLA --}}
-        <div class="max-h-125 overflow-y-auto overflow-x-auto">
+        <div class="max-h-150 overflow-y-auto overflow-x-auto">
             <table class="min-w-300 w-full">
                 <thead class="sticky top-0 z-0 border-b border-gray-200 bg-[#f1f3f8]">
                     <tr>

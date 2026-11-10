@@ -66,9 +66,9 @@ class AuthController extends Controller
             'ip' => $request->ip(),
         ]);
 
-        return back()->withErrors([
-            'username' => 'Las credenciales proporcionadas no son correctas.',
-        ])->onlyInput('username');
+        return back()
+            ->with('login_error', true)
+            ->onlyInput('username');
     }
 
     public function showCambiarPassword()

@@ -86,6 +86,33 @@ class AuthenticationTest extends TestCase
         ]);
     }
 
+    public function test_invalid_credentials_return_a_login_error_for_the_sweetalert(): void
+    {
+        $this->from('/login')->post('/login', [
+            'username' => 'unknown.user',
+            'password' => 'wrong-password',
+        ])->assertRedirect('/login')
+            ->assertSessionHas('login_error', true);
+
+        $this->assertGuest();
+        $this->assertDatabaseHas('login_logs', [
+            'usuario_id' => null,
+            'username' => 'unknown.user',
+            'resultado' => 'FALLIDO',
+            'motivo' => 'CREDENCIALES_INVALIDAS',
+        ]);
+    }
+
+    public function test_login_page_has_the_forgot_password_sweetalert(): void
+    {
+        $this->withSession(['login_error' => true])
+            ->get('/login')
+            ->assertOk()
+            ->assertSee('forgot-password')
+            ->assertSee('Comunícate con el administrador.')
+            ->assertSee('Credenciales incorrectas');
+    }
+
     public function test_login_is_throttled_after_five_attempts(): void
     {
         for ($attempt = 0; $attempt < 5; $attempt++) {

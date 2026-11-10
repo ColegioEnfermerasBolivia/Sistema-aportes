@@ -44,7 +44,7 @@ class AfiliadoPolicy
 
             $colegioUsuario = $usuario->colegio;
 
-            if (!$colegioUsuario) {
+            if (! $colegioUsuario) {
                 return false;
             }
 
@@ -72,7 +72,7 @@ class AfiliadoPolicy
         if ($afiliado->estado !== 'ACTIVO') {
             return false;
         }
-        
+
         return $usuario->rol?->nombre === 'SUPER ADMIN';
     }
 
@@ -92,7 +92,21 @@ class AfiliadoPolicy
         }
 
         if ($usuario->rol?->nombre === 'USUARIO') {
-            return $usuario->colegio_id === $colegioId;
+            $colegioUsuario = $usuario->colegio;
+
+            if (! $colegioUsuario) {
+                return false;
+            }
+
+            if ($usuario->colegio_id === $colegioId) {
+                return true;
+            }
+
+            return $colegioUsuario->tipo === 'DEPARTAMENTAL'
+                && $colegioUsuario->hijos()
+                    ->whereKey($colegioId)
+                    ->where('estado', 'ACTIVO')
+                    ->exists();
         }
 
         return false;
@@ -115,7 +129,7 @@ class AfiliadoPolicy
 
         $colegioUsuario = $usuario->colegio;
 
-        if (!$colegioUsuario) {
+        if (! $colegioUsuario) {
             return false;
         }
 
@@ -154,11 +168,11 @@ class AfiliadoPolicy
     }
 
     public function viewAcademic(
-    Usuario $usuario,
-    Afiliado $afiliado
+        Usuario $usuario,
+        Afiliado $afiliado
     ): bool {
         return $this->viewLaboral($usuario, $afiliado);
-        }
+    }
 
     public function createAcademic(
         Usuario $usuario,

@@ -116,16 +116,7 @@
 
                     {{-- Recordar datos / Olvidaste tu contraseña --}}
                     <div class="flex items-center justify-between text-sm">
-                        <label class="flex items-center gap-2 text-gray-600">
-                            <input
-                                type="checkbox"
-                                name="remember"
-                                class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
-                            >
-                            Recordar datos
-                        </label>
-
-                        <a href="#" class="font-medium text-blue-700 hover:underline">
+                        <a href="#" id="forgot-password" class="font-medium text-blue-700 hover:underline">
                             ¿Olvidaste tu contraseña?
                         </a>
                     </div>
@@ -133,17 +124,36 @@
                     {{-- Botón --}}
                     <button
                         type="submit"
-                        class="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-700 to-blue-500 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/30 transition hover:from-blue-800 hover:to-blue-600"
+                        class="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-700 to-blue-500 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/30 transition hover:from-blue-800 hover:to-blue-600 hover:cursor-pointer"
                     >
                         Ingresar al Portal →
                     </button>
-
                 </form>
-
             </div>
         </div>
-
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.getElementById('forgot-password').addEventListener('click', (event) => {
+            event.preventDefault();
+
+            Swal.fire({
+                icon: 'info',
+                title: '¿Olvidaste tu contraseña?',
+                text: 'Comunícate con el administrador.',
+                confirmButtonText: 'Aceptar',
+            });
+        });
+
+        @if (session('login_error'))
+            Swal.fire({
+                icon: 'error',
+                title: 'Credenciales incorrectas',
+                text: 'Verifica tu usuario y contraseña e inténtalo nuevamente.',
+                confirmButtonText: 'Aceptar',
+            });
+        @endif
+    </script>
 </body>
 </html>

@@ -1,5 +1,9 @@
 @php
     $esEdicion = $modo === 'editar';
+    $usuario = auth()->user();
+    $esUsuarioColegioPadre = $usuario->rol?->nombre === 'USUARIO'
+        && $usuario->colegio?->tipo === 'DEPARTAMENTAL'
+        && $colegios->count() > 1;
 @endphp
 
 <form
@@ -221,6 +225,11 @@
             auth()->user()->rol?->nombre === 'ADMIN'
             && !$esEdicion
         )
+        ||
+        (
+            $esUsuarioColegioPadre
+            && !$esEdicion
+        )
     )
         <div>
             <h3 class="mb-5 text-base font-semibold text-[#0d1b6e]">
@@ -235,7 +244,7 @@
             </label>
 
             <select
-                id="editar_colegio"
+                id="{{ $esEdicion ? 'editar_colegio' : 'colegio_id' }}"
                 name="colegio_id"
                 data-colegio-original="{{ $esEdicion ? $afiliado->colegio_id : '' }}"
                 required

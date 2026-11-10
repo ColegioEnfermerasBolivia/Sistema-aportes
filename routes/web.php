@@ -14,6 +14,7 @@ use App\Http\Controllers\AportesHistoricosController;
 use App\Http\Controllers\TransferenciasController;
 use App\Http\Controllers\SaldoHistoricoController;
 use App\Http\Controllers\ObservacionesHistoricasController;
+use App\Http\Controllers\ReportePagosLoteController;
 Route::get('/', function () {
     return view('welcome');
 });
@@ -336,6 +337,39 @@ Route::get('/reports/aportes/pdf',[InformeController::class, 'aportesPdf'])
         'rol:SUPER ADMIN,ADMIN,USUARIO',
     ])
     ->name('aportesReports.pdf');
+
+// Reporte de pagos por lote
+Route::get('/reports/lotes', [ReportePagosLoteController::class, 'index'])
+    ->middleware([
+        'auth',
+        'debe-cambiar-password',
+        'rol:SUPER ADMIN,ADMIN,USUARIO',
+    ])
+    ->name('lotesReports.index');
+
+Route::get(
+    '/reports/lotes/{lote}/preview',
+    [ReportePagosLoteController::class, 'preview']
+)
+    ->middleware([
+        'auth',
+        'debe-cambiar-password',
+        'rol:SUPER ADMIN,ADMIN,USUARIO',
+        'can:viewReport,lote',
+    ])
+    ->name('lotesReports.preview');
+
+Route::get(
+    '/reports/lotes/{lote}/excel',
+    [ReportePagosLoteController::class, 'excel']
+)
+    ->middleware([
+        'auth',
+        'debe-cambiar-password',
+        'rol:SUPER ADMIN,ADMIN,USUARIO',
+        'can:viewReport,lote',
+    ])
+    ->name('lotesReports.excel');
 
 //CARGA DE DATOS
 Route::get('/carga-datos',[CargaDatosController::class, 'index'])

@@ -162,52 +162,59 @@
                 >
                     Buscar afiliada
                 </label>
-                <div class="relative">
-                    <input
-                        type="text"
-                        id="buscar"
-                        name="buscar"
-                        value="{{ request('buscar') }}"
-                        placeholder="Buscar por nombre, apellidos o CI..."
-                        class="w-full rounded-lg border-gray-300 pr-10 text-sm shadow-sm focus:border-[#1a34c9] focus:ring-[#1a34c9]"
-                    >
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                        <x-icon
-                            name="search"
-                            class="text-gray-400"
-                            size="20"
-                        />
+
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-stretch">
+                    {{-- INPUT --}}
+                    <div class="relative min-w-0 flex-1">
+                        <input
+                            type="text"
+                            id="buscar"
+                            name="buscar"
+                            value="{{ request('buscar') }}"
+                            placeholder="Buscar por nombre, apellidos o CI..."
+                            class="p-3 w-full rounded-lg border-gray-300 pr-10 text-sm shadow-sm focus:border-[#1a34c9] focus:ring-[#1a34c9]"
+                        >
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                            <x-icon
+                                name="search"
+                                class="text-gray-400"
+                                size="20"
+                            />
+                        </div>
+                    </div>
+
+                    {{-- BOTONES --}}
+                    <div class="flex flex-col gap-3 sm:flex-row">
+                        <a
+                            href="{{ route('afiliadosReports.index') }}"
+                            class="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:cursor-pointer hover:bg-gray-100"
+                        >
+                            <x-icon
+                                name="cancel"
+                                class="text-gray-600"
+                                size="20"
+                            />
+                            Limpiar filtros
+                        </a>
+
+                        <button
+                            type="submit"
+                            class="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-[#1a34c9] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#152ba8] hover:cursor-pointer"
+                        >
+                            <x-icon
+                                name="search"
+                                class="text-white"
+                                size="20"
+                            />
+                            Aplicar filtros
+                        </button>
                     </div>
                 </div>
             </div>
-
-            {{-- BOTONES --}}
-            <div class="flex flex-col gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:justify-end">
-                <a
-                    href="{{ route('afiliadosReports.index') }}"
-                    class="inline-flex items-center justify-center gap-1.5 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:cursor-pointer hover:bg-gray-100"
-                >
-                    <x-icon
-                        name="cancel"
-                        class="text-gray-600"
-                        size="20"
-                    />
-                    Limpiar filtros
-                </a>
-                <button
-                    type="submit"
-                    class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#1a34c9] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#152ba8] hover:cursor-pointer"
-                >
-                    <x-icon
-                        name="search"
-                        class="text-white"
-                        size="20"
-                    />
-                    Aplicar filtros
-                </button>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
+
 
     {{-- ÁREA DEL REPORTE --}}
     <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -284,9 +291,9 @@
                 </p>
             </div>
         @else
-            <div class="overflow-x-auto">
+            <div class="max-h-84 overflow-y-auto">
                 <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+                    <thead class="sticky top-0 bg-gray-50">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
                                 CI
@@ -327,9 +334,9 @@
                         @endforeach
                     </tbody>
                 </table>
-                <div class="mt-4">
-                    {{ $afiliados->links() }}
-                </div>
+            </div>
+            <div class="mt-4">
+                {{ $afiliados->links() }}
             </div>
         @endif
     </div>

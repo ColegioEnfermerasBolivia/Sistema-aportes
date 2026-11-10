@@ -249,9 +249,9 @@
                         </p>
                     </div>
                 @else
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full border-collapse text-sm">
-                            <thead>
+                    <div class="max-h-84 overflow-y-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="sticky top-0 bg-gray-50">
                                 <tr class="bg-blue-700">
                                     @foreach ($meses as $mes)
                                         <th
@@ -300,52 +300,42 @@
                         </p>
                     </div>
                 @else
-                    <div class="space-y-8">
-                        @foreach ($gestionesAfiliada as $gestionAfiliada)
-                            @php
-                                $aportesGestion = $afiliada->aportesPorGestion
-                                    ->get($gestionAfiliada, collect());
-                            @endphp
-                            <div>
-                                <div class="mb-4">
-                                    <h2 class="text-lg font-semibold text-gray-800">
-                                        APORTES DEL AÑO: {{ $gestionAfiliada }}
-                                    </h2>
-                                </div>
-                                <div class="overflow-x-auto">
-                                    <table class="min-w-full border-collapse text-sm">
-                                        <thead>
-                                            <tr class="bg-blue-700">
-                                                @foreach ($meses as $mes)
-                                                    <th
-                                                        class="border border-gray-300 px-4 py-3
-                                                               text-center text-xs font-semibold
-                                                               text-white"
-                                                    >
-                                                        {{ substr($mes, 0, 3) }}
-                                                    </th>
-                                                @endforeach
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                @foreach ($meses as $numeroMes => $mes)
-                                                    @php
-                                                        $aporte = $aportesGestion->get($numeroMes);
-                                                    @endphp
-                                                    <td
-                                                        class="border border-gray-300 px-4 py-3
-                                                               text-center text-gray-700"
-                                                    >
-                                                        {{ $aporte ? number_format((float) $aporte->monto, 2) : '—' }}
-                                                    </td>
-                                                @endforeach
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        @endforeach
+                    <div class="overflow-x-auto rounded-xl border border-gray-200">
+                        <table class="min-w-full border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-blue-700">
+                                    <th class="border border-gray-300 px-4 py-3 text-center text-xs font-semibold text-white">
+                                        Gestión
+                                    </th>
+                                    @foreach ($meses as $mes)
+                                        <th class="border border-gray-300 px-4 py-3 text-center text-xs font-semibold text-white">
+                                            {{ substr($mes, 0, 3) }}
+                                        </th>
+                                    @endforeach
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($gestionesAfiliada as $gestionAfiliada)
+                                    @php
+                                        $aportesGestion = $afiliada->aportesPorGestion
+                                            ->get($gestionAfiliada, collect());
+                                    @endphp
+                                    <tr class="{{ $loop->even ? 'bg-gray-50' : 'bg-white' }}">
+                                        <td class="whitespace-nowrap border border-gray-300 px-4 py-3 text-center font-semibold text-gray-800">
+                                            {{ $gestionAfiliada }}
+                                        </td>
+                                        @foreach ($meses as $numeroMes => $mes)
+                                            @php
+                                                $aporte = $aportesGestion->get($numeroMes);
+                                            @endphp
+                                            <td class="border border-gray-300 px-4 py-3 text-center tabular-nums text-gray-700">
+                                                {{ $aporte ? number_format((float) $aporte->monto, 2) : '—' }}
+                                            </td>
+                                        @endforeach
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
                     </div>
                 @endif
             @endif
@@ -364,9 +354,9 @@
                 </p>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="min-w-full border-collapse text-sm">
-                    <thead>
+            <div class="max-h-110 overflow-y-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="sticky top-0 bg-gray-50">
                         <tr class="bg-blue-700">
                             <th
                                 class="border border-gray-300 px-3 py-3 text-center
@@ -434,6 +424,9 @@
                         @endforeach
                     </tbody>
                 </table>
+            </div>
+            <div class="mt-4">
+                {{ $afiliados->links() }}
             </div>
         @endif
     </div>
