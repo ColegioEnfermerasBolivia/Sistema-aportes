@@ -2,14 +2,14 @@
 @section('title', 'Dashboard')
 @section('content')
 
-<header class="h-17.5 bg-white border-b border-gray-200 flex items-center justify-between px-[25px]">
+<header class="h-17.5 py-8 bg-white border-b border-gray-200 flex items-center justify-between px-[25px]">
     <div>
-        <h1 class="m-0 text-xl text-gray-800">Sistema de Gestion</h1>
+        <h1 class="m-0 text-xl text-gray-800 font-bold">Sistema de Gestion de Afiliadas</h1>
 
         @if ($esAdministrador)
-            <p class="mt-0.5 text-xs text-gray-500">Tienes acceso a todos los colegios.</p>
+            <p class="mt-0.5 text-xs text-gray-500 font-semibold">Tienes acceso a todos los colegios.</p>
         @else
-            <p class="mt-0.5 text-xs text-gray-500">Colegio: {{ $usuario->colegio->nombre }}</p>
+            <p class="mt-0.5 text-xs text-gray-500 font-semibold">Colegio: {{ $usuario->colegio->nombre }}</p>
         @endif
     </div>
 

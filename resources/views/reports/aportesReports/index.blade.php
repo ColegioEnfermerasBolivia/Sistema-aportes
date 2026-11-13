@@ -4,10 +4,10 @@
 
 @section('content')
 
-<div class="space-y-6">
+<div class="min-h-screen px-6 py-8 lg:px-12">
     {{-- ENCABEZADO --}}
     <div>
-        <h1 class="text-2xl font-bold text-gray-800">
+        <h1 class="text-2xl font-semibold text-gray-800">
             Informes de Aportes
         </h1>
         <p class="mt-1 text-sm text-gray-500">
@@ -74,7 +74,14 @@
             </div>
 
             {{-- COLEGIO --}}
-            @if (in_array(auth()->user()->rol?->nombre, ['ADMIN', 'SUPER ADMIN']))
+            @if (
+                in_array(auth()->user()->rol?->nombre, ['ADMIN', 'SUPER ADMIN'])
+                || (
+                    auth()->user()->rol?->nombre === 'USUARIO'
+                    && auth()->user()->colegio?->tipo === 'DEPARTAMENTAL'
+                    && $colegios->count() > 1
+                )
+            )
                 <div>
                     <label
                         for="colegio_id"
@@ -90,7 +97,7 @@
                                focus:ring-[#1a34c9]"
                     >
                         <option value="">
-                            Todos los colegios
+                            {{ auth()->user()->rol?->nombre === 'USUARIO' ? 'Todos mis colegios' : 'Todos los colegios' }}
                         </option>
                         @foreach ($colegios as $colegio)
                             <option
@@ -249,14 +256,13 @@
                         </p>
                     </div>
                 @else
-                    <div class="max-h-84 overflow-y-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="sticky top-0 bg-gray-50">
-                                <tr class="bg-blue-700">
+                    <div class="max-h-[80vh] overflow-y-auto">
+                        <table class="min-w-full">
+                            <thead class="text-xs uppercase text-[#1a34c9]">
+                                <tr>
                                     @foreach ($meses as $mes)
                                         <th
-                                            class="border border-gray-300 px-4 py-3 text-center
-                                                   text-xs font-semibold text-white"
+                                            class="sticky top-0 z-10 bg-[#edeef3] px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 shadow-[inset_0_-2px_0_#1a34c9]
                                         >
                                             {{ substr($mes, 0, 3) }}
                                         </th>
@@ -270,8 +276,7 @@
                                             $aporte = $aportesGestion->get($numeroMes);
                                         @endphp
                                         <td
-                                            class="border border-gray-300 px-4 py-3 text-center
-                                                   text-gray-700"
+                                            class="sticky top-0 z-10 bg-[#edeef3] px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 shadow-[inset_0_-2px_0_#1a34c9]
                                         >
                                             {{ $aporte ? number_format((float) $aporte->monto, 2) : '—' }}
                                         </td>
@@ -300,15 +305,15 @@
                         </p>
                     </div>
                 @else
-                    <div class="overflow-x-auto rounded-xl border border-gray-200">
-                        <table class="min-w-full border-collapse text-sm">
-                            <thead>
-                                <tr class="bg-blue-700">
-                                    <th class="border border-gray-300 px-4 py-3 text-center text-xs font-semibold text-white">
+                    <div class="rounded-xl border border-gray-200">
+                        <table class="max-h-[60vh] overflow-x-auto">
+                            <thead class="text-xs uppercase text-[#1a34c9]">
+                                <tr>
+                                    <th class="sticky top-0 z-10 border border-gray-300 px-4 py-3 text-center text-xs font-semibold text-white">
                                         Gestión
                                     </th>
                                     @foreach ($meses as $mes)
-                                        <th class="border border-gray-300 px-4 py-3 text-center text-xs font-semibold text-white">
+                                        <th class="sticky top-0 z-10 border border-gray-300 px-4 py-3 text-center text-xs font-semibold text-white">
                                             {{ substr($mes, 0, 3) }}
                                         </th>
                                     @endforeach
@@ -354,7 +359,7 @@
                 </p>
             </div>
 
-            <div class="max-h-110 overflow-y-auto">
+            <div class="max-h-[55vh] overflow-y-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="sticky top-0 bg-gray-50">
                         <tr class="bg-blue-700">

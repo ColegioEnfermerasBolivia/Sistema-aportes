@@ -7,8 +7,8 @@
         </h3>
 
         <p class="mt-1 text-sm text-gray-500">
-            Selecciona el mes correspondiente al lote. El año y el colegio
-            serán asignados automáticamente por el sistema.
+            Selecciona el colegio y el mes correspondiente al lote. El año
+            será asignado automáticamente por el sistema.
         </p>
     </div>
 
@@ -21,19 +21,43 @@
         @csrf
         {{-- COLEGIO --}}
         <div>
-            <label class="mb-2 block text-sm font-medium text-gray-700">
+            <label for="lote_colegio_id" class="mb-2 block text-sm font-medium text-gray-700">
                 Colegio
             </label>
 
-            <div class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                <p class="text-sm font-medium text-gray-900">
-                    {{ Auth::user()->colegio->nombre }}
-                </p>
-
-                <p class="mt-1 text-xs text-gray-500">
-                    El colegio se asigna automáticamente según tu usuario.
-                </p>
-            </div>
+            @if ($colegiosDisponibles->count() > 1)
+                <select
+                    name="colegio_id"
+                    id="lote_colegio_id"
+                    required
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-[#1a34c9] focus:outline-none focus:ring-2 focus:ring-[#1a34c9]/20"
+                >
+                    <option value="">Selecciona un colegio</option>
+                    @foreach ($colegiosDisponibles as $colegioDisponible)
+                        <option
+                            value="{{ $colegioDisponible->id }}"
+                            @selected(old('colegio_id', $colegiosDisponibles->first()->id) == $colegioDisponible->id)
+                        >
+                            {{ $colegioDisponible->nombre }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('colegio_id')
+                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            @else
+                <div class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                    <p class="text-sm font-medium text-gray-900">
+                        {{ $colegiosDisponibles->first()->nombre }}
+                    </p>
+                    <p class="mt-1 text-xs text-gray-500">
+                        El colegio se asigna automáticamente según tu usuario.
+                    </p>
+                </div>
+            @endif
+            @error('lote')
+                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+            @enderror
         </div>
 
         {{-- AÑO --}}

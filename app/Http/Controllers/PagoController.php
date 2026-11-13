@@ -100,7 +100,7 @@ class PagoController extends Controller
              * Buscar el lote ABIERTO del colegio.
              */
             $lote = LoteVerificacion::query()
-                ->where('colegio_id', $usuario->colegio_id)
+                ->where('colegio_id', $afiliado->colegio_id)
                 ->where('estado', 'ABIERTO')
                 ->first();
 

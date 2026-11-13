@@ -5,200 +5,196 @@
 >
     @csrf
 
+    <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+        
+        {{-- CI --}}
+        <div>
+            <label
+                for="ci"
+                class="mb-2 block text-sm font-medium text-gray-800"
+            >
+                CI
+            </label>
+    
+            <input
+                type="text"
+                id="ci"
+                name="ci"
+                value="{{ old('ci') }}"
+                required
+                class="w-full rounded-lg border border-gray-300
+                       bg-white px-4 py-3
+                       text-sm text-gray-900
+                       outline-none
+                       transition
+                       placeholder:text-gray-400
+                       focus:border-[#1a34c9]
+                       focus:ring-2
+                       focus:ring-[#1a34c9]/15"
+            >
+    
+            @error('ci')
+                <p class="mt-1.5 text-xs text-red-600">
+                    {{ $message }}
+                </p>
+            @enderror
+        </div>
 
-    {{-- CI --}}
-    <div>
-
-        <label
-            for="ci"
-            class="mb-2 block text-sm font-medium text-gray-800"
-        >
-            CI
-        </label>
-
-        <input
-            type="text"
-            id="ci"
-            name="ci"
-            value="{{ old('ci') }}"
-            required
-            class="w-full rounded-lg border border-gray-300
-                   bg-white px-4 py-3
-                   text-sm text-gray-900
-                   outline-none
-                   transition
-                   placeholder:text-gray-400
-                   focus:border-[#1a34c9]
-                   focus:ring-2
-                   focus:ring-[#1a34c9]/15"
-        >
-
-        @error('ci')
-            <p class="mt-1.5 text-xs text-red-600">
-                {{ $message }}
-            </p>
-        @enderror
-
+        {{-- NOMBRES --}}
+        <div>
+    
+            <label
+                for="nombres"
+                class="mb-2 block text-sm font-medium text-gray-800"
+            >
+                Nombres
+            </label>
+    
+            <input
+                type="text"
+                id="nombres"
+                name="nombres"
+                value="{{ old('nombres') }}"
+                required
+                class="w-full rounded-lg border border-gray-300
+                       bg-white px-4 py-3
+                       text-sm text-gray-900
+                       outline-none
+                       transition
+                       placeholder:text-gray-400
+                       focus:border-[#1a34c9]
+                       focus:ring-2
+                       focus:ring-[#1a34c9]/15"
+            >
+    
+            @error('nombres')
+                <p class="mt-1.5 text-xs text-red-600">
+                    {{ $message }}
+                </p>
+            @enderror
+    
+        </div>
+        
+        {{-- APELLIDOS --}}
+        <div>
+    
+            <label
+                for="apellidos"
+                class="mb-2 block text-sm font-medium text-gray-800"
+            >
+                Apellidos
+            </label>
+    
+            <input
+                type="text"
+                id="apellidos"
+                name="apellidos"
+                value="{{ old('apellidos') }}"
+                required
+                class="w-full rounded-lg border border-gray-300
+                       bg-white px-4 py-3
+                       text-sm text-gray-900
+                       outline-none
+                       transition
+                       placeholder:text-gray-400
+                       focus:border-[#1a34c9]
+                       focus:ring-2
+                       focus:ring-[#1a34c9]/15"
+            >
+    
+            @error('apellidos')
+                <p class="mt-1.5 text-xs text-red-600">
+                    {{ $message }}
+                </p>
+            @enderror
+    
+        </div>
+        
+        {{-- NOMBRE DE USUARIO --}}
+        <div>
+    
+            <label
+                for="username"
+                class="mb-2 block text-sm font-medium text-gray-800"
+            >
+                Nombre de usuario
+            </label>
+    
+            <input
+                type="text"
+                id="username"
+                name="username"
+                value="{{ old('username') }}"
+                required
+                class="w-full rounded-lg border border-gray-300
+                       bg-white px-4 py-3
+                       text-sm text-gray-900
+                       outline-none
+                       transition
+                       placeholder:text-gray-400
+                       focus:border-[#1a34c9]
+                       focus:ring-2
+                       focus:ring-[#1a34c9]/15"
+            >
+    
+            @error('username')
+                <p class="mt-1.5 text-xs text-red-600">
+                    {{ $message }}
+                </p>
+            @enderror
+    
+        </div>
+    
+        {{-- CELULAR --}}
+        <div>
+    
+            <label
+                for="cel"
+                class="mb-2 block text-sm font-medium text-gray-800"
+            >
+                Celular
+            </label>
+    
+            <input
+                type="text"
+                id="cel"
+                name="cel"
+                value="{{ old('cel') }}"
+                required
+                class="w-full rounded-lg border border-gray-300
+                       bg-white px-4 py-3
+                       text-sm text-gray-900
+                       outline-none
+                       transition
+                       placeholder:text-gray-400
+                       focus:border-[#1a34c9]
+                       focus:ring-2
+                       focus:ring-[#1a34c9]/15"
+            >
+    
+            @error('cel')
+                <p class="mt-1.5 text-xs text-red-600">
+                    {{ $message }}
+                </p>
+            @enderror
+    
+        </div>
+    
+        
     </div>
-
-
-    {{-- NOMBRES --}}
-    <div>
-
-        <label
-            for="nombres"
-            class="mb-2 block text-sm font-medium text-gray-800"
-        >
-            Nombres
-        </label>
-
-        <input
-            type="text"
-            id="nombres"
-            name="nombres"
-            value="{{ old('nombres') }}"
-            required
-            class="w-full rounded-lg border border-gray-300
-                   bg-white px-4 py-3
-                   text-sm text-gray-900
-                   outline-none
-                   transition
-                   placeholder:text-gray-400
-                   focus:border-[#1a34c9]
-                   focus:ring-2
-                   focus:ring-[#1a34c9]/15"
-        >
-
-        @error('nombres')
-            <p class="mt-1.5 text-xs text-red-600">
-                {{ $message }}
-            </p>
-        @enderror
-
-    </div>
-
-
-    {{-- APELLIDOS --}}
-    <div>
-
-        <label
-            for="apellidos"
-            class="mb-2 block text-sm font-medium text-gray-800"
-        >
-            Apellidos
-        </label>
-
-        <input
-            type="text"
-            id="apellidos"
-            name="apellidos"
-            value="{{ old('apellidos') }}"
-            required
-            class="w-full rounded-lg border border-gray-300
-                   bg-white px-4 py-3
-                   text-sm text-gray-900
-                   outline-none
-                   transition
-                   placeholder:text-gray-400
-                   focus:border-[#1a34c9]
-                   focus:ring-2
-                   focus:ring-[#1a34c9]/15"
-        >
-
-        @error('apellidos')
-            <p class="mt-1.5 text-xs text-red-600">
-                {{ $message }}
-            </p>
-        @enderror
-
-    </div>
-
-
-    {{-- NOMBRE DE USUARIO --}}
-    <div>
-
-        <label
-            for="username"
-            class="mb-2 block text-sm font-medium text-gray-800"
-        >
-            Nombre de usuario
-        </label>
-
-        <input
-            type="text"
-            id="username"
-            name="username"
-            value="{{ old('username') }}"
-            required
-            class="w-full rounded-lg border border-gray-300
-                   bg-white px-4 py-3
-                   text-sm text-gray-900
-                   outline-none
-                   transition
-                   placeholder:text-gray-400
-                   focus:border-[#1a34c9]
-                   focus:ring-2
-                   focus:ring-[#1a34c9]/15"
-        >
-
-        @error('username')
-            <p class="mt-1.5 text-xs text-red-600">
-                {{ $message }}
-            </p>
-        @enderror
-
-    </div>
-
-
-    {{-- CELULAR --}}
-    <div>
-
-        <label
-            for="cel"
-            class="mb-2 block text-sm font-medium text-gray-800"
-        >
-            Celular
-        </label>
-
-        <input
-            type="text"
-            id="cel"
-            name="cel"
-            value="{{ old('cel') }}"
-            required
-            class="w-full rounded-lg border border-gray-300
-                   bg-white px-4 py-3
-                   text-sm text-gray-900
-                   outline-none
-                   transition
-                   placeholder:text-gray-400
-                   focus:border-[#1a34c9]
-                   focus:ring-2
-                   focus:ring-[#1a34c9]/15"
-        >
-
-        @error('cel')
-            <p class="mt-1.5 text-xs text-red-600">
-                {{ $message }}
-            </p>
-        @enderror
-
-    </div>
-
-
+    
     {{-- ROL --}}
     <div
         x-data="{ rol: '{{ old('rol_id') }}' }"
         class="pt-1"
-    >
-
+    >    
         <fieldset>
 
             <legend class="mb-3 text-sm font-medium text-gray-800">
                 Rol
             </legend>
 
-            <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
 
                 @if (auth()->user()->rol?->nombre === 'SUPER ADMIN')
                 <label
@@ -341,6 +337,7 @@
         </div>
 
     </div>
+
 
 
     {{-- BOTONES --}}

@@ -2,7 +2,7 @@
 @section('title', 'Historial de lotes')
 @section('content')
 
-<div class="px-6 py-8 lg:px-10">
+<div class="min-h-screen bg-[#f7f7f9] px-6 py-8 lg:px-12">
     {{-- ENCABEZADO --}}
     <div class="mb-8">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -121,9 +121,9 @@
 
     {{-- TABLA --}}
     <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-        <div class="overflow-x-auto">
-            <table class="min-w-[1050px] w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+        <div class="max-h-[70vh] overflow-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="text-xs uppercase text-[#1a34c9]">
                     <tr>
                         {{-- COLEGIO --}}
                         @if (
@@ -132,26 +132,26 @@
                                 ['SUPER ADMIN', 'ADMIN']
                             )
                         )
-                            <th class="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            <th class="sticky top-0 z-10 bg-[#edeef3] px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 shadow-[inset_0_-2px_0_#1a34c9]">
                                 Colegio
                             </th>
                         @endif
-                        <th class="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        <th class="sticky top-0 z-10 bg-[#edeef3] px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 shadow-[inset_0_-2px_0_#1a34c9]">
                             Código
                         </th>
-                        <th class="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        <th class="sticky top-0 z-10 bg-[#edeef3] px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 shadow-[inset_0_-2px_0_#1a34c9]">
                             Período
                         </th>
-                        <th class="px-5 py-4 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        <th class="sticky top-0 z-10 bg-[#edeef3] px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 shadow-[inset_0_-2px_0_#1a34c9]">
                             Pagos
                         </th>
-                        <th class="px-5 py-4 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        <th class="sticky top-0 z-10 bg-[#edeef3] px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 shadow-[inset_0_-2px_0_#1a34c9]">
                             Monto total
                         </th>
-                        <th class="px-5 py-4 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        <th class="sticky top-0 z-10 bg-[#edeef3] px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 shadow-[inset_0_-2px_0_#1a34c9]">
                             Estado
                         </th>
-                        <th class="px-5 py-4 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        <th class="sticky top-0 z-10 bg-[#edeef3] px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 shadow-[inset_0_-2px_0_#1a34c9]">
                             Ver
                         </th>
                     </tr>
@@ -159,7 +159,7 @@
 
                 <tbody class="divide-y divide-gray-200 bg-white">
                 @foreach ($lotes as $lote)
-                    <tr class="transition hover:bg-gray-200">
+                    <tr class="transition hover:bg-blue-100">
                         @if (in_array(auth()->user()->rol?->nombre, ['ADMIN', 'SUPER ADMIN']))
                             <td class="px-6 py-4 text-sm text-gray-700">
                                 {{ $lote->colegio->nombre }}

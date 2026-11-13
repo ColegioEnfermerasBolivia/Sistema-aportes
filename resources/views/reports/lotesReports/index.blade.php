@@ -4,7 +4,7 @@
 
 @section('content')
 <div
-    class="space-y-6 p-6"
+    class="min-h-screen px-6 py-8 lg:px-12"
     x-data="{
         previewOpen: false,
         previewLoading: false,
@@ -67,7 +67,7 @@
     }"
 >
     <header>
-        <h1 class="text-2xl font-bold text-gray-800">
+        <h1 class="text-2xl font-semibold text-gray-800">
             Reporte de Pagos por Lote
         </h1>
         <p class="mt-1 text-sm text-gray-500">
@@ -117,6 +117,38 @@
                 </select>
             </div>
 
+            @if (
+                in_array(auth()->user()->rol?->nombre, ['ADMIN', 'SUPER ADMIN'])
+                || (
+                    auth()->user()->rol?->nombre === 'USUARIO'
+                    && auth()->user()->colegio?->tipo === 'DEPARTAMENTAL'
+                    && $colegios->count() > 1
+                )
+            )
+                <div>
+                    <label for="colegio_id" class="mb-1 block text-sm font-medium text-gray-700">
+                        Colegio
+                    </label>
+                    <select
+                        id="colegio_id"
+                        name="colegio_id"
+                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#1a34c9] focus:outline-none focus:ring-1 focus:ring-[#1a34c9]"
+                    >
+                        <option value="">
+                            {{ auth()->user()->rol?->nombre === 'USUARIO' ? 'Todos mis colegios' : 'Todos los colegios' }}
+                        </option>
+                        @foreach ($colegios as $colegio)
+                            <option
+                                value="{{ $colegio->id }}"
+                                @selected((string) request('colegio_id') === (string) $colegio->id)
+                            >
+                                {{ $colegio->nombre }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            @endif
+
             <div class="flex gap-2">
                 <button
                     type="submit"
@@ -147,15 +179,15 @@
                 </p>
             </div>
         @else
-            <div class="overflow-x-auto">
+            <div class="max-h-[60vh] overflow-auto">
                 <table class="w-full min-w-[760px] divide-y divide-gray-200 text-left text-sm">
                     <thead class="bg-gray-50 text-xs uppercase tracking-wide text-gray-600">
                         <tr>
-                            <th class="px-5 py-3 font-semibold">Código de lote</th>
-                            <th class="px-5 py-3 font-semibold">Colegio</th>
-                            <th class="px-5 py-3 font-semibold">Gestión</th>
-                            <th class="px-5 py-3 font-semibold">Estado</th>
-                            <th class="px-5 py-3 text-right font-semibold">Acciones</th>
+                            <th class="sticky top-0 z-10 px-5 py-3 font-semibold">Código de lote</th>
+                            <th class="sticky top-0 z-10 px-5 py-3 font-semibold">Colegio</th>
+                            <th class="sticky top-0 z-10 px-5 py-3 font-semibold">Gestión</th>
+                            <th class="sticky top-0 z-10 px-5 py-3 font-semibold">Estado</th>
+                            <th class="sticky top-0 z-10 px-5 py-3 text-right font-semibold">Acciones</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">

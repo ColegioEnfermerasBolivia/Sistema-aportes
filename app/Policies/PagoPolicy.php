@@ -15,7 +15,8 @@ class PagoPolicy
      * - Puede registrar pagos directamente para cualquier afiliado.
      *
      * USUARIO:
-     * - Puede registrar pagos únicamente para afiliados de su colegio.
+     * - Puede registrar pagos para afiliados de su colegio y, si es departamental,
+     *   de sus colegios hijos activos.
      *
      * SUPER ADMIN:
      * - No registra pagos.
@@ -27,7 +28,17 @@ class PagoPolicy
         }
 
         if ($usuario->rol?->nombre === 'USUARIO') {
-            return $usuario->colegio_id === $afiliado->colegio_id;
+            if ($usuario->colegio_id === $afiliado->colegio_id) {
+                return true;
+            }
+
+            $colegio = $usuario->colegio;
+
+            return $colegio?->tipo === 'DEPARTAMENTAL'
+                && $colegio->hijos()
+                    ->whereKey($afiliado->colegio_id)
+                    ->where('estado', 'ACTIVO')
+                    ->exists();
         }
 
         return false;
@@ -38,7 +49,7 @@ class PagoPolicy
      *
      * Solo los USUARIO pueden modificar pagos.
      * El pago debe pertenecer a un lote ABIERTO
-     * y dicho lote debe corresponder al colegio del usuario.
+     * y dicho lote debe corresponder al colegio del usuario o a uno de sus hijos.
      */
     public function update(Usuario $usuario, Pago $pago): bool
     {
@@ -56,7 +67,14 @@ class PagoPolicy
             return false;
         }
 
-        return $usuario->colegio_id === $lote->colegio_id;
+        if ($usuario->colegio_id === $lote->colegio_id) {
+            return true;
+        }
+
+        $colegio = $usuario->colegio;
+
+        return $colegio?->tipo === 'DEPARTAMENTAL'
+            && $colegio->hijos()->whereKey($lote->colegio_id)->exists();
     }
 
     /**

@@ -29,17 +29,17 @@
 
             {{-- Tarjeta de bienvenida --}}
             <div class="absolute bottom-10 left-10 right-10 rounded-2xl border-l-4 border-blue-800 bg-white/90 p-6 backdrop-blur-sm">
-                <div class="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-blue-800 text-white">
-                    🛡
+                <div class="mb-3 flex h-20 w-20 items-center justify-center rounded-full bg-blue-800 text-white font-bold">
+                    SIGACEB
                 </div>
 
                 <h2 class="text-2xl font-extrabold leading-tight text-gray-900">
                     Bienvenidos al Nuevo
-                    <span class="block text-blue-800">Sistema de Aportes</span>
+                    <span class="block text-blue-800">Sistema Integral de Gestión de Afiliadas</span>
                 </h2>
 
                 <p class="mt-2 text-sm text-gray-700">
-                    Innovación para el cuidado de quienes cuidan. Una plataforma precisa, empática y progresiva.
+                    Innovación, transparencia y gestión al servicio de la enfermería.
                 </p>
             </div>
         </div>
@@ -56,7 +56,7 @@
                         class="mx-auto mb-3 h-20 w-20"
                     >
                     <h1 class="text-2xl font-extrabold text-blue-900">Colegio de Enfermeras de Bolivia</h1>
-                    <p class="text-sm text-gray-600">Portal de Gestión Profesional</p>
+                    <p class="text-sm text-gray-600">Sistema Integral de Gestión de Afiliadas</p>
                 </div>
 
                 {{-- Aviso de credenciales incorrectas --}}

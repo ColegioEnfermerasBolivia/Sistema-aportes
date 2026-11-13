@@ -10,11 +10,11 @@
                     >
         </div>
         <h2 class="m-0 text-xl font-extrabold leading-tight text-[#0d1b6e]">
-            Colegio de Enfermeras
+            Colegio de Enfermeras de Bolivia
         </h2>
 
         <span class="mt-1 block text-[11px] font-bold uppercase tracking-[2px] text-gray-600">
-            Sistema de Gestión
+            Sistema de Gestión de Afiliadas
         </span>
     </div>
 

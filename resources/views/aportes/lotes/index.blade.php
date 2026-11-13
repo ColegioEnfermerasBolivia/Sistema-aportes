@@ -4,25 +4,40 @@
 
 <div
     x-data="revisionLotes()"
-    class="p-6"
 >
     <div class="min-h-screen bg-[#f7f7f9] px-6 py-8 lg:px-12">
 
         {{-- USUARIO --}}
         @if (auth()->user()->rol?->nombre === 'USUARIO')
 
-            <div class="mb-8">
-                <h1 class="m-0 text-3xl font-semibold tracking-tight text-gray-900">
-                    Mi lote actual
-                </h1>
+            <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h1 class="m-0 text-3xl font-semibold tracking-tight text-gray-900">
+                        Mis lotes activos
+                    </h1>
 
-                <p class="mt-2 text-base text-gray-600">
-                    Administre los pagos correspondientes al lote de su colegio.
-                </p>
+                    <p class="mt-2 text-base text-gray-600">
+                        Administre los lotes de su colegio y de sus colegios hijos.
+                    </p>
+                </div>
+                <x-modal titulo="Crear lote de aportes" ancho="max-w-xl">
+                    <x-slot:trigger>
+                        <button
+                            type="button"
+                            class="rounded-lg bg-[#1a34c9] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1428a0] hover:cursor-pointer inline-flex items-center gap-1.5"
+                        >
+                            <x-icon name="register" class="text-white" size="20"/>
+                            Crear lote
+                        </button>
+                    </x-slot:trigger>
+                    @include('aportes.lotes.partials.lote-crear')
+                </x-modal>
             </div>
 
 
-            @if ($loteActual)
+            @if ($lotesActuales->isNotEmpty())
+                <div class="space-y-6">
+                @foreach ($lotesActuales as $loteActual)
 
                 {{-- TARJETA DEL LOTE ACTUAL --}}
                 <div class="rounded-2xl border border-gray-200 bg-white shadow-sm">
@@ -153,6 +168,8 @@
                         @endif
                     </div>
                 </div>
+                @endforeach
+                </div>
             @else
                 {{-- SIN LOTE ACTUAL --}}
                 <div class="flex min-h-[420px] items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-white">
@@ -178,20 +195,8 @@
                         </h2>
                         <p class="mt-2 text-sm leading-6 text-gray-500">
                             Puedes crear un nuevo lote para registrar los pagos
-                            correspondientes a tu colegio.
+                            correspondientes a tu colegio o a sus colegios hijos.
                         </p>
-                        <x-modal titulo="Crear lote de aportes" ancho="max-w-xl">
-                            <x-slot:trigger>
-                                <button
-                                    type="button"
-                                    class="rounded-lg bg-[#1a34c9] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1428a0] hover:cursor-pointer inline-flex items-center gap-1.5"
-                                >
-                                    <x-icon name="register" class="text-white" size="20"/>
-                                    Crear lote
-                                </button>
-                            </x-slot:trigger>
-                            @include('aportes.lotes.partials.lote-crear')
-                        </x-modal>
                     </div>
                 </div>
             @endif
@@ -199,7 +204,7 @@
         {{-- ADMIN / SUPER ADMIN --}}
         @else
             {{-- ENCABEZADO --}}
-            <div class="mb-8 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div class="mb-4 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 class="m-0 text-3xl font-semibold tracking-tight text-gray-900">
                         Lista de lotes
@@ -211,29 +216,29 @@
             </div>
 
             {{-- TABLA --}}
-            <div class="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+            <div class="max-h-[70vh] overflow-auto rounded-xl border border-gray-200 bg-white">
                 <table class="min-w-[1200px] w-full">
-                    <thead class="border-b border-gray-200 bg-[#f1f3f8]">
+                    <thead class="border-b-2 border-[#1a34c9] bg-[#4f588a]/10 text-xs uppercase tracking-wide text-[#1a34c9]">
                         <tr>
-                            <th class="px-5 py-4 text-left text-sm font-semibold text-gray-800">
+                            <th class="sticky top-0 z-10 px-5 py-4 text-left text-sm font-semibold text-gray-800">
                                 Código
                             </th>
-                            <th class="px-5 py-4 text-left text-sm font-semibold text-gray-800">
+                            <th class="sticky top-0 z-10 px-5 py-4 text-left text-sm font-semibold text-gray-800">
                                 Colegio
                             </th>
-                            <th class="px-5 py-4 text-left text-sm font-semibold text-gray-800">
+                            <th class="sticky top-0 z-10 px-5 py-4 text-left text-sm font-semibold text-gray-800">
                                 Período
                             </th>
-                            <th class="px-5 py-4 text-left text-sm font-semibold text-gray-800">
+                            <th class="sticky top-0 z-10 px-5 py-4 text-left text-sm font-semibold text-gray-800">
                                 Cant. Aportes
                             </th>
-                            <th class="px-5 py-4 text-left text-sm font-semibold text-gray-800">
+                            <th class="sticky top-0 z-10 px-5 py-4 text-left text-sm font-semibold text-gray-800">
                                 Monto total
                             </th>
-                            <th class="px-5 py-4 text-left text-sm font-semibold text-gray-800">
+                            <th class="sticky top-0 z-10 px-5 py-4 text-left text-sm font-semibold text-gray-800">
                                 Estado
                             </th>
-                            <th class="px-5 py-4 text-left text-sm font-semibold text-gray-800">
+                            <th class="sticky top-0 z-10 px-5 py-4 text-left text-sm font-semibold text-gray-800">
                                 Acciones
                             </th>
                         </tr>
@@ -241,7 +246,7 @@
 
                     <tbody class="divide-y divide-gray-100">
                         @forelse ($lotes as $lote)
-                            <tr class="transition hover:bg-gray-50">
+                            <tr class="transition hover:bg-blue-100">
                                 {{-- CÓDIGO --}}
                                 <td class="whitespace-nowrap px-5 py-5 text-sm text-gray-700">
                                     {{ $lote->codigo_lote }}
@@ -401,7 +406,7 @@
         @include('aportes.lotes.partials.confirmar')
     </x-modal>
 
-    @if (auth()->user()->rol?->nombre === 'USUARIO' && $loteActual && $loteActual->estado === 'ABIERTO')
+    @if (auth()->user()->rol?->nombre === 'USUARIO' && $tieneLoteAbierto)
         <div
             x-data="{
                 modalEditarPago: false,
@@ -429,7 +434,7 @@
 </div>
 
 @endsection
-
+@push('scripts')
 <script>
     document.addEventListener('alpine:init', () => {
 
@@ -675,3 +680,4 @@
         }));
     });
 </script>
+@endpush

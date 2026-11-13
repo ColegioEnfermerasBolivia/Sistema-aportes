@@ -6,174 +6,172 @@
     @csrf
     @method('PUT')
 
-
-    {{-- CI --}}
-    <div>
-
-        <label
-            for="edit_ci_{{ $usuario->id }}"
-            class="mb-2 block text-sm font-medium text-gray-800"
-        >
-            CI
-        </label>
-
-        <input
-            type="text"
-            id="edit_ci_{{ $usuario->id }}"
-            name="ci"
-            value="{{ old('ci', $usuario->ci) }}"
-            required
-            class="w-full rounded-lg border border-gray-300
-                   bg-white px-4 py-3
-                   text-sm text-gray-900
-                   outline-none transition
-                   focus:border-[#1a34c9]
-                   focus:ring-2
-                   focus:ring-[#1a34c9]/15"
-        >
-
-        @error('ci')
-            <p class="mt-1.5 text-xs text-red-600">
-                {{ $message }}
-            </p>
-        @enderror
-
-    </div>
-
-
-    {{-- NOMBRES --}}
-    <div>
-
-        <label
-            for="edit_nombres_{{ $usuario->id }}"
-            class="mb-2 block text-sm font-medium text-gray-800"
-        >
-            Nombres
-        </label>
-
-        <input
-            type="text"
-            id="edit_nombres_{{ $usuario->id }}"
-            name="nombres"
-            value="{{ old('nombres', $usuario->nombres) }}"
-            required
-            class="w-full rounded-lg border border-gray-300
-                   bg-white px-4 py-3
-                   text-sm text-gray-900
-                   outline-none transition
-                   focus:border-[#1a34c9]
-                   focus:ring-2
-                   focus:ring-[#1a34c9]/15"
-        >
-
-        @error('nombres')
-            <p class="mt-1.5 text-xs text-red-600">
-                {{ $message }}
-            </p>
-        @enderror
-
-    </div>
-
-
-    {{-- APELLIDOS --}}
-    <div>
-
-        <label
-            for="edit_apellidos_{{ $usuario->id }}"
-            class="mb-2 block text-sm font-medium text-gray-800"
-        >
-            Apellidos
-        </label>
-
-        <input
-            type="text"
-            id="edit_apellidos_{{ $usuario->id }}"
-            name="apellidos"
-            value="{{ old('apellidos', $usuario->apellidos) }}"
-            required
-            class="w-full rounded-lg border border-gray-300
-                   bg-white px-4 py-3
-                   text-sm text-gray-900
-                   outline-none transition
-                   focus:border-[#1a34c9]
-                   focus:ring-2
-                   focus:ring-[#1a34c9]/15"
-        >
-
-        @error('apellidos')
-            <p class="mt-1.5 text-xs text-red-600">
-                {{ $message }}
-            </p>
-        @enderror
-
-    </div>
-
-
-    {{-- NOMBRE DE USUARIO --}}
-    <div>
-
-        <label
-            for="edit_username_{{ $usuario->id }}"
-            class="mb-2 block text-sm font-medium text-gray-800"
-        >
-            Nombre de usuario
-        </label>
-
-        <input
-            type="text"
-            id="edit_username_{{ $usuario->id }}"
-            name="username"
-            value="{{ old('username', $usuario->username) }}"
-            required
-            class="w-full rounded-lg border border-gray-300
-                   bg-white px-4 py-3
-                   text-sm text-gray-900
-                   outline-none transition
-                   focus:border-[#1a34c9]
-                   focus:ring-2
-                   focus:ring-[#1a34c9]/15"
-        >
-
-        @error('username')
-            <p class="mt-1.5 text-xs text-red-600">
-                {{ $message }}
-            </p>
-        @enderror
-
-    </div>
-
-
-    {{-- CELULAR --}}
-    <div>
-
-        <label
-            for="edit_cel_{{ $usuario->id }}"
-            class="mb-2 block text-sm font-medium text-gray-800"
-        >
-            Celular
-        </label>
-
-        <input
-            type="text"
-            id="edit_cel_{{ $usuario->id }}"
-            name="cel"
-            value="{{ old('cel', $usuario->cel) }}"
-            required
-            class="w-full rounded-lg border border-gray-300
-                   bg-white px-4 py-3
-                   text-sm text-gray-900
-                   outline-none transition
-                   focus:border-[#1a34c9]
-                   focus:ring-2
-                   focus:ring-[#1a34c9]/15"
-        >
-
-        @error('cel')
-            <p class="mt-1.5 text-xs text-red-600">
-                {{ $message }}
-            </p>
-        @enderror
-
+    <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+        
+        {{-- CI --}}
+        <div>
+    
+            <label
+                for="edit_ci_{{ $usuario->id }}"
+                class="mb-2 block text-sm font-medium text-gray-800"
+            >
+                CI
+            </label>
+    
+            <input
+                type="text"
+                id="edit_ci_{{ $usuario->id }}"
+                name="ci"
+                value="{{ old('ci', $usuario->ci) }}"
+                required
+                class="w-full rounded-lg border border-gray-300
+                       bg-white px-4 py-3
+                       text-sm text-gray-900
+                       outline-none transition
+                       focus:border-[#1a34c9]
+                       focus:ring-2
+                       focus:ring-[#1a34c9]/15"
+            >
+    
+            @error('ci')
+                <p class="mt-1.5 text-xs text-red-600">
+                    {{ $message }}
+                </p>
+            @enderror
+    
+        </div>
+    
+        {{-- NOMBRES --}}
+        <div>
+    
+            <label
+                for="edit_nombres_{{ $usuario->id }}"
+                class="mb-2 block text-sm font-medium text-gray-800"
+            >
+                Nombres
+            </label>
+    
+            <input
+                type="text"
+                id="edit_nombres_{{ $usuario->id }}"
+                name="nombres"
+                value="{{ old('nombres', $usuario->nombres) }}"
+                required
+                class="w-full rounded-lg border border-gray-300
+                       bg-white px-4 py-3
+                       text-sm text-gray-900
+                       outline-none transition
+                       focus:border-[#1a34c9]
+                       focus:ring-2
+                       focus:ring-[#1a34c9]/15"
+            >
+    
+            @error('nombres')
+                <p class="mt-1.5 text-xs text-red-600">
+                    {{ $message }}
+                </p>
+            @enderror
+    
+        </div>
+    
+        {{-- APELLIDOS --}}
+        <div>
+    
+            <label
+                for="edit_apellidos_{{ $usuario->id }}"
+                class="mb-2 block text-sm font-medium text-gray-800"
+            >
+                Apellidos
+            </label>
+    
+            <input
+                type="text"
+                id="edit_apellidos_{{ $usuario->id }}"
+                name="apellidos"
+                value="{{ old('apellidos', $usuario->apellidos) }}"
+                required
+                class="w-full rounded-lg border border-gray-300
+                       bg-white px-4 py-3
+                       text-sm text-gray-900
+                       outline-none transition
+                       focus:border-[#1a34c9]
+                       focus:ring-2
+                       focus:ring-[#1a34c9]/15"
+            >
+    
+            @error('apellidos')
+                <p class="mt-1.5 text-xs text-red-600">
+                    {{ $message }}
+                </p>
+            @enderror
+    
+        </div>
+    
+        {{-- NOMBRE DE USUARIO --}}
+        <div>
+    
+            <label
+                for="edit_username_{{ $usuario->id }}"
+                class="mb-2 block text-sm font-medium text-gray-800"
+            >
+                Nombre de usuario
+            </label>
+    
+            <input
+                type="text"
+                id="edit_username_{{ $usuario->id }}"
+                name="username"
+                value="{{ old('username', $usuario->username) }}"
+                required
+                class="w-full rounded-lg border border-gray-300
+                       bg-white px-4 py-3
+                       text-sm text-gray-900
+                       outline-none transition
+                       focus:border-[#1a34c9]
+                       focus:ring-2
+                       focus:ring-[#1a34c9]/15"
+            >
+    
+            @error('username')
+                <p class="mt-1.5 text-xs text-red-600">
+                    {{ $message }}
+                </p>
+            @enderror
+    
+        </div>
+    
+        {{-- CELULAR --}}
+        <div>
+    
+            <label
+                for="edit_cel_{{ $usuario->id }}"
+                class="mb-2 block text-sm font-medium text-gray-800"
+            >
+                Celular
+            </label>
+    
+            <input
+                type="text"
+                id="edit_cel_{{ $usuario->id }}"
+                name="cel"
+                value="{{ old('cel', $usuario->cel) }}"
+                required
+                class="w-full rounded-lg border border-gray-300
+                       bg-white px-4 py-3
+                       text-sm text-gray-900
+                       outline-none transition
+                       focus:border-[#1a34c9]
+                       focus:ring-2
+                       focus:ring-[#1a34c9]/15"
+            >
+    
+            @error('cel')
+                <p class="mt-1.5 text-xs text-red-600">
+                    {{ $message }}
+                </p>
+            @enderror
+    
+        </div>
     </div>
 
 

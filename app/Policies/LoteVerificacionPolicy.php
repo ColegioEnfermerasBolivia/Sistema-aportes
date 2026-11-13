@@ -38,7 +38,7 @@ class LoteVerificacionPolicy
         }
 
         return $rol !== 'USUARIO'
-            || $usuario->colegio_id === $lote->colegio_id;
+            || $this->puedeGestionarColegio($usuario, $lote->colegio_id);
     }
 
     /**
@@ -56,7 +56,7 @@ class LoteVerificacionPolicy
      *
      * El lote debe:
      * - Estar ABIERTO.
-     * - Pertenecer al mismo colegio del usuario.
+     * - Pertenecer al colegio del usuario o a uno de sus colegios hijos.
      * - El usuario debe ser USUARIO.
      */
     public function cerrar(
@@ -71,7 +71,7 @@ class LoteVerificacionPolicy
             return false;
         }
 
-        return $usuario->colegio_id === $lote->colegio_id;
+        return $this->puedeGestionarColegio($usuario, $lote->colegio_id);
     }
 
     /**
@@ -136,5 +136,19 @@ class LoteVerificacionPolicy
     ): bool {
         return $usuario->rol?->nombre === 'SUPER ADMIN'
             && $lote->estado === 'ENVIADO';
+    }
+
+    private function puedeGestionarColegio(
+        Usuario $usuario,
+        int $colegioId
+    ): bool {
+        if ($usuario->colegio_id === $colegioId) {
+            return true;
+        }
+
+        $colegio = $usuario->colegio;
+
+        return $colegio?->tipo === 'DEPARTAMENTAL'
+            && $colegio->hijos()->whereKey($colegioId)->exists();
     }
 }

@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 use function PHPUnit\Framework\returnArgument;
 
@@ -29,15 +30,22 @@ class LoteVerificacionController extends Controller
 
         /*USUARIO*/
         if ($usuario->rol?->nombre === 'USUARIO') {
+            if (!$usuario->colegio) {
+                abort(403, 'El usuario no tiene un colegio asignado.');
+            }
 
-            $loteActual = LoteVerificacion::with([
+            $colegiosDisponibles = $this->colegiosPermitidosParaUsuario(
+                $usuario->colegio
+            );
+
+            $lotesActuales = LoteVerificacion::with([
                 'colegio',
                 'enviadoPor',
                 'pagos' => fn ($query) => $query
                     ->with(['afiliado.saldosActivos', 'saldos'])
                     ->orderBy('id'),
             ])
-                ->where('colegio_id', $usuario->colegio_id)
+                ->whereIn('colegio_id', $colegiosDisponibles->modelKeys())
                 ->whereIn('estado', [
                     'ABIERTO',
                     'ENVIADO',
@@ -46,9 +54,15 @@ class LoteVerificacionController extends Controller
                 ->orderByDesc('year')
                 ->orderByDesc('mes')
                 ->orderByDesc('id')
-                ->first();
+                ->get();
 
-            return view('aportes.lotes.index', compact('loteActual'));
+            $tieneLoteAbierto = $lotesActuales->contains('estado', 'ABIERTO');
+
+            return view('aportes.lotes.index', compact(
+                'lotesActuales',
+                'colegiosDisponibles',
+                'tieneLoteAbierto'
+            ));
         }
 
         /*ADMIN / SUPER ADMIN*/
@@ -97,7 +111,14 @@ class LoteVerificacionController extends Controller
 
         /*USUARIO:*/
         if ($usuario->rol?->nombre === 'USUARIO') {
-            $consulta->where('colegio_id', $usuario->colegio_id);
+            if (!$usuario->colegio) {
+                abort(403, 'El usuario no tiene un colegio asignado.');
+            }
+
+            $colegiosPermitidos = $this->colegiosPermitidosParaUsuario(
+                $usuario->colegio
+            );
+            $consulta->whereIn('colegio_id', $colegiosPermitidos->modelKeys());
         }
 
         /*BUSQUEDA POR CODIGO DE LOTE */
@@ -150,10 +171,12 @@ class LoteVerificacionController extends Controller
             abort(403, 'El colegio del usuario no existe.');
         }
 
-        return view(
-            'aportes.lotes.create',
-            compact('colegio')
-        );
+        $colegiosDisponibles = $this->colegiosPermitidosParaUsuario($colegio);
+
+        return view('aportes.lotes.create', compact(
+            'colegio',
+            'colegiosDisponibles'
+        ));
     }
 
     public function store(Request $request)
@@ -162,15 +185,7 @@ class LoteVerificacionController extends Controller
 
         $usuario = Auth::user();
 
-        $datos = $request->validate([
-            'mes' => [
-                'required',
-                'integer',
-                'between:1,12',
-            ],
-        ]);
-
-        if (!$usuario->colegio_id) {
+        if (!$usuario->colegio_id || !$usuario->colegio) {
             return back()
                 ->withErrors([
                     'lote' => 'El usuario no tiene un colegio asignado.',
@@ -178,25 +193,40 @@ class LoteVerificacionController extends Controller
                 ->withInput();
         }
 
-        $colegio = $usuario->colegio;
+        $colegiosDisponibles = $this->colegiosPermitidosParaUsuario(
+            $usuario->colegio
+        );
+        $reglas = [
+            'mes' => [
+                'required',
+                'integer',
+                'between:1,12',
+            ],
+            'colegio_id' => [
+                $colegiosDisponibles->count() > 1 ? 'required' : 'nullable',
+                'integer',
+                Rule::in($colegiosDisponibles->modelKeys()),
+            ],
+        ];
+        $datos = $request->validate($reglas);
+        $colegio = $colegiosDisponibles->firstWhere(
+            'id',
+            (int) ($datos['colegio_id'] ?? $usuario->colegio_id)
+        );
 
         if (!$colegio) {
-            return back()
-                ->withErrors([
-                    'lote' => 'El colegio del usuario no existe.',
-                ])
-                ->withInput();
+            abort(403);
         }
 
         $loteAbierto = LoteVerificacion::query()
-            ->where('colegio_id', $usuario->colegio_id)
+            ->where('colegio_id', $colegio->id)
             ->where('estado', 'ABIERTO')
             ->exists();
 
         if ($loteAbierto) {
             return back()
                 ->withErrors([
-                    'lote' => 'Tu colegio ya tiene un lote abierto. Debes cerrarlo y enviarlo antes de crear otro.',
+                    'lote' => 'El colegio seleccionado ya tiene un lote abierto. Debes cerrarlo y enviarlo antes de crear otro.',
                 ])
                 ->withInput();
         }
@@ -220,7 +250,7 @@ class LoteVerificacionController extends Controller
 
         try {
             $lote = LoteVerificacion::create([
-                'colegio_id' => $usuario->colegio_id,
+                'colegio_id' => $colegio->id,
                 'mes' => $mes,
                 'year' => $year,
                 'codigo_lote' => $codigoLote,
@@ -976,6 +1006,18 @@ class LoteVerificacionController extends Controller
     private function clavePeriodo(int $year, int $mes): string
     {
         return "{$year}-{$mes}";
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Collection<int, Colegio>
+     */
+    private function colegiosPermitidosParaUsuario(Colegio $colegio)
+    {
+        return $colegio->hijos()
+            ->where('estado', 'ACTIVO')
+            ->orderBy('nombre')
+            ->get()
+            ->prepend($colegio);
     }
 
 }

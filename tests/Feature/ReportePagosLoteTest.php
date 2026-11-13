@@ -156,6 +156,59 @@ class ReportePagosLoteTest extends TestCase
             ->assertSee($loteAjeno->codigo_lote);
     }
 
+    public function test_departmental_user_can_filter_child_college_batches(): void
+    {
+        $parent = $this->createCollege([
+            'nombre' => 'Colegio Padre',
+            'tipo' => 'DEPARTAMENTAL',
+        ]);
+        $child = $this->createCollege([
+            'nombre' => 'Colegio Hijo',
+            'colegio_padre_id' => $parent->id,
+        ]);
+        $unrelated = $this->createCollege(['nombre' => 'Colegio Ajeno']);
+        $usuario = $this->createUser('USUARIO', $parent);
+        $lotePadre = $this->createBatch($parent, [
+            'codigo_lote' => 'LOTE-PADRE',
+            'estado' => 'ENVIADO',
+        ]);
+        $loteHijo = $this->createBatch($child, [
+            'codigo_lote' => 'LOTE-HIJO',
+            'estado' => 'ENVIADO',
+        ]);
+        $loteAjeno = $this->createBatch($unrelated, [
+            'codigo_lote' => 'LOTE-AJENO',
+            'estado' => 'ENVIADO',
+        ]);
+
+        $this->actingAs($usuario)
+            ->get(route('lotesReports.index'))
+            ->assertOk()
+            ->assertSee($lotePadre->codigo_lote)
+            ->assertSee($loteHijo->codigo_lote)
+            ->assertDontSee($loteAjeno->codigo_lote)
+            ->assertSee('Colegio Hijo');
+
+        $this->get(route('lotesReports.index', [
+            'colegio_id' => $child->id,
+        ]))
+            ->assertOk()
+            ->assertSee($loteHijo->codigo_lote)
+            ->assertDontSee($lotePadre->codigo_lote)
+            ->assertDontSee($loteAjeno->codigo_lote);
+
+        $this->get(route('lotesReports.preview', $loteHijo))
+            ->assertOk()
+            ->assertSee('Colegio Hijo');
+
+        $this->from(route('lotesReports.index'))
+            ->get(route('lotesReports.index', [
+                'colegio_id' => $unrelated->id,
+            ]))
+            ->assertRedirect(route('lotesReports.index'))
+            ->assertSessionHasErrors('colegio_id');
+    }
+
     public function test_open_or_other_college_batches_cannot_be_reported_by_user(): void
     {
         $colegioUsuario = $this->createCollege();

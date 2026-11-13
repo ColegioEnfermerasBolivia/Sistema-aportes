@@ -102,7 +102,7 @@
         class="overflow-hidden rounded-2xl
                border border-gray-200
                bg-white
-               shadow-sm"
+               shadow-sm flex flex-col gap-4"
     >
 
         {{-- FILTROS --}}
@@ -235,35 +235,35 @@
         {{-- TABLA --}}
         <div class="max-h-150 overflow-y-auto overflow-x-auto">
             <table class="min-w-300 w-full">
-                <thead class="sticky top-0 z-0 border-b border-gray-200 bg-[#f1f3f8]">
+                <thead class="border-b-1 border-[#1a34c9] bg-[#4f588a]/10 text-xs uppercase tracking-wide text-[#1a34c9]">
                     <tr>
-                        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-800">
+                        <th class="sticky top-0 z-10 bg-[#edeef3] px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 shadow-[inset_0_-2px_0_#1a34c9]">
                             Registro departamental
                         </th>
-                        <th class="px-5 py-4 text-left text-sm font-semibold text-gray-800">
+                        <th class="sticky top-0 z-10 bg-[#edeef3] px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 shadow-[inset_0_-2px_0_#1a34c9]">
                             Matrícula profesional
                         </th>
-                        <th class="px-5 py-4 text-left text-sm font-semibold text-gray-800">
+                        <th class="sticky top-0 z-10 bg-[#edeef3] px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 shadow-[inset_0_-2px_0_#1a34c9]">
                             CI
                         </th>
-                        <th class="px-5 py-4 text-left text-sm font-semibold text-gray-800">
+                        <th class="sticky top-0 z-10 bg-[#edeef3] px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 shadow-[inset_0_-2px_0_#1a34c9]">
                             Afiliado
                         </th>
                         @if (auth()->user()->rol?->nombre === 'ADMIN' || auth()->user()->rol?->nombre === 'SUPER ADMIN')
-                        <th class="px-5 py-4 text-left text-sm font-semibold text-gray-800">
+                        <th class="sticky top-0 z-10 bg-[#edeef3] px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 shadow-[inset_0_-2px_0_#1a34c9]">
                             Colegio
                         </th>
                         @endif
-                        <th class="px-5 py-4 text-left text-sm font-semibold text-gray-800">
+                        <th class="sticky top-0 z-10 bg-[#edeef3] px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 shadow-[inset_0_-2px_0_#1a34c9]">
                             Celular
                         </th>
-                        <th class="px-5 py-4 text-left text-sm font-semibold text-gray-800">
+                        <th class="sticky top-0 z-10 bg-[#edeef3] px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 shadow-[inset_0_-2px_0_#1a34c9]">
                             Estado
                         </th>
-                        <th class="px-5 py-4 text-left text-sm font-semibold text-gray-800">
+                        <th class="sticky top-0 z-10 bg-[#edeef3] px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 shadow-[inset_0_-2px_0_#1a34c9]">
                             Fecha afiliación
                         </th>
-                        <th class="px-5 py-4 text-left text-sm font-semibold text-gray-800">
+                        <th class="sticky top-0 z-10 bg-[#edeef3] px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 shadow-[inset_0_-2px_0_#1a34c9]">
                             Acciones
                         </th>
                     </tr>
@@ -271,7 +271,7 @@
 
                 <tbody class="divide-y divide-gray-100">
                     @forelse ($afiliados as $afiliado)
-                        <tr class="transition hover:bg-gray-200">
+                        <tr class="transition hover:bg-blue-100">
 
                             {{-- REGISTRO --}}
                             <td class="whitespace-nowrap px-5 py-5 text-sm text-gray-700">

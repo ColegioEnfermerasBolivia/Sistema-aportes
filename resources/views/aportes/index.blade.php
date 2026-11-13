@@ -25,7 +25,7 @@
 
     <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-            <h1 class="text-3xl font-bold tracking-tight text-gray-900">
+            <h1 class="text-3xl font-semibold tracking-tight text-gray-900">
                 Gestión de Aportes
             </h1>
 
@@ -151,9 +151,9 @@
         </div>
 
         {{--TABLA DE APORTES--}}
-        <div class="max-h-145 overflow-y-auto overflow-x-auto">
+        <div class="max-h-[65vh] overflow-y-auto overflow-x-auto">
             <table class="min-w-300 w-full">
-                <thead class="sticky top-0 z-0 border-b border-gray-200 bg-[#f1f3f8]">
+                <thead class="sticky top-0 z-0 border-b-2 border-[#1a34c9] bg-[#4f588a]/10 text-xs uppercase tracking-wide text-[#1a34c9]">
                     <tr class="bg-[#f1f3f8] text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
                         <th class="whitespace-nowrap px-5 py-4">
                            Nombres
@@ -231,7 +231,7 @@
                                 12 => 'DIC',
                             ];
                         @endphp
-                        <tr class="transition hover:bg-gray-200">
+                        <tr class="transition hover:bg-blue-100">
                             {{-- Nombres --}}
                             <td class="whitespace-nowrap px-5 py-4 font-medium text-gray-900">
                                 {{ $afiliado->nombres }}

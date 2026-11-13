@@ -14,6 +14,8 @@ use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 
@@ -21,7 +23,6 @@ class InformeController extends Controller
 {
     public function afiliados(Request $request): View{
         Gate::authorize('viewAny', Afiliado::class);
-        $usuario = auth()->user();
 
         /* Consulta base */
         $query = $this->consultaAfiliados(($request));
@@ -48,14 +49,7 @@ class InformeController extends Controller
             ->orderBy('nombre')
             ->get();
 
-        /* Colegios */
-        $colegios = collect();
-
-        if (in_array($usuario->rol?->nombre, ['ADMIN', 'SUPER ADMIN'])) {
-            $colegios = Colegio::where('estado', 'ACTIVO')
-                ->orderBy('nombre')
-                ->get();
-        }
+        $colegios = $this->colegiosDisponiblesParaInforme();
 
         return view(
             'reports.afiliadosReports.index',
@@ -80,24 +74,20 @@ class InformeController extends Controller
             $query->with('afiliadosPostgrados.postgrado');
         }
 
-        /*Restricción por usuario*/
-
+        $colegiosDisponibles = $this->colegiosDisponiblesParaInforme();
         if ($usuario->rol?->nombre === 'USUARIO') {
-            $colegio = $usuario->colegio;
+            $query->whereIn(
+                'colegio_id',
+                $colegiosDisponibles->pluck('id')
+            );
+        }
 
-            if (!$colegio) {
-                abort(403);
-            }
-
-            if ($colegio->tipo === 'DEPARTAMENTAL') {
-                $colegiosPermitidos = $colegio->hijos
-                    ->pluck('id')
-                    ->push($colegio->id);
-
-                $query->whereIn('colegio_id', $colegiosPermitidos);
-            } else {
-                $query->where('colegio_id', $colegio->id);
-            }
+        $colegioSeleccionado = $this->colegioSeleccionado(
+            $request,
+            $colegiosDisponibles
+        );
+        if ($colegioSeleccionado) {
+            $query->where('colegio_id', $colegioSeleccionado->id);
         }
 
         /*Buscar*/
@@ -144,16 +134,6 @@ class InformeController extends Controller
             });
         }
 
-        /*Colegio*/
-        if (
-            $request->filled('colegio_id') &&
-            in_array($usuario->rol?->nombre, ['ADMIN', 'SUPER ADMIN'])
-        ) {
-            $query->where(
-                'colegio_id',
-                $request->input('colegio_id')
-            );
-        }
         return $query;
     }
 
@@ -165,16 +145,10 @@ class InformeController extends Controller
         $query = $this->consultaAfiliados($request);
         $usuario = auth()->user();
 
-        // Obtener nombre del colegio seleccionado
-        $colegio = null;
-
-        if ($request->filled('colegio_id')) {
-            $colegio = Colegio::find($request->input('colegio_id'));
-        }
-
-        if (!$colegio && $usuario->rol?->nombre === 'USUARIO') {
-            $colegio = $usuario->colegio;
-        }
+        $colegio = $this->colegioSeleccionado(
+            $request,
+            $this->colegiosDisponiblesParaInforme()
+        );
 
         // Obtener nombre de la especialidad seleccionada
         $especialidad = null;
@@ -200,8 +174,10 @@ class InformeController extends Controller
             'anio' => $request->input('year_afiliacion')
                 ?: 'Todos',
 
-            'colegio' => $colegio->nombre
-                ?? 'Todos',
+            'colegio' => $this->nombreColegioReporte(
+                $colegio,
+                'Todos'
+            ),
 
             'especialidad' => $especialidad->nombre
                 ?? 'Todas',
@@ -271,23 +247,10 @@ class InformeController extends Controller
         /*
         * Colegio mostrado en el encabezado.
         */
-        $colegio = null;
-
-        if ($request->filled('colegio_id')) {
-            $colegio = Colegio::find(
-                $request->input('colegio_id')
-            );
-        }
-
-        /*
-        * Si es USUARIO, su reporte pertenece a su colegio.
-        */
-        if (
-            !$colegio &&
-            $usuario->rol?->nombre === 'USUARIO'
-        ) {
-            $colegio = $usuario->colegio;
-        }
+        $colegio = $this->colegioSeleccionado(
+            $request,
+            $this->colegiosDisponiblesParaInforme()
+        );
 
         /*
         * Información del reporte.
@@ -295,7 +258,10 @@ class InformeController extends Controller
         $informacionReporte = [
             'usuario' => $usuario->username,
             'fecha' => now()->format('d/m/Y H:i'),
-            'colegio' => $colegio->nombre ?? 'Todos los colegios',
+            'colegio' => $this->nombreColegioReporte(
+                $colegio,
+                'Todos los colegios'
+            ),
         ];
 
         /*
@@ -363,23 +329,20 @@ class InformeController extends Controller
             },
         ]);
 
-        //Restriccion por colegio para usuario
+        $colegiosDisponibles = $this->colegiosDisponiblesParaInforme();
         if ($usuario->rol?->nombre === 'USUARIO') {
-            $colegio = $usuario->colegio;
+            $query->whereIn(
+                'colegio_id',
+                $colegiosDisponibles->pluck('id')
+            );
+        }
 
-            if (!$colegio) {
-                abort(403);
-            }
-
-            if ($colegio->tipo === 'DEPARTAMENTAL') {
-                $colegiosPermitidos = $colegio->hijos
-                    ->pluck('id')
-                    ->push($colegio->id);
-                
-                $query->whereIn('colegio_id', $colegiosPermitidos);
-            } else {
-                $query->where('colegio_id', $colegio->id);
-            }
+        $colegioSeleccionado = $this->colegioSeleccionado(
+            $request,
+            $colegiosDisponibles
+        );
+        if ($colegioSeleccionado) {
+            $query->where('colegio_id', $colegioSeleccionado->id);
         }
 
         //Busqueda por CI
@@ -388,11 +351,6 @@ class InformeController extends Controller
 
             $query->where('ci', $buscar);
             
-        }
-
-        //Filtro por Colegio
-        if ($request->filled('colegio_id') && in_array($usuario->rol?->nombre, ['ADMIN', 'SUPER ADMIN'])) {
-            $query->where('colegio_id', $request->input('colegio_id'));
         }
 
         if ($year !== null) {
@@ -448,15 +406,8 @@ class InformeController extends Controller
         //Gestion Seleccionada
         $year = $datos['year'] ?? null;
 
-        //Colegios Disponibles
-        $usuario = auth()->user();
-        $colegios = collect();
-
-        if (in_array($usuario->rol?->nombre, ['SUPER ADMIN', 'ADMIN'])) {
-            $colegios = Colegio::where('estado', 'ACTIVO')
-                ->orderBy('nombre')
-                ->get();
-        }
+        //Colegios disponibles para el filtro
+        $colegios = $this->colegiosDisponiblesParaInforme();
 
         //Gestiones disponibles
         $gestiones = Aporte::query()
@@ -514,20 +465,10 @@ class InformeController extends Controller
             ? (int) $request->input('year')
             : null;
 
-        $colegio = null;
-
-        if ($request->filled('colegio_id')) {
-            $colegio = Colegio::find(
-                $request->input('colegio_id')
-            );
-        }
-
-        if (
-            !$colegio &&
-            $usuario->rol?->nombre === 'USUARIO'
-        ) {
-            $colegio = $usuario->colegio;
-        }
+        $colegio = $this->colegioSeleccionado(
+            $request,
+            $this->colegiosDisponiblesParaInforme()
+        );
 
         /*Si se busca por CI*/
 
@@ -544,8 +485,10 @@ class InformeController extends Controller
             'usuario' => $usuario->username,
             'fecha' => now()->format('d/m/Y H:i'),
             'year' => $year ?? 'Todos los años',
-            'colegio' => $colegio->nombre
-                ?? 'Todos los colegios',
+            'colegio' => $this->nombreColegioReporte(
+                $colegio,
+                'Todos los colegios'
+            ),
             'buscar' => $request->filled('buscar')
                 ? $request->input('buscar')
                 : 'Sin búsqueda',
@@ -573,13 +516,10 @@ class InformeController extends Controller
         $year = $request->filled('year')
             ? (int) $request->input('year')
             : null;
-        $colegio = null;
-
-        if ($request->filled('colegio_id')) {
-            $colegio = Colegio::find(
-                $request->input('colegio_id')
-            );
-        }
+        $colegio = $this->colegioSeleccionado(
+            $request,
+            $this->colegiosDisponiblesParaInforme()
+        );
 
          $totalAfiliados = (clone $query)->count();
 
@@ -592,13 +532,6 @@ class InformeController extends Controller
                     "Para informes de más de 1.000 afiliados, " .
                     "utilice la exportación a Excel."
                 );
-        }
-
-        if (
-            !$colegio &&
-            $usuario->rol?->nombre === 'USUARIO'
-        ) {
-            $colegio = $usuario->colegio;
         }
 
         /*Afiliada buscada por CI*/
@@ -624,8 +557,10 @@ class InformeController extends Controller
 
             'year' => $year ?? 'Todos los años',
 
-            'colegio' => $colegio->nombre
-                ?? 'Todos los colegios',
+            'colegio' => $this->nombreColegioReporte(
+                $colegio,
+                'Todos los colegios'
+            ),
 
             'buscar' => $request->filled('buscar')
                 ? $request->input('buscar')
@@ -662,5 +597,84 @@ class InformeController extends Controller
         )->download(
             'informe-aportes.pdf'
         );
+    }
+
+    /**
+     * @return Collection<int, Colegio>
+     */
+    private function colegiosDisponiblesParaInforme(): Collection
+    {
+        $usuario = auth()->user();
+
+        if (in_array($usuario->rol?->nombre, ['ADMIN', 'SUPER ADMIN'])) {
+            return Colegio::where('estado', 'ACTIVO')
+                ->orderBy('nombre')
+                ->get();
+        }
+
+        if ($usuario->rol?->nombre !== 'USUARIO') {
+            abort(403);
+        }
+
+        $colegio = $usuario->colegio;
+        if (!$colegio) {
+            abort(403);
+        }
+
+        if ($colegio->tipo !== 'DEPARTAMENTAL') {
+            return collect([$colegio]);
+        }
+
+        return Colegio::query()
+            ->where('colegio_padre_id', $colegio->id)
+            ->orderBy('nombre')
+            ->get()
+            ->prepend($colegio);
+    }
+
+    /**
+     * @param Collection<int, Colegio> $colegiosDisponibles
+     */
+    private function colegioSeleccionado(
+        Request $request,
+        Collection $colegiosDisponibles
+    ): ?Colegio {
+        if (!$request->filled('colegio_id')) {
+            $usuario = auth()->user();
+
+            return $usuario->rol?->nombre === 'USUARIO'
+                && $usuario->colegio?->tipo !== 'DEPARTAMENTAL'
+                ? $usuario->colegio
+                : null;
+        }
+
+        $datos = $request->validate([
+            'colegio_id' => [
+                'required',
+                'integer',
+                Rule::in($colegiosDisponibles->pluck('id')->all()),
+            ],
+        ]);
+
+        return $colegiosDisponibles->firstWhere(
+            'id',
+            (int) $datos['colegio_id']
+        );
+    }
+
+    private function nombreColegioReporte(
+        ?Colegio $colegio,
+        string $valorTodos
+    ): string {
+        if ($colegio) {
+            return $colegio->nombre;
+        }
+
+        $usuario = auth()->user();
+
+        return $usuario->rol?->nombre === 'USUARIO'
+            && $usuario->colegio?->tipo === 'DEPARTAMENTAL'
+            ? 'Todos mis colegios'
+            : $valorTodos;
     }
 }

@@ -20,6 +20,68 @@ class ReportCompatibilityTest extends TestCase
             ->assertOk();
     }
 
+    public function test_departmental_user_can_filter_affiliate_and_contribution_reports_by_child_college(): void
+    {
+        $parent = $this->createCollege([
+            'nombre' => 'Colegio Padre',
+            'tipo' => 'DEPARTAMENTAL',
+        ]);
+        $child = $this->createCollege([
+            'nombre' => 'Colegio Hijo',
+            'colegio_padre_id' => $parent->id,
+        ]);
+        $sibling = $this->createCollege([
+            'nombre' => 'Colegio Hermano',
+            'colegio_padre_id' => $parent->id,
+        ]);
+        $unrelated = $this->createCollege(['nombre' => 'Colegio Ajeno']);
+        $usuario = $this->createUser('USUARIO', $parent);
+
+        $this->createAffiliate($parent, ['nombres' => 'AfiliadaPadre']);
+        $this->createAffiliate($child, ['nombres' => 'AfiliadaHija']);
+        $this->createAffiliate($sibling, ['nombres' => 'AfiliadaHermana']);
+        $this->createAffiliate($unrelated, ['nombres' => 'AfiliadaAjena']);
+
+        $this->actingAs($usuario)
+            ->get('/reports/afiliados')
+            ->assertOk()
+            ->assertSee('AfiliadaPadre')
+            ->assertSee('AfiliadaHija')
+            ->assertSee('AfiliadaHermana')
+            ->assertDontSee('AfiliadaAjena')
+            ->assertSee('Colegio Hijo');
+
+        $this->get('/reports/aportes')
+            ->assertOk()
+            ->assertSee('AfiliadaPadre')
+            ->assertSee('AfiliadaHija')
+            ->assertSee('AfiliadaHermana')
+            ->assertDontSee('AfiliadaAjena')
+            ->assertSee('Colegio Hijo');
+
+        $this->actingAs($usuario)
+            ->get('/reports/afiliados?colegio_id='.$child->id)
+            ->assertOk()
+            ->assertSee('AfiliadaHija')
+            ->assertDontSee('AfiliadaPadre')
+            ->assertDontSee('AfiliadaHermana')
+            ->assertDontSee('AfiliadaAjena')
+            ->assertDontSee('Colegio Ajeno');
+
+        $this->get('/reports/aportes?colegio_id='.$child->id)
+            ->assertOk()
+            ->assertSee('AfiliadaHija')
+            ->assertDontSee('AfiliadaPadre')
+            ->assertDontSee('AfiliadaHermana')
+            ->assertDontSee('AfiliadaAjena')
+            ->assertDontSee('Colegio Ajeno');
+
+        $this->from('/reports/afiliados')
+            ->get('/reports/afiliados?colegio_id='.$unrelated->id)
+            ->assertRedirect('/reports/afiliados')
+            ->assertSessionHasErrors('colegio_id');
+    }
+
     public function test_affiliate_report_paginates_results_and_keeps_search_filters_in_links(): void
     {
         $college = $this->createCollege();
