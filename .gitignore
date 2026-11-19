@@ -24,5 +24,12 @@ Homestead.yaml
 Thumbs.db
 .phpunit.xml
 .phpstan.neon
-respaldo-binlog/
+
 .env.ensayo
+# Respaldos y registros de bases de datos
+*.sql
+*.sql.gz
+*.dump
+*.bak
+*.binlog
+respaldo-binlog/
