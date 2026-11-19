@@ -15,9 +15,6 @@ use App\Http\Controllers\TransferenciasController;
 use App\Http\Controllers\SaldoHistoricoController;
 use App\Http\Controllers\ObservacionesHistoricasController;
 use App\Http\Controllers\ReportePagosLoteController;
-Route::get('/', function () {
-    return view('welcome');
-});
 
 Route::get('/login', [\App\Http\Controllers\AuthController::class, 'showLogin'])
     ->name('login');

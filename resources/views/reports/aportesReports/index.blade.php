@@ -262,7 +262,7 @@
                                 <tr>
                                     @foreach ($meses as $mes)
                                         <th
-                                            class="sticky top-0 z-10 bg-[#edeef3] px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 shadow-[inset_0_-2px_0_#1a34c9]
+                                            class="sticky top-0 z-10 bg-[#edeef3] px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 shadow-[inset_0_-2px_0_#1a34c9]"
                                         >
                                             {{ substr($mes, 0, 3) }}
                                         </th>
@@ -276,7 +276,7 @@
                                             $aporte = $aportesGestion->get($numeroMes);
                                         @endphp
                                         <td
-                                            class="sticky top-0 z-10 bg-[#edeef3] px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 shadow-[inset_0_-2px_0_#1a34c9]
+                                            class="sticky top-0 z-10 bg-[#edeef3] px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 shadow-[inset_0_-2px_0_#1a34c9]"
                                         >
                                             {{ $aporte ? number_format((float) $aporte->monto, 2) : '—' }}
                                         </td>

@@ -57,3 +57,43 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## API de afiliados (v1)
+
+La API solo permite consultar afiliados activos y devuelve `ci`, `nombres`,
+`apellidos`, `especialidad` (lista de especialidades activas) y `departamento`.
+No devuelve registros académicos que no sean de grado `ESPECIALIDAD`. Las sedes
+regionales usan el departamento de su colegio padre; si no tienen padre, el
+departamento se devuelve como `null`.
+
+Configura una clave secreta en `.env` (no la compartas ni la incluyas en el
+repositorio):
+
+```env
+API_PUBLIC_KEY=pega_aqui_una_clave_aleatoria
+```
+
+En PowerShell puedes generar una clave aleatoria de 256 bits con:
+
+```powershell
+php -r "echo bin2hex(random_bytes(32)), PHP_EOL;"
+```
+
+Luego reinicia el servidor o limpia la configuración cacheada con
+`php artisan config:clear`. La API falla de forma cerrada si no se configura
+`API_PUBLIC_KEY`.
+
+Con el servidor local iniciado con `php artisan serve`, la URL es
+`http://127.0.0.1:8000/api/v1/afiliados`. En Postman o REST Client selecciona
+`GET`, agrega `Accept: application/json` y envía la clave en el encabezado
+`X-API-Key` (no en la URL). Opcionalmente puedes filtrar por CI exacto con
+`?ci=1234567` o cambiar el tamaño de página con `?per_page=10`; el máximo es
+30 resultados por página. Se permiten 30 solicitudes por minuto desde cada IP;
+el exceso devuelve HTTP 429. Las respuestas no se almacenan en caché.
+
+Esta ruta expone números de CI y otros datos personales a cualquier persona que
+obtenga la clave. Para producción, entrega la clave solo a integraciones
+autorizadas, usa HTTPS, restringe el acceso de red cuando sea posible, rota la
+clave si se filtra y configura correctamente las IPs de proxies confiables antes
+de depender de la limitación por IP. Una API key por sí sola no convierte en
+segura la publicación irrestricta de datos personales.

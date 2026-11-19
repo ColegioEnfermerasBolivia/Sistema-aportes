@@ -1,0 +1,36 @@
+name: sistema-aportes-ensayo
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: docker/prod/Dockerfile
+      target: web
+    ports:
+      - "8080:80"
+    depends_on:
+      - app
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/prod/Dockerfile
+      target: app
+    env_file: .env.ensayo
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mysql:8.4
+    env_file: .env.ensayo
+    volumes:
+      - ensayo_mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  ensayo_mysql:

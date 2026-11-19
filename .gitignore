@@ -25,3 +25,4 @@ Thumbs.db
 .phpunit.xml
 .phpstan.neon
 respaldo-binlog/
+.env.ensayo
