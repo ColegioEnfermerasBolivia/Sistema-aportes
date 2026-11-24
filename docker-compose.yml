@@ -1,56 +1,28 @@
-services:
+name: sistema-aportes-limpio
 
+services:
   app:
     build:
       context: .
       dockerfile: docker/php/Dockerfile
-    container_name: sistema-aportes-app
+    container_name: sistema-aportes-limpio-app
     working_dir: /var/www/html
     volumes:
       - ./:/var/www/html
       - vendor:/var/www/html/vendor
       - framework_cache:/var/www/html/storage/framework
     ports:
-      - "8000:8000"
+      - "8001:8000"
     command: sh -c "[ -f vendor/autoload.php ] || composer install; php artisan serve --host=0.0.0.0 --port=8000"
-    depends_on:
-      - mysql
-
-  mysql:
-    image: mysql:8.4
-    container_name: sistema-aportes-mysql
+    networks:
+      - app_network
     restart: unless-stopped
-    environment:
-      MYSQL_DATABASE: sistema_aportes
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_USER: sistema
-      MYSQL_PASSWORD: sistema
-    ports:
-      - "3306:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
 
-  mysql-testing:
-    image: mysql:8.4
-    container_name: sistema-aportes-mysql-testing
-    profiles:
-      - testing
-    environment:
-      MYSQL_DATABASE: sistema_aportes_testing
-      MYSQL_USER: sistema_test
-      MYSQL_PASSWORD: testing-only
-      MYSQL_ROOT_PASSWORD: testing-root-only
-    ports:
-      - "127.0.0.1:3307:3306"
-    tmpfs:
-      - /var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-ptesting-root-only"]
-      interval: 3s
-      timeout: 5s
-      retries: 20
+networks:
+  app_network:
+    external: true
+    name: sistema-aportes_default
 
 volumes:
-  mysql_data:
   vendor:
   framework_cache:

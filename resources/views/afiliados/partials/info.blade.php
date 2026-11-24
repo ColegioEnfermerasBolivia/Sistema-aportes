@@ -690,7 +690,7 @@
                         type="button"
                         @click="laboralModal = false"
                         class="text-3xl font-light text-gray-500
-                               hover:text-gray-800"
+                               hover:text-gray-800 hover:cursor-pointer"
                     >
                         <x-icon name="x" class="text-gray-500" size="30"/>
                     </button>
@@ -882,7 +882,7 @@
                                        hover:bg-[#1429a3]
                                        hover:cursor-pointer"
                             >
-                                <x-icon name="register" class="text-blue-700" size="30"/>
+                                <x-icon name="register" class="text-white" size="30"/>
 
                                 <span x-show="modoLaboral === 'crear'">
                                     Registrar
@@ -952,7 +952,7 @@
                         type="button"
                         @click="academicaModal = false"
                         class="text-3xl font-light text-gray-500
-                               hover:text-gray-800 inline-flex items-center gap-1.5"
+                               hover:text-gray-800 inline-flex items-center gap-1.5 hover:cursor-pointer"
                     >
                         <x-icon name="x" class="text-gray-500" size="30"/>
                     </button>
@@ -1187,7 +1187,8 @@
                                        text-white
                                        hover:bg-[#1429a3]
                                        hover:cursor-pointer"
-                            >
+                            > 
+                                <x-icon name="register" class="text-white" size="30"/>
                                 <span
                                     x-text="modoAcademica === 'crear'
                                             ? 'Registrar'

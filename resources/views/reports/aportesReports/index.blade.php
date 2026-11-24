@@ -1,7 +1,5 @@
 @extends('layouts.app')
-
 @section('title', 'Informes de Aportes')
-
 @section('content')
 
 <div class="min-h-screen px-6 py-8 lg:px-12">
@@ -262,7 +260,7 @@
                                 <tr>
                                     @foreach ($meses as $mes)
                                         <th
-                                            class="sticky top-0 z-10 bg-[#edeef3] px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 shadow-[inset_0_-2px_0_#1a34c9]
+                                            class="sticky top-0 z-10 bg-[#edeef3] px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 shadow-[inset_0_-2px_0_#1a34c9]"
                                         >
                                             {{ substr($mes, 0, 3) }}
                                         </th>
@@ -276,7 +274,7 @@
                                             $aporte = $aportesGestion->get($numeroMes);
                                         @endphp
                                         <td
-                                            class="sticky top-0 z-10 bg-[#edeef3] px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 shadow-[inset_0_-2px_0_#1a34c9]
+                                            class="sticky top-0 z-10 bg-[#edeef3] px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 shadow-[inset_0_-2px_0_#1a34c9]"
                                         >
                                             {{ $aporte ? number_format((float) $aporte->monto, 2) : '—' }}
                                         </td>
@@ -305,9 +303,9 @@
                         </p>
                     </div>
                 @else
-                    <div class="rounded-xl border border-gray-200">
-                        <table class="max-h-[60vh] overflow-x-auto">
-                            <thead class="text-xs uppercase text-[#1a34c9]">
+                    <div class="rounded-xl border border-gray-200 max-h-[60vh] overflow-auto">
+                        <table class="w-full text-left">
+                            <thead class="text-xs uppercase bg-[#1a34c9]">
                                 <tr>
                                     <th class="sticky top-0 z-10 border border-gray-300 px-4 py-3 text-center text-xs font-semibold text-white">
                                         Gestión
@@ -359,7 +357,7 @@
                 </p>
             </div>
 
-            <div class="max-h-[55vh] overflow-y-auto">
+            <div class="max-h-[55vh] overflow-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="sticky top-0 bg-gray-50">
                         <tr class="bg-blue-700">

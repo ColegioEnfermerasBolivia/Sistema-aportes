@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * @property int $mes
@@ -72,5 +73,11 @@ class Aporte extends Model
     public function verificadoPor(): BelongsTo
     {
         return $this->belongsTo(Usuario::class, 'verificado_por');
+    }
+
+    /** @return HasOne<DevengadoPeriodo, $this> */
+    public function devengadoPeriodo(): HasOne
+    {
+        return $this->hasOne(DevengadoPeriodo::class, 'aporte_id');
     }
 }

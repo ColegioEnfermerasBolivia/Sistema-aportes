@@ -12,6 +12,7 @@ use App\Models\TransferenciaAfiliado;
 use App\Services\AuditoriaService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
@@ -72,24 +73,7 @@ class AfiliadoController extends Controller
                 $request->input('buscar')
             );
 
-            $query->where(function ($q) use ($buscar) {
-
-                $q->where(
-                    'ci',
-                    'like',
-                    "%{$buscar}%"
-                )
-                    ->orWhere(
-                        'nombres',
-                        'like',
-                        "%{$buscar}%"
-                    )
-                    ->orWhere(
-                        'apellidos',
-                        'like',
-                        "%{$buscar}%"
-                    );
-            });
+            $query->buscarPorTerminos($buscar);
         }
 
         if (
@@ -201,6 +185,8 @@ class AfiliadoController extends Controller
             'fecha_afiliacion' => [
                 'required',
                 'date',
+                'after_or_equal:1900-01-01',
+                'before_or_equal:today',
             ],
 
             'observacion' => [
@@ -392,6 +378,8 @@ class AfiliadoController extends Controller
             'fecha_afiliacion' => [
                 'required',
                 'date',
+                'after_or_equal:1900-01-01',
+                'before_or_equal:today',
             ],
 
             'observacion' => [
@@ -641,14 +629,29 @@ class AfiliadoController extends Controller
     public function buscarPorCi(Request $request)
     {
         $datos = $request->validate([
-            'ci' => ['required', 'string', 'max:50'],
+            'buscar' => [
+                'required_without_all:ci,afiliado_id',
+                'nullable',
+                'string',
+                'max:100',
+            ],
+            'ci' => [
+                'required_without_all:buscar,afiliado_id',
+                'nullable',
+                'string',
+                'max:50',
+            ],
+            'afiliado_id' => [
+                'required_without_all:buscar,ci',
+                'nullable',
+                'integer',
+                'exists:afiliados,id',
+            ],
         ]);
 
         $usuario = auth()->user();
-        $query = Afiliado::query()
-            ->where('ci', trim($datos['ci']));
+        $consulta = Afiliado::query();
 
-        /* Restricción por colegio para usuarios USUARIO */
         if ($usuario->rol?->nombre === 'USUARIO') {
             $colegio = $usuario->colegio;
 
@@ -663,19 +666,69 @@ class AfiliadoController extends Controller
                     ->pluck('id')
                     ->push($colegio->id);
 
-                $query->whereIn('colegio_id', $colegiosPermitidos);
+                $consulta->whereIn('colegio_id', $colegiosPermitidos);
             } else {
-                $query->where('colegio_id', $colegio->id);
+                $consulta->where('colegio_id', $colegio->id);
             }
         }
 
-        $afiliado = $query->first();
-        if (! $afiliado) {
+        if (! empty($datos['afiliado_id'])) {
+            $afiliados = $consulta
+                ->whereKey($datos['afiliado_id'])
+                ->get();
+        } else {
+            $termino = trim($datos['buscar'] ?? $datos['ci']);
+            $ciNormalizado = Afiliado::normalizarIdentificador($termino);
+            $afiliadoPorCi = (clone $consulta)
+                ->where('ci', $ciNormalizado)
+                ->first();
+
+            if ($afiliadoPorCi) {
+                $afiliados = collect([$afiliadoPorCi]);
+            } else {
+                $afiliados = $consulta
+                    ->buscarPorTerminos($termino)
+                    ->orderBy('apellidos')
+                    ->orderBy('nombres')
+                    ->limit(26)
+                    ->get();
+            }
+        }
+
+        if ($afiliados->isEmpty()) {
             return response()->json([
-                'message' => 'No se encontró ningún afiliado con ese CI.',
+                'message' => 'No se encontró ninguna afiliada con esos datos.',
             ], 404);
         }
 
+        if ($afiliados->count() > 1) {
+            return response()->json([
+                'ambigua' => true,
+                'hay_mas_resultados' => $afiliados->count() > 25,
+                'resultados' => $afiliados
+                    ->take(25)
+                    ->map(fn (Afiliado $afiliado): array => [
+                        'id' => $afiliado->id,
+                        'ci' => $afiliado->ci,
+                        'nombres' => $afiliado->nombres,
+                        'apellidos' => $afiliado->apellidos,
+                        'estado' => $afiliado->estado,
+                    ])
+                    ->values(),
+            ]);
+        }
+
+        $afiliado = $afiliados->first();
+
+        if (! $afiliado instanceof Afiliado) {
+            abort(404);
+        }
+
+        return $this->datosAfiliadoParaPago($afiliado);
+    }
+
+    private function datosAfiliadoParaPago(Afiliado $afiliado): JsonResponse
+    {
         /* Último aporte verificado */
         $ultimoAporte = Aporte::query()
             ->where('afiliado_id', $afiliado->id)
@@ -701,6 +754,12 @@ class AfiliadoController extends Controller
             'nombres' => $afiliado->nombres,
             'apellidos' => $afiliado->apellidos,
             'estado' => $afiliado->estado,
+            'campos_faltantes_pago' => array_values(
+                $afiliado->camposFaltantesParaPago()
+            ),
+            'campos_incompletos' => array_values(
+                $afiliado->camposIncompletos()
+            ),
             'saldo_disponible' => number_format(
                 (float) $saldoDisponible,
                 2,

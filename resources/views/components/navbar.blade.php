@@ -77,10 +77,10 @@
         {{-- Aportes --}}
         <details
             class="group"
-            {{ request()->routeIs('aportes.*', 'lotes.*') ? 'open' : '' }}
+            {{ request()->routeIs('aportes.*', 'lotes.*', 'devengados.*') ? 'open' : '' }}
         >
             <summary
-                class="{{ request()->routeIs('aportes.*', 'lotes.*')
+                class="{{ request()->routeIs('aportes.*', 'lotes.*', 'devengados.*')
                     ? 'bg-[#1a34c9] text-white font-semibold shadow-[0_6px_16px_rgba(26,52,201,0.35)]'
                     : 'text-[#2b2b2b] hover:bg-[#f7f7f9]'
                 }} flex cursor-pointer list-none items-center gap-3.5 rounded-xl px-4.5 py-3.5 text-[15px] font-medium transition"
@@ -126,6 +126,19 @@
                         <x-icon name="lote" size="35"/>
                     </span>
                     Ver lotes activos
+                </a>
+
+                <a
+                    href="{{ route('devengados.index') }}"
+                    class="{{ request()->routeIs('devengados.*')
+                        ? 'font-semibold text-[#1a34c9]'
+                        : 'text-[#555] hover:text-[#1a34c9]'
+                    }} rounded-lg px-3 py-2 text-sm no-underline transition flex gap-1.5"
+                >
+                    <span class="flex h-5 w-5 shrink-0 items-center justify-center text-base">
+                        <x-icon name="money" size="35"/>
+                    </span>
+                    Aportes a regularizar
                 </a>
 
                 {{-- Ver Historial de lotes --}}

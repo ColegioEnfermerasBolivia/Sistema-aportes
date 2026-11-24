@@ -36,16 +36,39 @@
 
         {{-- Botón registrar pago --}}
         @if (in_array(auth()->user()->rol?->nombre, ['ADMIN', 'USUARIO']))
-            <button
-                type="button"
-                @click="abrirModalPago()"
-                class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#1a34c9] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1429a3] focus:outline-none focus:ring-2 focus:ring-[#1a34c9]/30 hover:cursor-pointer"
-            >
-                <span class="text-lg leading-none">
-                    <x-icon name="cashRegister" class="text-white" size="20"/>
-                </span>
-                Registrar pago
-            </button>
+            <div class="flex flex-wrap items-center gap-3">
+                <button
+                    type="button"
+                    @click="abrirModalPago()"
+                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#1a34c9] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1429a3] focus:outline-none focus:ring-2 focus:ring-[#1a34c9]/30 hover:cursor-pointer"
+                >
+                    <span class="text-lg leading-none">
+                        <x-icon name="cashRegister" class="text-white" size="20"/>
+                    </span>
+                    Registrar pago
+                </button>
+                @if (auth()->user()->rol?->nombre === 'USUARIO')
+                    <x-modal titulo="Agregar pago devengado" ancho="max-w-6xl" @cerrar-modal-devengado.window="abierto = false">
+                        <x-slot:trigger>
+                            <button
+                                type="button"
+                                class="inline-flex items-center justify-center gap-2 rounded-xl border border-[#1a34c9] bg-white px-5 py-3 text-sm font-semibold text-[#1a34c9] shadow-sm transition hover:bg-blue-50 hover:cursor-pointer"
+                            >
+                                <x-icon name="cashRegister" class="text-[#1a34c9]" size="20"/>
+                                Agregar pago devengado
+                            </button>
+                        </x-slot:trigger>
+                        @include('devengados.pagos.form', [
+                            'modoEdicion' => false,
+                            'gestiones' => [],
+                            'seleccionados' => [],
+                            'lotesDisponibles' => [],
+                            'afiliada' => null,
+                            'pago' => null,
+                        ])
+                    </x-modal>
+                @endif
+            </div>
         @endif
     </div>
 
@@ -72,7 +95,7 @@
                         id="buscar"
                         name="buscar"
                         value="{{ request('buscar') }}"
-                        placeholder="CI, nombres o apellidos..."
+                        placeholder="CI, nombre o apellido (en cualquier orden)"
                         class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#1a34c9] focus:ring-2 focus:ring-[#1a34c9]/10"
                     >
                 </div>
