@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Aporte;
 use App\Models\Afiliado;
 use App\Models\Colegio;
+use App\Models\DevengadoLote;
 use App\Models\LoteVerificacion;
 use App\Models\Pago;
 use App\Services\AuditoriaService;
@@ -56,10 +57,20 @@ class LoteVerificacionController extends Controller
                 ->orderByDesc('id')
                 ->get();
 
+            $devengadoLotes = DevengadoLote::with('colegio')
+                ->whereIn('colegio_id', $colegiosDisponibles->modelKeys())
+                ->whereIn('estado', ['ABIERTO', 'ENVIADO', 'EN_VERIFICACION'])
+                ->withCount('pagos')
+                ->orderByDesc('year')
+                ->orderByDesc('mes')
+                ->orderByDesc('id')
+                ->get();
+
             $tieneLoteAbierto = $lotesActuales->contains('estado', 'ABIERTO');
 
             return view('aportes.lotes.index', compact(
                 'lotesActuales',
+                'devengadoLotes',
                 'colegiosDisponibles',
                 'tieneLoteAbierto'
             ));
@@ -85,7 +96,15 @@ class LoteVerificacionController extends Controller
             ->orderByDesc('id')
             ->paginate(10);
 
-        return view('aportes.lotes.index', compact('lotes'));
+        $devengadoLotes = DevengadoLote::with('colegio')
+            ->whereIn('estado', ['ABIERTO', 'ENVIADO', 'EN_VERIFICACION'])
+            ->withCount('pagos')
+            ->orderByDesc('year')
+            ->orderByDesc('mes')
+            ->orderByDesc('id')
+            ->paginate(10, ['*'], 'devengados_page');
+
+        return view('aportes.lotes.index', compact('lotes', 'devengadoLotes'));
     }
 
     public function historial(Request $request)
@@ -121,11 +140,34 @@ class LoteVerificacionController extends Controller
             $consulta->whereIn('colegio_id', $colegiosPermitidos->modelKeys());
         }
 
+        $consultaDevengados = DevengadoLote::with('colegio')
+            ->withCount([
+                'pagos as pagos_count' => fn ($query) => $query
+                    ->where('estado', 'VERIFICADO'),
+            ])
+            ->withSum([
+                'pagos as monto_total' => fn ($query) => $query
+                    ->where('estado', 'VERIFICADO'),
+            ], 'monto_total')
+            ->where('estado', 'VERIFICADO');
+
+        if ($usuario->rol?->nombre === 'USUARIO') {
+            $consultaDevengados->whereIn(
+                'colegio_id',
+                $this->colegiosPermitidosParaUsuario($usuario->colegio)->modelKeys()
+            );
+        }
+
         /*BUSQUEDA POR CODIGO DE LOTE */
         if (!empty($datos['buscar'])) {
             $buscar = trim($datos['buscar']);
 
             $consulta->where(
+                'codigo_lote',
+                'like',
+                "%{$buscar}%"
+            );
+            $consultaDevengados->where(
                 'codigo_lote',
                 'like',
                 "%{$buscar}%"
@@ -136,6 +178,7 @@ class LoteVerificacionController extends Controller
 
         if (in_array($usuario->rol?->nombre, ['ADMIN', 'SUPER ADMIN']) && !empty($datos['colegio_id'])) {
             $consulta->where('colegio_id', $datos['colegio_id']);
+            $consultaDevengados->where('colegio_id', $datos['colegio_id']);
         }
 
         $lotes = $consulta
@@ -143,6 +186,11 @@ class LoteVerificacionController extends Controller
             ->orderByDesc('mes')
             ->orderByDesc('id')
             ->paginate(10);
+        $devengadoLotes = $consultaDevengados
+            ->orderByDesc('year')
+            ->orderByDesc('mes')
+            ->orderByDesc('id')
+            ->paginate(10, ['*'], 'devengados_page');
 
         $colegios = collect();
 
@@ -152,7 +200,11 @@ class LoteVerificacionController extends Controller
                 ->get();
         }
 
-        return view('aportes.lotes.historial', compact('lotes', 'colegios'));
+        return view('aportes.lotes.historial', compact(
+            'lotes',
+            'devengadoLotes',
+            'colegios'
+        ));
     }
 
     public function create()
@@ -242,42 +294,57 @@ class LoteVerificacionController extends Controller
                 ->withInput();
         }
 
-        $codigoLote = $colegio->codigo
-            . '-'
-            . $year
-            . '-'
-            . str_pad((string) $mes, 2, '0', STR_PAD_LEFT);
-
         try {
-            $lote = LoteVerificacion::create([
-                'colegio_id' => $colegio->id,
-                'mes' => $mes,
-                'year' => $year,
-                'codigo_lote' => $codigoLote,
-                'cantidad_aportes' => 0,
-                'monto_total' => 0,
-                'estado' => 'ABIERTO',
-            ]);
+            $lote = DB::transaction(function () use (
+                $colegio,
+                $usuario,
+                $year,
+                $mes
+            ): LoteVerificacion {
+                Colegio::query()
+                    ->whereKey($colegio->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
-            //Auditoria
-            $this->auditoria->registrar(
-                $usuario->id,
-                'CREAR',
-                'lotes_verificacion',
-                $lote->id,
-                null,
-                [
-                    'colegio_id' => $lote->colegio_id,
-                    'mes' => $lote->mes,
-                    'year' => $lote->year,
-                    'codigo_lote' => $lote->codigo_lote,
-                    'cantidad_aportes' => $lote->cantidad_aportes,
-                    'monto_total' => $lote->monto_total,
-                    'estado' => $lote->estado,
-                ]
-            );
+                $codigoLote = $colegio->codigo
+                    . '-'
+                    . $year
+                    . '-'
+                    . str_pad((string) $mes, 2, '0', STR_PAD_LEFT);
+                $lote = LoteVerificacion::create([
+                    'colegio_id' => $colegio->id,
+                    'mes' => $mes,
+                    'year' => $year,
+                    'codigo_lote' => $codigoLote,
+                    'cantidad_aportes' => 0,
+                    'monto_total' => 0,
+                    'estado' => 'ABIERTO',
+                ]);
 
+                $this->auditoria->registrar(
+                    $usuario->id,
+                    'CREAR',
+                    'lotes_verificacion',
+                    $lote->id,
+                    null,
+                    [
+                        'colegio_id' => $lote->colegio_id,
+                        'mes' => $lote->mes,
+                        'year' => $lote->year,
+                        'codigo_lote' => $lote->codigo_lote,
+                        'cantidad_aportes' => $lote->cantidad_aportes,
+                        'monto_total' => $lote->monto_total,
+                        'estado' => $lote->estado,
+                    ]
+                );
+
+                return $lote;
+            });
         } catch (\Illuminate\Database\QueryException $e) {
+            if ((int) ($e->errorInfo[1] ?? 0) !== 1062) {
+                throw $e;
+            }
+
             return back()
                 ->withErrors([
                     'lote' => 'Ya existe un lote para ese colegio, mes y año.',

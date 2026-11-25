@@ -20,18 +20,20 @@
                         Administre los lotes de su colegio y de sus colegios hijos.
                     </p>
                 </div>
-                <x-modal titulo="Crear lote de aportes" ancho="max-w-xl">
-                    <x-slot:trigger>
-                        <button
-                            type="button"
-                            class="rounded-lg bg-[#1a34c9] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1428a0] hover:cursor-pointer inline-flex items-center gap-1.5"
-                        >
-                            <x-icon name="register" class="text-white" size="20"/>
-                            Crear lote
-                        </button>
-                    </x-slot:trigger>
-                    @include('aportes.lotes.partials.lote-crear')
-                </x-modal>
+                <div class="flex flex-wrap gap-3">
+                    <x-modal titulo="Crear lote de aportes" ancho="max-w-xl">
+                        <x-slot:trigger>
+                            <button
+                                type="button"
+                                class="rounded-lg bg-[#1a34c9] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1428a0] hover:cursor-pointer inline-flex items-center gap-1.5"
+                            >
+                                <x-icon name="register" class="text-white" size="20"/>
+                                Crear lote
+                            </button>
+                        </x-slot:trigger>
+                        @include('aportes.lotes.partials.lote-crear')
+                    </x-modal>
+                </div>
             </div>
 
 
@@ -191,10 +193,10 @@
                         </div>
 
                         <h2 class="mt-5 text-xl font-semibold text-gray-900">
-                            No tienes un lote activo
+                            No tienes un lote ordinario activo
                         </h2>
                         <p class="mt-2 text-sm leading-6 text-gray-500">
-                            Puedes crear un nuevo lote para registrar los pagos
+                            Puedes crear un lote ordinario para registrar los pagos
                             correspondientes a tu colegio o a sus colegios hijos.
                         </p>
                     </div>

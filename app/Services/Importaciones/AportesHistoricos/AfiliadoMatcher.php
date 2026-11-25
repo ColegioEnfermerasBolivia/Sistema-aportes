@@ -7,42 +7,9 @@ use Illuminate\Support\Str;
 
 class AfiliadoMatcher
 {
-    /**
-     * Índice de afiliadas por nombre completo normalizado.
-     *
-     * [
-     *     'QUISPE USMAYO LIDIA FIDELA' => [
-     *         Afiliado,
-     *     ],
-     * ]
-     */
-    private array $indiceAfiliados = [];
+    private array $indicePalabras = [];
 
-    /**
-     * Índice por posición y palabra exacta.
-     *
-     * [
-     *     0 => [
-     *         'QUISPE' => [
-     *             1809 => Afiliado,
-     *         ],
-     *     ],
-     * ]
-     */
-    private array $indicePalabrasPorPosicion = [];
-
-    /**
-     * Índice por posición e inicial.
-     *
-     * [
-     *     0 => [
-     *         'Q' => [
-     *             1809 => Afiliado,
-     *         ],
-     *     ],
-     * ]
-     */
-    private array $indiceInicialesPorPosicion = [];
+    private array $indiceIniciales = [];
 
     /**
      * Partes normalizadas del nombre de cada afiliada.
@@ -82,17 +49,13 @@ class AfiliadoMatcher
             ];
         }
 
-        /*
-         * ---------------------------------------------------------
-         * 1. COINCIDENCIA EXACTA
-         * ---------------------------------------------------------
-         */
-
-        $afiliadosEncontrados =
-            $this->indiceAfiliados[$nombreNormalizado] ?? [];
+        $afiliadosEncontrados = $this->buscarCoincidenciasPorAbreviacion(
+            $nombreNormalizado
+        );
 
         /*
-         * Más de una afiliada con exactamente el mismo nombre.
+         * Más de una afiliada es una coincidencia ambigua, sin importar
+         * si las palabras llegaron en orden distinto o con iniciales.
          */
         if (count($afiliadosEncontrados) > 1) {
             return [
@@ -103,60 +66,27 @@ class AfiliadoMatcher
             ];
         }
 
-        /*
-         * Encontramos exactamente una afiliada.
-         */
         if (count($afiliadosEncontrados) === 1) {
+            $afiliado = $afiliadosEncontrados[0];
+            $partesAfiliado =
+                $this->partesNombrePorAfiliado[$afiliado->id] ?? [];
+            $partesCsv = $this->obtenerPartesNombre($nombreNormalizado);
+
             return [
-                'estado' => 'ENCONTRADA',
-                'afiliado' => $afiliadosEncontrados[0],
+                'estado' => count($partesCsv) === count($partesAfiliado)
+                    && $this->coincidenPartesExactas($partesCsv, $partesAfiliado)
+                        ? 'ENCONTRADA'
+                        : 'ENCONTRADA_POR_ABREVIACION',
+                'afiliado' => $afiliado,
                 'afiliados' => $afiliadosEncontrados,
                 'nombre_normalizado' => $nombreNormalizado,
             ];
         }
 
-        /*
-         * ---------------------------------------------------------
-         * 2. COINCIDENCIA POR ABREVIACIÓN
-         * ---------------------------------------------------------
-         */
-
-        $afiliadosAbreviados =
-            $this->buscarCoincidenciasPorAbreviacion(
-                $nombreNormalizado
-            );
-
-        /*
-         * No encontramos ninguna coincidencia.
-         */
-        if (count($afiliadosAbreviados) === 0) {
-            return [
-                'estado' => 'NO_ENCONTRADA',
-                'afiliado' => null,
-                'afiliados' => [],
-                'nombre_normalizado' => $nombreNormalizado,
-            ];
-        }
-
-        /*
-         * Más de una posible afiliada.
-         */
-        if (count($afiliadosAbreviados) > 1) {
-            return [
-                'estado' => 'AMBIGUA',
-                'afiliado' => null,
-                'afiliados' => $afiliadosAbreviados,
-                'nombre_normalizado' => $nombreNormalizado,
-            ];
-        }
-
-        /*
-         * Encontramos exactamente una por abreviación.
-         */
         return [
-            'estado' => 'ENCONTRADA_POR_ABREVIACION',
-            'afiliado' => $afiliadosAbreviados[0],
-            'afiliados' => $afiliadosAbreviados,
+            'estado' => 'NO_ENCONTRADA',
+            'afiliado' => null,
+            'afiliados' => [],
             'nombre_normalizado' => $nombreNormalizado,
         ];
     }
@@ -165,22 +95,8 @@ class AfiliadoMatcher
      * Busca coincidencias por abreviación utilizando
      * los índices previamente construidos.
      *
-     * La diferencia importante respecto a la versión anterior
-     * es que aquí INTERSECTAMOS los candidatos de cada posición.
-     *
-     * Ejemplo:
-     *
-     * CSV:
-     * QUISPE USMAYO LIDIA F
-     *
-     * Se buscan candidatos que cumplan simultáneamente:
-     *
-     * posición 0 -> QUISPE
-     * posición 1 -> USMAYO
-     * posición 2 -> LIDIA
-     * posición 3 -> F*
-     *
-     * En lugar de recorrer todas las afiliadas.
+     * Cada término debe coincidir con una palabra distinta del nombre,
+     * pero no depende del orden en el que aparezca en el archivo.
      */
     private function buscarCoincidenciasPorAbreviacion(
         string $nombreCsv
@@ -194,48 +110,46 @@ class AfiliadoMatcher
 
         /*
          * Aquí guardaremos los candidatos que cumplen
-         * TODAS las posiciones.
+         * TODOS los términos.
          */
         $candidatos = null;
 
-        foreach ($partesCsv as $posicion => $parteCsv) {
+        foreach ($partesCsv as $parteCsv) {
 
             /*
-             * Una inicial solamente puede coincidir
-             * con la inicial de la palabra correspondiente.
+             * Una inicial puede coincidir con la inicial de cualquier palabra.
              */
             if (mb_strlen($parteCsv, 'UTF-8') === 1) {
 
-                $coincidenciasPosicion =
-                    $this->indiceInicialesPorPosicion[$posicion][$parteCsv]
+                $coincidenciasTermino =
+                    $this->indiceIniciales[$parteCsv]
                     ?? [];
 
             } else {
 
                 /*
-                 * Una palabra completa debe coincidir
-                 * exactamente con la palabra de esa posición.
+                 * Una palabra completa debe coincidir exactamente.
                  */
-                $coincidenciasPosicion =
-                    $this->indicePalabrasPorPosicion[$posicion][$parteCsv]
+                $coincidenciasTermino =
+                    $this->indicePalabras[$parteCsv]
                     ?? [];
             }
 
             /*
-             * Si una sola posición no tiene candidatos,
+             * Si un solo término no tiene candidatos,
              * no existe ninguna coincidencia posible.
              */
-            if (count($coincidenciasPosicion) === 0) {
+            if (count($coincidenciasTermino) === 0) {
                 return [];
             }
 
             /*
-             * Primera posición:
+             * Primer término:
              * copiamos todos sus candidatos.
              */
             if ($candidatos === null) {
 
-                $candidatos = $coincidenciasPosicion;
+                $candidatos = $coincidenciasTermino;
 
                 continue;
             }
@@ -244,11 +158,11 @@ class AfiliadoMatcher
              * INTERSECCIÓN REAL.
              *
              * Conservamos únicamente los IDs que también
-             * aparecen en esta posición.
+             * aparecen con este término.
              */
             $candidatos = array_intersect_key(
                 $candidatos,
-                $coincidenciasPosicion
+                $coincidenciasTermino
             );
 
             /*
@@ -264,14 +178,6 @@ class AfiliadoMatcher
             return [];
         }
 
-        /*
-         * Verificación final.
-         *
-         * Esto mantiene la regla original:
-         *
-         * - palabra exacta = válida
-         * - una sola letra al inicio = abreviación válida
-         */
         $coincidencias = [];
 
         foreach ($candidatos as $afiliadoId => $afiliado) {
@@ -294,16 +200,8 @@ class AfiliadoMatcher
     }
 
     /**
-     * Determina si un nombre del CSV puede corresponder
-     * al nombre completo registrado en BD mediante abreviaciones.
-     *
-     * Ejemplo válido:
-     *
-     * CSV:
-     * QUISPE USMAYO LIDIA F
-     *
-     * BD:
-     * QUISPE USMAYO LIDIA FIDELA
+     * Determina si todas las palabras del CSV pueden asignarse a palabras
+     * distintas del nombre registrado, aceptando iniciales.
      */
     private function esNombreCompatiblePorAbreviacion(
         array $partesCsv,
@@ -317,54 +215,70 @@ class AfiliadoMatcher
             return false;
         }
 
-        /*
-         * El CSV no puede tener más palabras que la BD.
-         */
         if (count($partesCsv) > count($partesBd)) {
             return false;
         }
 
-        /*
-         * Comparamos posición por posición.
-         */
-        foreach ($partesCsv as $i => $parteCsv) {
+        return $this->asignarPartesNombre(
+            $partesCsv,
+            $partesBd,
+            0,
+            []
+        );
+    }
 
-            $parteBd = $partesBd[$i] ?? null;
-
-            if ($parteBd === null) {
-                return false;
-            }
-
-            /*
-             * Coincidencia exacta.
-             */
-            if ($parteCsv === $parteBd) {
-                continue;
-            }
-
-            /*
-             * Una inicial puede representar
-             * el comienzo de una palabra completa.
-             *
-             * F -> FIDELA
-             */
-            if (
-                mb_strlen($parteCsv, 'UTF-8') === 1
-                && str_starts_with(
-                    $parteBd,
-                    $parteCsv
-                )
-            ) {
-                continue;
-            }
-
-            /*
-             * No son compatibles.
-             */
-            return false;
+    private function asignarPartesNombre(
+        array $partesCsv,
+        array $partesBd,
+        int $indice,
+        array $usadas
+    ): bool {
+        if ($indice === count($partesCsv)) {
+            return true;
         }
 
-        return true;
+        $parteCsv = $partesCsv[$indice];
+
+        foreach ($partesBd as $indiceBd => $parteBd) {
+            if (isset($usadas[$indiceBd])) {
+                continue;
+            }
+
+            $coincide = $parteCsv === $parteBd
+                || (
+                    mb_strlen($parteCsv, 'UTF-8') === 1
+                    && str_starts_with($parteBd, $parteCsv)
+                );
+
+            if (!$coincide) {
+                continue;
+            }
+
+            $usadas[$indiceBd] = true;
+
+            if ($this->asignarPartesNombre(
+                $partesCsv,
+                $partesBd,
+                $indice + 1,
+                $usadas
+            )) {
+                return true;
+            }
+
+            unset($usadas[$indiceBd]);
+        }
+
+        return false;
+    }
+
+    private function coincidenPartesExactas(
+        array $partesCsv,
+        array $partesAfiliado
+    ): bool {
+        sort($partesCsv);
+        sort($partesAfiliado);
+
+        return $partesCsv === $partesAfiliado;
     }
 
     /**
@@ -434,54 +348,11 @@ class AfiliadoMatcher
             $this->partesNombrePorAfiliado[$afiliado->id] =
                 $partesNombre;
 
-            /*
-             * Índice exacto por nombre completo.
-             */
-            $this->indiceAfiliados[
-                $nombreNormalizado
-            ][] = $afiliado;
-        }
+            foreach ($partesNombre as $parteNombre) {
+                $this->indicePalabras[$parteNombre][$afiliado->id] = $afiliado;
 
-        /*
-         * Construimos los índices secundarios.
-         */
-        foreach ($this->indiceAfiliados as $afiliados) {
-
-            foreach ($afiliados as $afiliado) {
-
-                $afiliadoId = $afiliado->id;
-
-                $partesNombre =
-                    $this->partesNombrePorAfiliado[$afiliadoId]
-                    ?? [];
-
-                foreach (
-                    $partesNombre as $posicion => $parteNombre
-                ) {
-
-                    /*
-                     * Índice de palabra completa.
-                     */
-                    $this->indicePalabrasPorPosicion
-                        [$posicion]
-                        [$parteNombre]
-                        [$afiliadoId] = $afiliado;
-
-                    /*
-                     * Índice de inicial.
-                     */
-                    $inicial = mb_substr(
-                        $parteNombre,
-                        0,
-                        1,
-                        'UTF-8'
-                    );
-
-                    $this->indiceInicialesPorPosicion
-                        [$posicion]
-                        [$inicial]
-                        [$afiliadoId] = $afiliado;
-                }
+                $inicial = mb_substr($parteNombre, 0, 1, 'UTF-8');
+                $this->indiceIniciales[$inicial][$afiliado->id] = $afiliado;
             }
         }
     }

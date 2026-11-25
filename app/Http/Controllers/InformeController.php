@@ -94,11 +94,7 @@ class InformeController extends Controller
         if ($request->filled('buscar')) {
             $buscar = trim($request->input('buscar'));
 
-            $query->where(function ($q) use ($buscar) {
-                $q->where('ci', 'like', "%{$buscar}%")
-                    ->orWhere('nombres', 'like', "%{$buscar}%")
-                    ->orWhere('apellidos', 'like', "%{$buscar}%");
-            });
+            $query->buscarPorTerminos($buscar);
         }
 
         /*Año de afiliación*/

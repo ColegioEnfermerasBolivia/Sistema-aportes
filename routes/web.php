@@ -15,6 +15,8 @@ use App\Http\Controllers\TransferenciasController;
 use App\Http\Controllers\SaldoHistoricoController;
 use App\Http\Controllers\ObservacionesHistoricasController;
 use App\Http\Controllers\ReportePagosLoteController;
+use App\Http\Controllers\DevengadoController;
+
 Route::get('/', function () {
     return view('welcome');
 });
@@ -256,6 +258,44 @@ Route::post('/pagos', [PagoController::class, 'store'])
         'rol:ADMIN,USUARIO',
     ])
     ->name('pagos.store');
+
+Route::middleware(['auth', 'debe-cambiar-password', 'rol:SUPER ADMIN,ADMIN,USUARIO'])
+    ->prefix('devengados')
+    ->name('devengados.')
+    ->controller(DevengadoController::class)
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/lotes/crear', 'create')
+            ->middleware('rol:USUARIO')
+            ->name('create');
+        Route::post('/lotes', 'store')
+            ->middleware('rol:USUARIO')
+            ->name('store');
+        Route::get('/buscar-afiliada', 'buscarAfiliada')
+            ->middleware('rol:ADMIN,USUARIO')
+            ->name('buscar-afiliada');
+        Route::post('/pagos', 'storePayment')
+            ->middleware('rol:USUARIO')
+            ->name('pagos.store');
+        Route::get('/pagos/{pago}/editar', 'editPayment')
+            ->middleware('rol:USUARIO')
+            ->name('pagos.edit');
+        Route::put('/pagos/{pago}', 'updatePayment')
+            ->middleware('rol:USUARIO')
+            ->name('pagos.update');
+        Route::get('/lotes/{lote}', 'show')->name('show');
+        Route::patch('/lotes/{lote}/enviar', 'submit')
+            ->middleware('rol:USUARIO')
+            ->name('submit');
+        Route::get('/lotes/{lote}/excel', 'excel')
+            ->name('lotes.excel');
+        Route::post('/lotes/{lote}/confirmar-pagos', 'confirmarPagos')
+            ->middleware('rol:ADMIN')
+            ->name('confirmar-pagos');
+        Route::post('/periodos/{periodo}/exoneraciones', 'exonerate')
+            ->middleware('rol:ADMIN')
+            ->name('exoneraciones.store');
+    });
 
 // Modificar pago
 Route::patch('/pagos/{pago}', [PagoController::class, 'update'])

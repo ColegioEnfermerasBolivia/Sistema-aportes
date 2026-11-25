@@ -138,7 +138,7 @@
                             id="buscar"
                             name="buscar"
                             value="{{ request('buscar') }}"
-                            placeholder="CI, nombre o apellido"
+                            placeholder="CI, nombre o apellido (en cualquier orden)"
                             class="w-full rounded-lg
                                    border border-gray-300
                                    bg-white
@@ -271,6 +271,7 @@
 
                 <tbody class="divide-y divide-gray-100">
                     @forelse ($afiliados as $afiliado)
+                        @php($camposIncompletos = $afiliado->camposIncompletos())
                         <tr class="transition hover:bg-blue-100">
 
                             {{-- REGISTRO --}}
@@ -293,10 +294,20 @@
                                 <div class="flex items-center gap-3">
                                     
                                     <div class="min-w-0">
-                                        <p class="whitespace-nowrap text-sm font-semibold text-gray-900">
+                                        <p
+                                            class="whitespace-nowrap text-sm font-semibold {{ $camposIncompletos ? 'text-orange-700' : 'text-gray-900' }}"
+                                            @if ($camposIncompletos)
+                                                title="Datos incompletos: {{ implode(', ', $camposIncompletos) }}"
+                                            @endif
+                                        >
                                             {{ $afiliado->apellidos }}
                                             {{ $afiliado->nombres }}
                                         </p>
+                                        @if ($camposIncompletos)
+                                            <span class="text-xs font-medium text-orange-700">
+                                                Datos incompletos
+                                            </span>
+                                        @endif
                                     </div>
                                 </div>
                             </td>

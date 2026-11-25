@@ -420,9 +420,6 @@ class CargaDatosController extends Controller
         array &$errores
     ): void {
         $camposObligatorios = [
-            'registro_departamental' => 'Registro departamental',
-            'matricula_profesional' => 'Matrícula profesional',
-            'ci' => 'CI',
             'colegio' => 'Colegio',
             'nombres' => 'Nombres',
             'apellidos' => 'Apellidos',
@@ -590,6 +587,15 @@ class CargaDatosController extends Controller
         ) {
             $errores[] =
                 'La fecha de afiliación no tiene un formato válido.';
+        } elseif (
+            $fechaNormalizada !== null
+            && (
+                $fechaNormalizada < '1900-01-01'
+                || $fechaNormalizada > now()->toDateString()
+            )
+        ) {
+            $errores[] =
+                'La fecha de afiliación debe ser una fecha real entre 1900 y hoy.';
         }
 
         return $fechaNormalizada;
@@ -628,9 +634,15 @@ class CargaDatosController extends Controller
                 foreach ($filasValidas as $fila) {
 
                     Afiliado::create([
-                        'registro_departamental' => $fila['registro_departamental'],
-                        'matricula_profesional' => $fila['matricula_profesional'],
-                        'ci' => $fila['ci'],
+                        'registro_departamental' => $fila['registro_departamental'] !== ''
+                            ? $fila['registro_departamental']
+                            : null,
+                        'matricula_profesional' => $fila['matricula_profesional'] !== ''
+                            ? $fila['matricula_profesional']
+                            : null,
+                        'ci' => $fila['ci'] !== ''
+                            ? $fila['ci']
+                            : null,
                         'colegio_id' => $fila['colegio_id'],
                         'nombres' => $fila['nombres'],
                         'apellidos' => $fila['apellidos'],
@@ -667,13 +679,13 @@ class CargaDatosController extends Controller
                 );
 
         } catch (\Throwable $e) {
+            report($e);
 
             return redirect()
                 ->route('carga-datos.index')
                 ->withErrors([
                     'archivo_afiliadas' =>
-                        'Ocurrió un error durante la carga: '
-                        . $e->getMessage()
+                        'Ocurrió un error durante la carga. Inténtalo nuevamente.'
                 ]);
         }
     }

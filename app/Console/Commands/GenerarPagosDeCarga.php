@@ -69,6 +69,12 @@ class GenerarPagosDeCarga extends Command
         // Afiliados activos, sin saldos activos y sin pago previo en este lote.
         $elegibles = DB::table('afiliados')
             ->where('estado', 'ACTIVO')
+            ->whereNotNull('ci')
+            ->where('ci', '<>', '')
+            ->whereNotNull('registro_departamental')
+            ->where('registro_departamental', '<>', '')
+            ->whereNotNull('matricula_profesional')
+            ->where('matricula_profesional', '<>', '')
             ->when(
                 ! $this->option('cualquier-colegio'),
                 fn ($q) => $q->where('colegio_id', $lote->colegio_id)

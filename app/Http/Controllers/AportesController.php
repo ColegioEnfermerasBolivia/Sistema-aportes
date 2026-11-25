@@ -60,11 +60,7 @@ class AportesController extends Controller
 
         if ($buscar !== '') {
 
-            $query->where(function ($q) use ($buscar) {
-                $q->where('ci', 'like', "%{$buscar}%")
-                    ->orWhere('nombres', 'like', "%{$buscar}%")
-                    ->orWhere('apellidos', 'like', "%{$buscar}%");
-            });
+            $query->buscarPorTerminos($buscar);
         }
 
         /* Filtro por colegio para administradores */

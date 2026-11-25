@@ -52,7 +52,7 @@
                     <input
                         type="search"
                         x-model="buscar"
-                        placeholder="Buscar por CI o nombre..."
+                        placeholder="Buscar por CI, nombre o apellido (en cualquier orden)..."
                         class="min-w-0 flex-1 rounded-xl border border-gray-300 px-4 py-2.5 text-sm
                                focus:border-[#1a34c9] focus:outline-none focus:ring-2 focus:ring-[#1a34c9]/10"
                     >
@@ -102,10 +102,12 @@
                                         (filtro === 'TODAS' || filtro === @js($fila['estado']))
                                         && (
                                             buscar === ''
-                                            || @js(mb_strtolower(
-                                                ($fila['ci_original'] ?? '') . ' ' .
-                                                ($fila['nombre'] ?? '')
-                                            )).includes(buscar.toLowerCase())
+                                            || buscar.trim().toLowerCase().split(/\s+/).filter(Boolean).every(termino =>
+                                                @js(mb_strtolower(
+                                                    ($fila['ci_original'] ?? '') . ' ' .
+                                                    ($fila['nombre'] ?? '')
+                                                )).includes(termino)
+                                            )
                                         )
                                     "
                                     class="hover:bg-gray-50"

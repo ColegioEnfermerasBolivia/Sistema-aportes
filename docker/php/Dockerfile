@@ -9,6 +9,7 @@ RUN apt-get update \
         libpng-dev \
         libjpeg62-turbo-dev \
         libfreetype6-dev \
+        libicu-dev \
     && docker-php-ext-configure gd \
         --with-freetype \
         --with-jpeg \
@@ -18,6 +19,7 @@ RUN apt-get update \
         zip \
         gd \
         opcache \
+        intl \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer

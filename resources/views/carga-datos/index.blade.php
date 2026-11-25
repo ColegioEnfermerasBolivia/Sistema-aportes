@@ -103,6 +103,9 @@
                                 >
                                     Selecciona un archivo CSV con los datos de las afiliadas.
                                 </p>
+                                <p class="mt-2 text-xs text-gray-500">
+                                    CI, registro departamental y matrícula profesional pueden quedar vacíos; deberán completarse antes de registrar pagos.
+                                </p>
                                 <p
                                     x-show="archivo"
                                     x-text="nombreArchivo"
@@ -236,6 +239,7 @@
                             <p class="mt-2 text-xs text-gray-500">
                                 CSV con las columnas:
                                 APELLIDOS Y NOMBRES, YEAR, ENERO ... DICIEMBRE.
+                                El nombre puede estar en cualquier orden.
                                 Tamaño máximo: 256 MB.
                             </p>
 

@@ -2,16 +2,19 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Validation\ValidationException;
 
 class Afiliado extends Model
 {
     protected $table = 'afiliados';
 
     const CREATED_AT = 'creado_en';
+
     const UPDATED_AT = 'actualizado_en';
 
     protected $fillable = [
@@ -38,6 +41,74 @@ class Afiliado extends Model
         }
 
         return preg_replace('/[\s\p{Z}]+/u', '', $valor) ?? $valor;
+    }
+
+    public function camposIncompletos(): array
+    {
+        $campos = [
+            'ci' => 'CI',
+            'nombres' => 'nombres',
+            'apellidos' => 'apellidos',
+            'registro_departamental' => 'registro departamental',
+            'matricula_profesional' => 'matrícula profesional',
+        ];
+
+        return array_filter(
+            $campos,
+            fn (string $campo): bool => trim(
+                (string) $this->getAttribute($campo)
+            ) === '',
+            ARRAY_FILTER_USE_KEY
+        );
+    }
+
+    public function camposFaltantesParaPago(): array
+    {
+        return array_intersect_key(
+            $this->camposIncompletos(),
+            array_flip([
+                'ci',
+                'registro_departamental',
+                'matricula_profesional',
+            ])
+        );
+    }
+
+    public function validarDatosParaPago(): void
+    {
+        $faltantes = $this->camposFaltantesParaPago();
+
+        if ($faltantes !== []) {
+            throw ValidationException::withMessages([
+                'afiliado_id' => 'Completa estos datos antes de registrar un pago: '
+                    .implode(', ', $faltantes).'.',
+            ]);
+        }
+    }
+
+    public function scopeBuscarPorTerminos(
+        Builder $query,
+        string $buscar
+    ): Builder {
+        $terminos = preg_split(
+            '/\s+/',
+            trim($buscar),
+            -1,
+            PREG_SPLIT_NO_EMPTY
+        ) ?: [];
+
+        foreach ($terminos as $termino) {
+            $query->where(function (Builder $coincidencias) use ($termino) {
+                $patron = "%{$termino}%";
+
+                $coincidencias
+                    ->where('ci', 'like', $patron)
+                    ->orWhere('nombres', 'like', $patron)
+                    ->orWhere('apellidos', 'like', $patron);
+            });
+        }
+
+        return $query;
     }
 
     public function setRegistroDepartamentalAttribute(?string $valor): void
@@ -88,6 +159,12 @@ class Afiliado extends Model
         return $this->hasMany(Aporte::class, 'afiliado_id');
     }
 
+    /** @return HasMany<DevengadoPeriodo, $this> */
+    public function devengadoPeriodos(): HasMany
+    {
+        return $this->hasMany(DevengadoPeriodo::class, 'afiliado_id');
+    }
+
     /** @return HasMany<Saldo, $this> */
     public function saldosActivos(): HasMany
     {
@@ -108,7 +185,7 @@ class Afiliado extends Model
             'colegioOrigen',
             'colegioDestino',
         ]))
-        ->orderBy('fecha_transferencia');
+            ->orderBy('fecha_transferencia');
     }
 
     /** @return HasMany<ObservacionAfiliado, $this> */
@@ -120,7 +197,8 @@ class Afiliado extends Model
         );
     }
 
-    public function informacionLaboral():HasOne {
+    public function informacionLaboral(): HasOne
+    {
         return $this->hasOne(InformacionLaboral::class, 'afiliado_id');
     }
 }

@@ -11,6 +11,9 @@
         mensual: '',
         total: '',
         saldoAnterior: '0.00',
+        resultados: [],
+        hayMasResultados: false,
+        camposFaltantes: [],
 
         buscando: false,
         encontrado: false,
@@ -24,6 +27,9 @@
             this.estado = ''; 
             this.ultimoAporte = null; 
             this.montoAporteLaboral = null;
+            this.resultados = [];
+            this.hayMasResultados = false;
+            this.camposFaltantes = [];
             this.mensual = ''; 
             this.total = ''; 
             this.saldoAnterior = '0.00';
@@ -77,6 +83,7 @@
             return (
                 this.encontrado &&
                 this.estado === 'ACTIVO' &&
+                this.camposFaltantes.length === 0 &&
                 Number.isFinite(mensual) &&
                 Number.isFinite(total) &&
                 mensual > 0 &&
@@ -88,6 +95,9 @@
 
             this.mensaje = '';
             this.encontrado = false;
+            this.resultados = [];
+            this.hayMasResultados = false;
+            this.camposFaltantes = [];
             this.afiliadoId = '';
             this.nombres = '';
             this.apellidos = '';
@@ -96,10 +106,10 @@
             this.montoAporteLaboral = null;
             this.saldoAnterior = '0.00';
 
-            const ciBuscado = this.ci.trim();
+            const busqueda = this.ci.trim();
 
-            if (!ciBuscado) {
-                this.mensaje = 'Ingresa un CI para realizar la búsqueda.';
+            if (!busqueda) {
+                this.mensaje = 'Ingresa un CI, nombres o apellidos para realizar la búsqueda.';
                 return;
             }
 
@@ -108,8 +118,8 @@
             try {
 
                 const respuesta = await fetch(
-                    '{{ route('afiliados.buscar-ci') }}?ci=' +
-                    encodeURIComponent(ciBuscado),
+                    '{{ route('afiliados.buscar-ci') }}?buscar=' +
+                    encodeURIComponent(busqueda),
                     {
                         headers: {
                             'Accept': 'application/json',
@@ -124,15 +134,14 @@
                     return;
                 }
 
-                this.afiliadoId = datos.id;
-                this.nombres = datos.nombres;
-                this.apellidos = datos.apellidos;
-                this.estado = datos.estado;
-                this.ultimoAporte = datos.ultimo_aporte;
-                this.montoAporteLaboral = datos.monto_aporte_laboral;
-                this.saldoAnterior = datos.saldo_disponible ?? '0.00';
+                if (datos.ambigua) {
+                    this.resultados = datos.resultados;
+                    this.hayMasResultados = datos.hay_mas_resultados;
+                    this.mensaje = 'Se encontraron varias afiliadas. Selecciona la correcta.';
+                    return;
+                }
 
-                this.encontrado = true;
+                this.mostrarAfiliado(datos);
 
             } catch (error) {
 
@@ -143,6 +152,44 @@
                 this.buscando = false;
 
             }
+        },
+
+        async seleccionarAfiliado(id) {
+            this.buscando = true;
+            this.mensaje = '';
+            this.resultados = [];
+
+            try {
+                const respuesta = await fetch(
+                    '{{ route('afiliados.buscar-ci') }}?afiliado_id=' +
+                    encodeURIComponent(id),
+                    { headers: { 'Accept': 'application/json' } }
+                );
+                const datos = await respuesta.json();
+
+                if (!respuesta.ok) {
+                    this.mensaje = datos.message ?? 'No se pudo cargar la afiliada seleccionada.';
+                    return;
+                }
+
+                this.mostrarAfiliado(datos);
+            } catch (error) {
+                this.mensaje = 'Ocurrió un error al cargar la afiliada.';
+            } finally {
+                this.buscando = false;
+            }
+        },
+
+        mostrarAfiliado(datos) {
+            this.afiliadoId = datos.id;
+            this.nombres = datos.nombres;
+            this.apellidos = datos.apellidos;
+            this.estado = datos.estado;
+            this.ultimoAporte = datos.ultimo_aporte;
+            this.montoAporteLaboral = datos.monto_aporte_laboral;
+            this.saldoAnterior = datos.saldo_disponible ?? '0.00';
+            this.camposFaltantes = datos.campos_faltantes_pago ?? [];
+            this.encontrado = true;
         }
     }"
 
@@ -160,13 +207,13 @@
             name="afiliado_id"
             x-model="afiliadoId"
         >
-        {{-- CI --}}
+        {{-- Búsqueda de afiliada --}}
         <div>
             <label
                 for="ci_pago"
                 class="mb-1.5 block text-sm font-medium text-gray-700"
             >
-                CI del afiliado
+                Buscar por CI, nombres o apellidos
             </label>
             <div class="flex gap-2">
                 <input
@@ -174,7 +221,7 @@
                     id="ci_pago"
                     x-model="ci"
                     @keydown.enter.prevent="buscarAfiliado()"
-                    placeholder="Ingresa el CI..."
+                    placeholder="CI, nombres y apellidos..."
                     class="min-w-0 flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-[#1a34c9] focus:ring-2 focus:ring-[#1a34c9]/10"
                 >
                 <button
@@ -200,6 +247,25 @@
                 x-text="mensaje"
                 class="mt-2 text-sm text-red-600"
             ></p>
+            <div
+                x-show="resultados.length > 0"
+                x-cloak
+                class="mt-3 space-y-2 rounded-xl border border-gray-200 bg-white p-3"
+            >
+                <template x-for="resultado in resultados" :key="resultado.id">
+                    <button
+                        type="button"
+                        @click="seleccionarAfiliado(resultado.id)"
+                        class="block w-full rounded-lg border border-gray-200 px-3 py-2 text-left text-sm hover:bg-gray-50"
+                    >
+                        <span class="font-semibold text-gray-900" x-text="`${resultado.apellidos}, ${resultado.nombres}`"></span>
+                        <span class="ml-2 text-gray-500" x-text="`CI ${resultado.ci || 'no registrado'}`"></span>
+                    </button>
+                </template>
+                <p x-show="hayMasResultados" class="text-xs text-gray-500">
+                    Hay más coincidencias. Agrega más términos para afinar la búsqueda.
+                </p>
+            </div>
         </div>
 
         {{-- Información del afiliado --}}
@@ -227,6 +293,14 @@
                         x-text="apellidos"
                     ></p>
                 </div>
+            </div>
+            <div
+                x-show="camposFaltantes.length > 0"
+                x-cloak
+                class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800"
+            >
+                No se puede registrar el pago. La afiliada debe completar:
+                <span class="font-semibold" x-text="camposFaltantes.join(', ')"></span>.
             </div>
 
             {{-- Estado --}}

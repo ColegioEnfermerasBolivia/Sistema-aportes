@@ -57,3 +57,25 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Aportes devengados
+
+Los lotes devengados comparten con los ordinarios la restricción de un lote por
+colegio y período. Su código conserva el prefijo `DEV-`. El encargado busca a
+la afiliada por CI, selecciona las lagunas desde su fecha de afiliación e
+ingresa el pago total, el importe mensual y su método de determinación. El
+saldo sobrante se registra como saldo disponible al verificar el pago.
+
+Al abrir un lote enviado, un usuario `ADMIN` lo pasa a verificación. Solo los
+pagos seleccionados y todavía pendientes se insertan como aportes
+`VERIFICADO` en la tabla central `aportes`; una colisión con un período ya
+existente bloquea la operación sin modificar el historial. Las exoneraciones
+requieren motivo y referencia expresa de autorización presidencial, quedan
+auditadas y no se contabilizan como pagos. El módulo no carga documentos ni
+calcula automáticamente el 0,5 % de los aportes ordinarios.
+
+La migración `2026_11_20_000002_update_devengados_for_selected_period_workflow`
+agrega campos para identificar el período del lote y revisar sus pagos,
+además de quitar columnas de rutas documentales vacías tras verificar que no
+contengan referencias. Aplicarla con el procedimiento aditivo habitual; no
+usar `migrate:fresh` ni borrar la base de datos.

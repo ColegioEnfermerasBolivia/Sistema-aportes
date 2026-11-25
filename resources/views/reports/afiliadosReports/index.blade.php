@@ -178,7 +178,7 @@
                             id="buscar"
                             name="buscar"
                             value="{{ request('buscar') }}"
-                            placeholder="Buscar por nombre, apellidos o CI..."
+                            placeholder="CI, nombre o apellido (en cualquier orden)"
                             class="p-3 w-full rounded-lg border-gray-300 pr-10 text-sm shadow-sm focus:border-[#1a34c9] focus:ring-[#1a34c9]"
                         >
                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">

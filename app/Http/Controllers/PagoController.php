@@ -66,6 +66,8 @@ class PagoController extends Controller
                 ->withInput();
         }
 
+        $afiliado->validarDatosParaPago();
+
         $montoMensualCentavos = (int) round(
             $datos['monto_mensual'] * 100
         );
@@ -147,10 +149,11 @@ class PagoController extends Controller
                 &$cantidadPeriodos,
                 &$pago
             ) {
-                Afiliado::query()
+                $afiliadoBloqueado = Afiliado::query()
                     ->whereKey($afiliado->id)
                     ->lockForUpdate()
                     ->firstOrFail();
+                $afiliadoBloqueado->validarDatosParaPago();
 
                 $saldosActivos = $this->saldoService
                     ->activosParaAfiliado($afiliado->id, true);
@@ -232,10 +235,11 @@ class PagoController extends Controller
                     &$aportesGenerados,
                     &$saldoGeneradoCentavos
                 ) {
-                    Afiliado::query()
+                    $afiliadoBloqueado = Afiliado::query()
                         ->whereKey($afiliado->id)
                         ->lockForUpdate()
                         ->firstOrFail();
+                    $afiliadoBloqueado->validarDatosParaPago();
 
                     $saldosActivos = $this->saldoService
                         ->activosParaAfiliado($afiliado->id, true);
