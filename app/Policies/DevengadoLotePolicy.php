@@ -41,7 +41,7 @@ class DevengadoLotePolicy
     public function manage(Usuario $usuario, DevengadoLote $lote): bool
     {
         return $usuario->rol?->nombre === 'USUARIO'
-            && in_array($lote->estado, ['ABIERTO', 'ENVIADO'], true)
+            && $lote->estado === 'ABIERTO'
             && $this->puedeGestionarColegio($usuario, $lote->colegio_id);
     }
 
@@ -61,7 +61,6 @@ class DevengadoLotePolicy
     {
         if (! in_array($lote->estado, [
             'ENVIADO',
-            'EN_VERIFICACION',
             'VERIFICADO',
         ], true)) {
             return false;

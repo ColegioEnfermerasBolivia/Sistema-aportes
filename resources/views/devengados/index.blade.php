@@ -114,17 +114,36 @@
                                         </x-slot:trigger>
                                         @include('devengados.partials.lote-detalle', ['lote' => $lote])
                                     </x-modal>
+                                    @if (auth()->user()->rol?->nombre === 'USUARIO' && $lote->estado === 'ABIERTO')
+                                        <form method="POST" action="{{ route('devengados.submit', $lote) }}"
+                                            data-confirm-title="¿Enviar lote devengado a revisión?"
+                                            data-confirm-text="Los pagos dejarán de estar disponibles para edición cuando se envíe el lote."
+                                            data-confirm-button="Sí, enviar">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit"
+                                                class="inline-flex items-center rounded-lg bg-[#1a34c9] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1428a0]">
+                                                Enviar a revisión
+                                            </button>
+                                        </form>
+                                    @endif
                                     @if (auth()->user()->rol?->nombre === 'ADMIN' && in_array($lote->estado, ['ENVIADO', 'EN_VERIFICACION'], true))
                                         <a href="{{ route('devengados.show', $lote) }}"
                                             class="inline-flex items-center rounded-lg bg-[#1a34c9] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1428a0]">
                                             Abrir revisión
                                         </a>
                                     @endif
-                                    @if (in_array($lote->estado, ['ENVIADO', 'EN_VERIFICACION', 'VERIFICADO'], true))
+                                    @if (in_array($lote->estado, ['ENVIADO', 'VERIFICADO'], true))
                                         <a href="{{ route('devengados.lotes.excel', $lote) }}"
                                             class="inline-flex items-center rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700">
                                             Descargar Excel
                                         </a>
+                                    @else
+                                        <button type="button" disabled
+                                            class="inline-flex cursor-not-allowed items-center rounded-lg bg-gray-300 px-4 py-2 text-sm font-semibold text-gray-600"
+                                            aria-label="Descargar Excel no disponible hasta que el lote esté enviado o verificado">
+                                            Descargar Excel
+                                        </button>
                                     @endif
                                 </div>
                             </td>

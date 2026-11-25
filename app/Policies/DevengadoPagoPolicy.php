@@ -14,7 +14,7 @@ class DevengadoPagoPolicy
         }
 
         $lote = $pago->lote;
-        if (! $lote || in_array($lote->estado, ['EN_VERIFICACION', 'VERIFICADO'], true)) {
+        if (! $lote || $lote->estado !== 'ABIERTO') {
             return false;
         }
 

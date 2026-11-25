@@ -41,11 +41,11 @@ class DevengadosPresentationTest extends TestCase
             ->assertSee($loteDevengado->codigo_lote);
     }
 
-    public function test_sent_and_reviewing_devengado_lots_can_be_downloaded_as_excel(): void
+    public function test_sent_and_verified_devengado_lots_can_be_downloaded_as_excel(): void
     {
         $college = $this->createCollege();
         $admin = $this->createUser('ADMIN', $college);
-        $lotes = collect(['ENVIADO', 'EN_VERIFICACION'])
+        $lotes = collect(['ENVIADO', 'VERIFICADO'])
             ->map(fn (string $estado, int $indice): DevengadoLote => DevengadoLote::create([
                 'colegio_id' => $college->id,
                 'mes' => $indice + 1,
@@ -69,5 +69,58 @@ class DevengadosPresentationTest extends TestCase
                 fn ($export): bool => $export instanceof ReporteDevengadoLoteExport
             );
         }
+    }
+
+    public function test_open_and_reviewing_devengado_lots_cannot_be_downloaded_as_excel(): void
+    {
+        $college = $this->createCollege();
+        $admin = $this->createUser('ADMIN', $college);
+        $lotes = collect(['ABIERTO', 'EN_VERIFICACION'])
+            ->map(fn (string $estado, int $indice): DevengadoLote => DevengadoLote::create([
+                'colegio_id' => $college->id,
+                'mes' => $indice + 1,
+                'year' => now()->year,
+                'codigo_lote' => "DEV-{$college->codigo}-".now()->year.'-'.str_pad((string) ($indice + 1), 2, '0', STR_PAD_LEFT),
+                'estado' => $estado,
+                'creado_por' => $admin->id,
+            ]));
+
+        $this->actingAs($admin);
+
+        foreach ($lotes as $lote) {
+            $this->get(route('devengados.lotes.excel', $lote))->assertForbidden();
+        }
+    }
+
+    public function test_open_lot_actions_are_limited_to_the_college_user(): void
+    {
+        $college = $this->createCollege();
+        $user = $this->createUser('USUARIO', $college);
+        $admin = $this->createUser('ADMIN', $college);
+        $lote = DevengadoLote::create([
+            'colegio_id' => $college->id,
+            'mes' => now()->month,
+            'year' => now()->year,
+            'codigo_lote' => "DEV-{$college->codigo}-".now()->year.'-'.str_pad((string) now()->month, 2, '0', STR_PAD_LEFT),
+            'estado' => 'ABIERTO',
+            'creado_por' => $user->id,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('devengados.index'))
+            ->assertOk()
+            ->assertSee('Enviar a revisión')
+            ->assertSee('disabled')
+            ->assertDontSee(route('devengados.lotes.excel', $lote));
+
+        $this->actingAs($admin)
+            ->get(route('devengados.index'))
+            ->assertOk()
+            ->assertDontSee('Enviar a revisión');
+
+        $this->patch(route('devengados.submit', $lote))->assertForbidden();
+        $this->post(route('devengados.confirmar-pagos', $lote), [
+            'pago_ids' => [1],
+        ])->assertForbidden();
     }
 }

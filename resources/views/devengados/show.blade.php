@@ -29,7 +29,7 @@
             </div>
             <div class="flex flex-wrap items-center gap-3">
                 <span class="rounded-full bg-blue-50 px-3 py-1.5 text-sm font-semibold text-blue-800">{{ str_replace('_', ' ', $lote->estado) }}</span>
-                @if (in_array($lote->estado, ['ENVIADO', 'EN_VERIFICACION', 'VERIFICADO'], true))
+                @if (in_array($lote->estado, ['ENVIADO', 'VERIFICADO'], true))
                     <a href="{{ route('devengados.lotes.excel', $lote) }}" class="rounded-lg border border-emerald-700 px-3 py-1.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 hover:cursor-pointer">
                         Descargar Excel
                     </a>
@@ -56,7 +56,7 @@
     @if (auth()->user()->rol?->nombre === 'USUARIO' && $lote->estado === 'ABIERTO')
         <form method="POST" action="{{ route('devengados.submit', $lote) }}" class="mb-5"
             data-confirm-title="¿Enviar lote devengado a central?"
-            data-confirm-text="Los pagos no podrán editarse cuando central abra el lote en verificación."
+            data-confirm-text="Al enviar el lote, los pagos dejarán de estar disponibles para edición."
             data-confirm-button="Sí, enviar">
             @csrf
             @method('PATCH')
@@ -194,7 +194,7 @@
                             <td class="px-4 py-4 whitespace-nowrap">Bs {{ number_format((float) $pago->saldo_generado, 2, ',', '.') }}</td>
                             <td class="px-4 py-4"><span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold">{{ str_replace('_', ' ', $pago->estado) }}</span></td>
                             <td class="px-4 py-4">
-                                @if (auth()->user()->rol?->nombre === 'USUARIO' && $pago->estado === 'EN_LOTE' && !in_array($lote->estado, ['EN_VERIFICACION', 'VERIFICADO'], true))
+                                @if (auth()->user()->rol?->nombre === 'USUARIO' && $lote->estado === 'ABIERTO' && $pago->estado === 'EN_LOTE')
                                     <x-modal
                                         titulo="Editar pago devengado"
                                         ancho="max-w-5xl"

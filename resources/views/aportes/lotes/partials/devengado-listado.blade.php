@@ -59,7 +59,7 @@
                                         Abrir revisión
                                     </a>
                                 @endif
-                                @if (in_array($lote->estado, ['ENVIADO', 'EN_VERIFICACION', 'VERIFICADO'], true))
+                                @if (in_array($lote->estado, ['ENVIADO', 'VERIFICADO'], true))
                                     <a href="{{ route('devengados.lotes.excel', $lote) }}"
                                         class="inline-flex items-center rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700">
                                         Descargar Excel

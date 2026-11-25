@@ -238,6 +238,10 @@ class DevengadosWorkflowTest extends TestCase
         $this->assertSame(3, $pago->cantidad_periodos);
         $this->assertDatabaseCount('devengado_pago_detalles', 3);
 
+        $this->get(route('devengados.index'))
+            ->assertOk()
+            ->assertSee(route('devengados.pagos.edit', $pago));
+
         $this->actingAs($usuario)
             ->put(route('devengados.pagos.update', $pago), [
                 'monto_total' => '50.00',
@@ -251,6 +255,11 @@ class DevengadosWorkflowTest extends TestCase
 
         $this->patch(route('devengados.submit', $lote))
             ->assertRedirect();
+        $this->get(route('devengados.index'))
+            ->assertOk()
+            ->assertDontSee(route('devengados.pagos.edit', $pago));
+        $this->get(route('devengados.pagos.edit', $pago))
+            ->assertForbidden();
         $this->actingAs($admin)
             ->get(route('devengados.show', $lote))
             ->assertOk()

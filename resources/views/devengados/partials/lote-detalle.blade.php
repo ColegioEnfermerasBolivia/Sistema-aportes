@@ -119,6 +119,9 @@
                         <th class="px-4 py-3">Saldo generado</th>
                         <th class="px-4 py-3">Estado</th>
                         <th class="px-4 py-3">Observaciones</th>
+                        @if (auth()->user()->rol?->nombre === 'USUARIO')
+                            <th class="px-4 py-3">Acciones</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -162,10 +165,21 @@
                                     <span class="text-gray-400">Sin observaciones</span>
                                 @endif
                             </td>
+                            @if (auth()->user()->rol?->nombre === 'USUARIO')
+                                <td class="whitespace-nowrap px-4 py-4">
+                                    @can('update', $pago)
+                                        <a href="{{ route('devengados.pagos.edit', $pago) }}"
+                                            class="inline-flex items-center gap-1.5 rounded-lg border border-[#1a34c9] px-3 py-2 text-sm font-semibold text-[#1a34c9] transition hover:bg-blue-50">
+                                            <x-icon name="edit" class="text-[#1a34c9]" size="18"/>
+                                            Editar
+                                        </a>
+                                    @endcan
+                                </td>
+                            @endif
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-4 py-10 text-center text-sm text-gray-500">Este lote todavía no tiene pagos registrados.</td>
+                            <td colspan="{{ auth()->user()->rol?->nombre === 'USUARIO' ? 9 : 8 }}" class="px-4 py-10 text-center text-sm text-gray-500">Este lote todavía no tiene pagos registrados.</td>
                         </tr>
                     @endforelse
                 </tbody>
