@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             UsuarioSeeder::class,
             GradoAcademicoSeeder::class,
             PostgradoSeeder::class,
+            DepartamentosSeeder::class,
         ]);
     }
 }

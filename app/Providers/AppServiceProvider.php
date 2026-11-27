@@ -6,15 +6,19 @@ use App\Models\Afiliado;
 use App\Models\DevengadoLote;
 use App\Models\DevengadoPago;
 use App\Models\DevengadoPeriodo;
+use App\Models\Egresada;
 use App\Models\LoteVerificacion;
 use App\Models\Pago;
+use App\Models\Universidad;
 use App\Models\Usuario;
 use App\Policies\AfiliadoPolicy;
 use App\Policies\DevengadoLotePolicy;
 use App\Policies\DevengadoPagoPolicy;
 use App\Policies\DevengadoPeriodoPolicy;
+use App\Policies\EgresadaPolicy;
 use App\Policies\LoteVerificacionPolicy;
 use App\Policies\PagoPolicy;
+use App\Policies\UniversidadPolicy;
 use App\Policies\UsuarioPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -41,5 +45,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(DevengadoLote::class, DevengadoLotePolicy::class);
         Gate::policy(DevengadoPeriodo::class, DevengadoPeriodoPolicy::class);
         Gate::policy(DevengadoPago::class, DevengadoPagoPolicy::class);
+        Gate::policy(Egresada::class, EgresadaPolicy::class);
+        Gate::policy(Universidad::class, UniversidadPolicy::class);
     }
 }

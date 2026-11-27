@@ -18,6 +18,7 @@ class Afiliado extends Model
     const UPDATED_AT = 'actualizado_en';
 
     protected $fillable = [
+        'egresada_id',
         'registro_departamental',
         'matricula_profesional',
         'ci',
@@ -32,6 +33,7 @@ class Afiliado extends Model
     protected $casts = [
         'fecha_afiliacion' => 'date',
         'colegio_id' => 'integer',
+        'egresada_id' => 'integer',
     ];
 
     public static function normalizarIdentificador(?string $valor): ?string
@@ -132,6 +134,11 @@ class Afiliado extends Model
     public function colegio(): BelongsTo
     {
         return $this->belongsTo(Colegio::class);
+    }
+
+    public function egresada(): BelongsTo
+    {
+        return $this->belongsTo(Egresada::class, 'egresada_id');
     }
 
     public function informacionesLaborales(): HasMany

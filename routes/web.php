@@ -16,6 +16,9 @@ use App\Http\Controllers\SaldoHistoricoController;
 use App\Http\Controllers\ObservacionesHistoricasController;
 use App\Http\Controllers\ReportePagosLoteController;
 use App\Http\Controllers\DevengadoController;
+use App\Http\Controllers\EgresadaController;
+use App\Http\Controllers\ImportacionEgresadasController;
+use App\Http\Controllers\UniversidadController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -508,4 +511,59 @@ Route::middleware(['auth','debe-cambiar-password','rol:SUPER ADMIN',])
             ->name('previsualizarObservaciones');
         Route::post('/{token}/confirmar', 'confirmar')
             ->name('confirmar');
+    });
+
+Route::middleware([
+    'auth',
+    'debe-cambiar-password',
+    'rol:SUPER ADMIN,ADMIN,USUARIO',
+])
+    ->prefix('egresadas')
+    ->name('egresadas.')
+    ->controller(EgresadaController::class)
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/exportar/excel', 'exportarExcel')
+            ->name('exportar.excel');
+        Route::post('/', 'store')->name('store');
+        Route::post('/{egresada}/convertir-afiliada', 'convertir')
+            ->name('convertir');
+        Route::get('/{egresada}/editar', 'edit')->name('edit');
+        Route::get('/{egresada}', 'show')->name('show');
+        Route::put('/{egresada}', 'update')->name('update');
+    });
+
+Route::middleware([
+    'auth',
+    'debe-cambiar-password',
+    'rol:SUPER ADMIN,ADMIN,USUARIO',
+])
+    ->prefix('universidades')
+    ->name('universidades.')
+    ->controller(UniversidadController::class)
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/{universidad}', 'show')->name('show');
+    });
+
+Route::middleware([
+    'auth',
+    'debe-cambiar-password',
+    'rol:SUPER ADMIN',
+])
+    ->prefix('universidades')
+    ->name('universidades.')
+    ->controller(UniversidadController::class)
+    ->group(function () {
+        Route::post('/', 'store')->name('store');
+        Route::put('/{universidad}', 'update')->name('update');
+    });
+
+Route::middleware(['auth', 'debe-cambiar-password', 'rol:SUPER ADMIN'])
+    ->prefix('importaciones/egresadas')
+    ->name('egresadas.importar.')
+    ->controller(ImportacionEgresadasController::class)
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
     });

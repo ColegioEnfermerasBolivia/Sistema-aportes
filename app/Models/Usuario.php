@@ -83,5 +83,31 @@ class Usuario extends Authenticatable
     {
         return $this->hasMany(Pago::class, 'verificado_por');
     }
+
+    public function egresadasRegistradas(): HasMany
+    {
+        return $this->hasMany(Egresada::class, 'registrado_por');
+    }
+
+    public function egresadasActualizadas(): HasMany
+    {
+        return $this->hasMany(Egresada::class, 'actualizado_por');
+    }
+
+    public function egresadasConvertidas(): HasMany
+    {
+        return $this->hasMany(Egresada::class, 'convertida_por');
+    }
+
+    public function formacionesRegistradas(): HasMany
+    {
+        return $this->hasMany(EgresadaFormacion::class, 'registrado_por');
+    }
+
+    public function formacionesActualizadas(): HasMany
+    {
+        return $this->hasMany(EgresadaFormacion::class, 'actualizado_por');
+    }
+
    
 }

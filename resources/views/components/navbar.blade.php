@@ -74,6 +74,22 @@
             </span>
         </a>
 
+        {{-- Egresadas universitarias --}}
+        <a
+            href="{{ route('egresadas.index') }}"
+            class="{{ request()->routeIs('egresadas.*')
+                ? 'bg-[#1a34c9] text-white font-semibold shadow-[0_6px_16px_rgba(26,52,201,0.35)]'
+                : 'text-[#2b2b2b] hover:bg-[#f7f7f9]'
+            }} flex items-center gap-3.5 rounded-xl px-4.5 py-3.5 text-[15px] font-medium no-underline transition"
+        >
+            <span class="flex h-5 w-5 shrink-0 items-center justify-center text-base">
+                <x-icon name="report" size="35" />
+            </span>
+            <span class="whitespace-nowrap">
+                Egresadas
+            </span>
+        </a>
+
         {{-- Aportes --}}
         <details
             class="group"
