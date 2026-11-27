@@ -9,7 +9,6 @@ services:
     working_dir: /var/www/html
     volumes:
       - ./:/var/www/html
-      - vendor:/var/www/html/vendor
       - framework_cache:/var/www/html/storage/framework
     ports:
       - "8001:8000"
@@ -24,5 +23,4 @@ networks:
     name: sistema-aportes_default
 
 volumes:
-  vendor:
   framework_cache:
